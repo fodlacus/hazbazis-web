@@ -111,7 +111,7 @@ window.urlapUrites = function () {
 window.ertelmezdAkeresest = async function (szoveg) {
   console.log("AI elemzés indítása (Hazbazis Proxy)...", szoveg);
 
-  // A Cloudflare Pages Function elérési útja
+  // FONTOS: Ez az útvonal a Cloudflare Functions végpontodra mutat
   const PROXY_URL = "/functions/ai-proxy";
 
   try {
@@ -125,7 +125,8 @@ window.ertelmezdAkeresest = async function (szoveg) {
         messages: [
           {
             role: "system",
-            content: `Ingatlanos asszisztens vagy. JSON kinyerése a cél: 'minAr', 'maxAr', 'kerulet', 'szobak'.`,
+            content:
+              "Ingatlanos asszisztens vagy. A feladatod tiszta JSON kinyerése.",
           },
           {
             role: "user",
@@ -137,20 +138,22 @@ window.ertelmezdAkeresest = async function (szoveg) {
       }),
     });
 
-    if (!response.ok) throw new Error(`Proxy hiba: ${response.status}`);
-
-    const data = await response.json();
-
-    // Biztonságos ellenőrzés a válasz szerkezetére
-    if (data.choices && data.choices.length > 0) {
-      const eredmeny = JSON.parse(data.choices[0].message.content);
-      console.log("AI értelmezett feltételek:", eredmeny);
-      return eredmeny;
+    if (!response.ok) {
+      const hibaAdat = await response.json();
+      throw new Error(
+        `Proxy hiba: ${response.status} - ${
+          hibaAdat.error || "Ismeretlen hiba"
+        }`
+      );
     }
 
-    return null;
+    const data = await response.json();
+    const eredmeny = JSON.parse(data.choices[0].message.content);
+
+    console.log("AI által értelmezett feltételek:", eredmeny);
+    return eredmeny;
   } catch (hiba) {
-    console.error("AI hiba a keresés értelmezésekor:", hiba);
+    console.error("AI hiba a keresés értelmezésekor:", hiba.message);
     return null;
   }
 };

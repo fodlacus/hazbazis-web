@@ -1,9 +1,12 @@
 export async function onRequestPost(context) {
   try {
-    // A Cloudflare Settingsben megadott kulcsot olvassa be
+    // 1. A kulcs beolvasása a Cloudflare Settings-ből
     const apiKey = context.env.OPENAI_API_KEY;
+
+    // 2. A böngészőből érkező adatok beolvasása
     const requestData = await context.request.json();
 
+    // 3. Kérés továbbítása az OpenAI felé
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -14,6 +17,8 @@ export async function onRequestPost(context) {
     });
 
     const data = await response.text();
+
+    // 4. Válasz visszaküldése a böngészőnek
     return new Response(data, {
       headers: { "Content-Type": "application/json" },
     });
