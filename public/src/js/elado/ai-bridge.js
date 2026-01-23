@@ -69,8 +69,7 @@ window.aiAdatKeres = async function () {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization:
-          "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", // Ide kell a titkos kulcs
+        Authorization: "process.env.OPENAI_API_KEY",
       },
       body: JSON.stringify({
         model: "gpt-4o",
@@ -128,7 +127,7 @@ window.ertelmezdAkeresest = async function (szoveg) {
 
   // Ide jön majd az API kulcsod, vagy a backend végpontod
   const API_URL = "https://api.openai.com/v1/chat/completions";
-  const API_KEY = "process.env.OPENAI_API_KEY";
+  const API_KEY = "";
   try {
     const response = await fetch(API_URL, {
       method: "POST",
