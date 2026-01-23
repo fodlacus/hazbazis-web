@@ -44,49 +44,33 @@ window.aiAdatKeres = async function () {
   gomb.disabled = true;
   gomb.innerText = "Elemzés...";
 
-  // FIGYELEM: Itt kell majd a valódi végpontod!
-  const API_URL = "https://api.openai.com/v1/chat/completions"; // Példa OpenAI végpont
-
   try {
-    // Ha még nincs kész a szervered, itt egy szimuláció a teszteléshez:
-    if (forrasSzoveg.includes("Zászlós utca")) {
-      console.log("Szimulált AI válasz indítása...");
-      const tesztAdat = {
-        nev: "Zászlós utca 29-31.",
-        vételár: "86500000",
-        alapterület: "66",
-        szobák: "3",
-        kerulet: "XIV.",
-        varosresz: "Alsórákos",
-        típus: "Tégla lakás",
-      };
-      adatokBetoltese(tesztAdat);
-      return;
-    }
-
-    // VALÓDI HÍVÁS (Csak ha az API_URL helyes!)
-    const valasz = await fetch(API_URL, {
+    // FONTOS: Mostantól a saját Cloudflare proxy-dat hívjuk!
+    const response = await fetch("/functions/ai-proxy", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "process.env.OPENAI_API_KEY",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
           { role: "system", content: "Ingatlan JSON exportáló vagy." },
           { role: "user", content: forrasSzoveg },
         ],
+        response_format: { type: "json_object" },
       }),
     });
 
-    if (!valasz.ok) throw new Error(`Szerver hiba: ${valasz.status}`);
+    if (!response.ok) throw new Error("Proxy hiba: " + response.status);
 
-    const data = await valasz.json();
-    adatokBetoltese(JSON.parse(data.choices[0].message.content));
+    const data = await response.json();
+
+    // Biztonságos kiolvasás: ellenőrizzük, van-e válasz
+    if (data.choices && data.choices[0]) {
+      const aiTartalom = JSON.parse(data.choices[0].message.content);
+      adatokBetoltese(aiTartalom);
+    }
   } catch (hiba) {
     console.error("AI Elemzési hiba:", hiba);
-    alert("Hiba: Az API végpont nem érhető el vagy hibás.");
+    alert("Hiba: A biztonságos AI kapcsolat megszakadt.");
   } finally {
     gomb.disabled = false;
     gomb.innerText = "Elemzés";
@@ -122,52 +106,50 @@ window.urlapUrites = function () {
 
 // ai-bridge.js - AZ AI ÉLESÍTÉSE
 
-window.ertelmezdAkeresest = async function (szoveg) {
-  console.log("AI elemzés indítása (OpenAI)...", szoveg);
+// ai-bridge.js - JAVÍTOTT VERZIÓ CLOUDFLARE-HEZ
 
-  // Ide jön majd az API kulcsod, vagy a backend végpontod
-  const API_URL = "https://api.openai.com/v1/chat/completions";
-  const API_KEY = "";
+window.ertelmezdAkeresest = async function (szoveg) {
+  console.log("AI elemzés indítása (Hazbazis Proxy)...", szoveg);
+
+  // A Cloudflare proxy végpontja
+  const PROXY_URL = "/functions/ai-proxy";
+
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(PROXY_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${API_KEY}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: `Ingatlanos asszisztens vagy. A feladatod tiszta JSON kinyerése a szövegből. 
-                          Szabályok:
-                          - 'minAr': ha 'felett', 'minimum', 'legalább' szerepel.
-                          - 'maxAr': ha 'alatt', 'maximum', 'ig' szerepel.
-                          - A számokat tiszta egészként add vissza (pl. 75 millió -> 75000000).
-                          - Kerületet római számmal (pl. XIV.).`,
+            content: `Ingatlanos asszisztens vagy. JSON kinyerése a cél: 'minAr', 'maxAr', 'kerulet', 'szobak'.`,
           },
-          {
-            role: "user",
-            content: `Elemezd ezt: "${szoveg}"`,
-          },
+          { role: "user", content: `Elemezd ezt: "${szoveg}"` },
         ],
-        response_format: { type: "json_object" }, // Így biztosan JSON-t kapunk vissza
+        response_format: { type: "json_object" },
         temperature: 0,
       }),
     });
 
-    const data = await response.json();
-    const eredmeny = JSON.parse(data.choices[0].message.content);
+    if (!response.ok) throw new Error(`Proxy hiba: ${response.status}`);
 
-    console.log("AI által értelmezett feltételek:", eredmeny);
-    return eredmeny;
+    const data = await response.json();
+
+    // Biztonságos ellenőrzés a választömbön
+    if (data.choices && data.choices[0]) {
+      const eredmeny = JSON.parse(data.choices[0].message.content);
+      console.log("AI értelmezett feltételek:", eredmeny);
+      return eredmeny;
+    }
+
+    return {}; // Üres objektum hiba esetén
   } catch (hiba) {
     console.error("AI hiba:", hiba);
-    // Tartalék megoldás: ha az AI elbukik, küldjünk vissza egy üres objektumot
-    return null;
+    return {};
   }
 };
+
 window.automataCimEllenorzes = async function () {
   const irsz = document.getElementById("iranyitoszam")?.value;
   const varos = document.getElementById("telepules")?.value;

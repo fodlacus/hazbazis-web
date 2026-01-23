@@ -25,6 +25,12 @@ window.gyorsKitoltesInditasa = async function (szoveg) {
   try {
     const feltetelek = await window.ertelmezdAkeresest(szoveg);
 
+    // Ha az AI hiba miatt null-t vagy üreset adna vissza, álljunk meg
+    if (!feltetelek || Object.keys(feltetelek).length === 0) {
+      jelezzHibat("Az AI nem tudta értelmezni a kérést. Próbáld másképp!");
+      return;
+    }
+
     // FONTOS: Csak az alapvető mezőkre szűrünk
     let q = collection(adatbazis, "lakasok");
     let szurok = [];
