@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>teras.hu - Shorts</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+            .hatter-zold {
+                  background-color: #3D4A16;
+            }
+
+            .szoveg-vilagos {
+                  color: #E2F1B0;
+            }
+
+            .video-kontener {
+                  scroll-snap-type: y mandatory;
+                  overflow-y: scroll;
+                  height: 100vh;
+            }
+
+            .short-elem {
+                  scroll-snap-align: start;
+                  height: 100vh;
+                  position: relative;
+            }
+      </style>
+</head>
+
+<body class="hatter-zold text-white m-0 p-0 overflow-hidden">
+
+      <div class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center">
+            <input type="text" placeholder="Keresés (pl. Balaton, kertes ház...)"
+                  class="bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-3 px-6 w-full max-w-md text-sm outline-none focus:border-lime-400 transition-all">
+      </div>
+
+      <div id="shorts-folyam" class="video-kontener">
+            <section class="short-elem flex items-center justify-center bg-black">
+                  <video loop muted autoplay class="h-full w-full object-cover opacity-80">
+                        <source
+                              src="https://assets.mixkit.co/videos/preview/mixkit-modern-house-exterior-design-41151-large.mp4"
+                              type="video/mp4">
+                  </video>
+
+                  <div class="absolute right-4 bottom-24 flex flex-col gap-6 items-center">
+                        <button
+                              class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20 hover:bg-lime-500 transition-all">
+                              🏠
+                        </button>
+                        <div class="flex flex-col items-center">
+                              <button
+                                    class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">❤️</button>
+                              <span class="text-xs mt-1">128</span>
+                        </div>
+                        <button class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                              <i class="text-xs">360°</i>
+                        </button>
+                  </div>
+
+                  <div class="absolute bottom-10 left-6 right-16">
+                        <h3 class="bg-lime-400 text-black px-2 py-1 rounded inline-block font-bold mb-2">Modern Villa
+                        </h3>
+                        <p class="text-lg font-semibold drop-shadow-md">Tihany, panorámás luxus</p>
+                        <p class="text-sm opacity-80">145 m² • 4 szoba • AA++</p>
+                  </div>
+            </section>
+      </div>
+
+      <nav
+            class="fixed bottom-0 w-full bg-black/40 backdrop-blur-lg border-t border-white/10 flex justify-around p-3 z-50">
+            <a href="../../../index.html" class="opacity-50 hover:opacity-100">🏠</a>
+            <a href="#" class="szoveg-vilagos font-bold underline">🎥 Shorts</a>
+            <a href="#" class="opacity-50 hover:opacity-100">❤️</a>
+            <a href="#" class="opacity-50 hover:opacity-100">👤</a>
+      </nav>
+
+      <script type="module" src="../../js/vevo/kereso.js"></script>
+</body>
+
+</html>

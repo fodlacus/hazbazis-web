@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Házbázis - Virtuális Bejárás</title>
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css" />
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+      <style>
+            body {
+                  margin: 0;
+                  padding: 0;
+                  overflow: hidden;
+            }
+
+            #container {
+                  position: relative;
+                  width: 100vw;
+                  height: 100vh;
+            }
+
+            #panorama {
+                  width: 100%;
+                  height: 100%;
+            }
+
+            /* Reszponzív Alaprajz Konténer */
+            #floorplan-container {
+                  position: absolute;
+                  bottom: 20px;
+                  left: 20px;
+                  width: 280px;
+                  /* Alapméret asztali nézetben */
+                  background: rgba(255, 255, 255, 0.85);
+                  border: 1px solid #ccc;
+                  border-radius: 12px;
+                  padding: 5px;
+                  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+                  z-index: 1000;
+                  transition: width 0.3s ease;
+            }
+
+            /* Mobil nézet javítása (iPhone 16 Pro-hoz) */
+            @media (max-width: 768px) {
+                  #floorplan-container {
+                        width: 160px;
+                        /* Kisebb méret mobilon */
+                        bottom: 10px;
+                        left: 10px;
+                  }
+            }
+
+            #floorplan-img {
+                  width: 100%;
+                  display: block;
+                  border-radius: 8px;
+            }
+
+            /* Navigációs pontok az alaprajzon */
+            .room-dot {
+                  position: absolute;
+                  width: 12px;
+                  height: 12px;
+                  background: #007bff;
+                  border: 2px solid white;
+                  border-radius: 50%;
+                  cursor: pointer;
+                  z-index: 1010;
+            }
+
+            .room-dot:hover {
+                  background: #ff0000;
+                  scale: 1.2;
+            }
+
+            /* Radar ikon */
+            #radar {
+                  position: absolute;
+                  width: 20px;
+                  height: 20px;
+                  background: rgba(255, 0, 0, 0.5);
+                  border: 2px solid white;
+                  border-radius: 50%;
+                  pointer-events: none;
+                  /* Ne zavarja a kattintást */
+                  z-index: 1020;
+                  transition: top 0.3s, left 0.3s;
+            }
+
+            #radar-beam {
+                  width: 0;
+                  height: 0;
+                  border-left: 8px solid transparent;
+                  border-right: 8px solid transparent;
+                  border-bottom: 16px solid rgba(255, 255, 0, 0.8);
+                  position: absolute;
+                  top: -18px;
+                  left: 2px;
+            }
+      </style>
+</head>
+
+<body>
+
+      <div id="container">
+            <div id="panorama"></div>
+
+            <div id="floorplan-container">
+                  <img id="floorplan-img" src="https://media.hazbazis.hu/magicplan-01.png">
+
+                  <div class="room-dot" style="top: 35%; left: 68%;" onclick="switchRoom('nappali')"></div>
+                  <div class="room-dot" style="top: 25%; left: 30%;" onclick="switchRoom('szoba1')"></div>
+                  <div class="room-dot" style="top: 75%; left: 55%;" onclick="switchRoom('furdo')"></div>
+                  <div class="room-dot" style="top: 85%; left: 35%;" onclick="switchRoom('eloter')"></div>
+
+                  <div id="radar">
+                        <div id="radar-beam"></div>
+                  </div>
+            </div>
+
+
+
+      </div>
+
+      <script>
+            const scenes = {
+                  "nappali": {
+                        "panorama": "https://media.hazbazis.hu/p_1.jpg",
+                        "x": "68%", "y": "35%"
+                  },
+                  "szoba1": {
+                        "panorama": "https://media.hazbazis.hu/szoba-1.jpg",
+                        "x": "30%", "y": "25%"
+                  },
+                  "furdo": {
+                        "panorama": "https://media.hazbazis.hu/furdo.jpg",
+                        "x": "55%", "y": "75%"
+                  },
+                  "eloter": {
+                        "panorama": "https://media.hazbazis.hu/eloter.jpg",
+                        "x": "35%", "y": "85%"
+                  }
+            };
+
+            // Kezdeti konfiguráció
+            let viewerConfig = {
+                  "type": "equirectangular",
+                  "panorama": scenes.nappali.panorama,
+                  "autoLoad": true,
+                  "hfov": 100
+            };
+
+            let viewer = pannellum.viewer('panorama', viewerConfig);
+
+            function switchRoom(id) {
+                  // A hiba javítása: destroy() és újraépítés a legstabilabb módszer szobaváltáshoz
+                  viewer.destroy();
+
+                  viewer = pannellum.viewer('panorama', {
+                        "type": "equirectangular",
+                        "panorama": scenes[id].panorama,
+                        "autoLoad": true,
+                        "hfov": 100
+                  });
+
+                  // Radar mozgatása az új koordinátára
+                  const radar = document.getElementById('radar');
+                  radar.style.left = scenes[id].x;
+                  radar.style.top = scenes[id].y;
+
+                  // Eseményfigyelő újracsatolása az elforgatáshoz
+                  viewer.on('viewchange', function () {
+                        const yaw = viewer.getYaw();
+                        document.getElementById('radar').style.transform = `rotate(${yaw}deg)`;
+                  });
+            }
+
+            // Alapértelmezett forgatás figyelése
+            viewer.on('viewchange', function () {
+                  const yaw = viewer.getYaw();
+                  document.getElementById('radar').style.transform = `rotate(${yaw}deg)`;
+            });
+      </script>
+
+</body>
+
+</html>

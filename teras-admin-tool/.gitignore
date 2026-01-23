@@ -1,0 +1,13 @@
+# Node modulok
+node_modules/
+
+# Firebase kulcs (SOHA ne kerüljön fel Gitre!)
+teras-admin-tool/serviceAccountKey.json
+
+# Lokális média fájlok (feleslegesen foglalnák a helyet a Gitben)
+teras-admin-tool/letoltott_drive_anyag/
+teras-admin-tool/feltoltesre/
+
+# Operációs rendszer fájlok
+.DS_Store
+Thumbs.db

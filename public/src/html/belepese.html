@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>teras.hu - Belépés</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+            .hatter-zold {
+                  background-color: #3D4A16;
+            }
+
+            .bevitel {
+                  background-color: rgba(255, 255, 255, 0.05);
+                  border: 1px solid rgba(226, 241, 176, 0.2);
+            }
+
+            .gomb-vilagos {
+                  background-color: #E2F1B0;
+                  color: #3D4A16;
+            }
+      </style>
+</head>
+
+<body class="hatter-zold text-white flex items-center justify-center min-h-screen p-6">
+      <div class="max-w-md w-full bg-black/20 p-8 rounded-3xl backdrop-blur-lg border border-white/10">
+            <h2 class="text-3xl font-bold mb-2 text-center">Üdvözlünk a <span style="color: #E2F1B0;">teras</span>-on!
+            </h2>
+            <p class="text-gray-400 text-center mb-8 text-sm uppercase tracking-widest">Ingatlan hirdetéskezelő</p>
+
+            <form id="belepese-urlap" class="space-y-4">
+                  <input type="email" id="email" placeholder="E-mail cím"
+                        class="bevitel w-full p-4 rounded-xl outline-none focus:border-lime-400 transition-all"
+                        required>
+                  <input type="password" id="jelszo" placeholder="Jelszó"
+                        class="bevitel w-full p-4 rounded-xl outline-none focus:border-lime-400 transition-all"
+                        required>
+
+                  <button type="submit" id="gomb-belep"
+                        class="gomb-vilagos w-full py-4 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform mt-4">
+                        Bejelentkezés
+                  </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm">
+                  <span class="opacity-60">Még nincs fiókod?</span>
+                  <button id="valtas-regisztraciora" class="font-bold border-b border-lime-400 ml-1"
+                        style="color: #E2F1B0;">Regisztráció
+                  </button>
+                  <div>
+                        <a href="../../index.html" class="text-xs opacity-50 hover:opacity-100 transition-all">
+                              ← Vissza a főoldalra
+                        </a>
+                  </div>
+
+            </div>
+
+      </div>
+
+      <script type="module" src="../js/util/auth.js"></script>
+</body>
+
+</html>

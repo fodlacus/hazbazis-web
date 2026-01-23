@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>teras.hu - Admin Dashboard</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+            .hatter-zold {
+                  background-color: #3D4A16;
+            }
+
+            .kartya {
+                  background-color: rgba(255, 255, 255, 0.05);
+                  border: 1px solid rgba(226, 241, 176, 0.1);
+            }
+
+            .szoveg-vilagos {
+                  color: #E2F1B0;
+            }
+      </style>
+</head>
+
+<body class="hatter-zold text-white font-sans p-6">
+
+      <div class="max-w-6xl mx-auto">
+            <header class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
+                  <div>
+                        <h1 class="text-3xl font-bold">Admin <span class="szoveg-vilagos">Panel</span></h1>
+                        <p id="bejelentkezett-email" class="text-xs opacity-60 italic"></p>
+                        <p class="text-sm opacity-60 uppercase tracking-widest">Ingatlan feldolgozási folyamat</p>
+                  </div>
+                  <div class="flex gap-4">
+                        <button onclick="kijelentkezes()"
+                              class="text-xs border border-white/20 px-4 py-2 rounded-full hover:bg-white/10">Kijelentkezés</button>
+                  </div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                  <div class="kartya p-6 rounded-2xl">
+                        <p class="text-xs opacity-50 uppercase">Feltöltött hirdetések</p>
+                        <h2 id="statisztika-osszes" class="text-4xl font-bold szoveg-vilagos">--</h2>
+                  </div>
+                  <div class="kartya p-6 rounded-2xl">
+                        <p class="text-xs opacity-50 uppercase">Fotózásra vár</p>
+                        <h2 class="text-4xl font-bold text-orange-400">12</h2>
+                  </div>
+                  <div class="kartya p-6 rounded-2xl">
+                        <p class="text-xs opacity-50 uppercase">Aktív Shorts videók</p>
+                        <h2 class="text-4xl font-bold text-lime-400">45</h2>
+                  </div>
+            </div>
+
+            <div class="kartya rounded-3xl overflow-hidden">
+                  <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                        <h3 class="font-bold">Legutóbbi feltöltések</h3>
+                        <button class="bg-white/10 text-xs px-3 py-1 rounded">Frissítés</button>
+                  </div>
+                  <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                              <thead class="bg-black/20 text-xs uppercase opacity-60">
+                                    <tr>
+                                          <th class="p-4">Ingatlan neve</th>
+                                          <th class="p-4">Helyszín</th>
+                                          <th class="p-4">Ár</th>
+                                          <th class="p-4">Státusz</th>
+                                          <th class="p-4 text-right">Művelet</th>
+                                    </tr>
+                              </thead>
+                              <tbody id="admin-ingatlan-lista">
+                                    <tr>
+                                          <td colspan="5" class="p-10 text-center opacity-30 italic">Adatok betöltése...
+                                          </td>
+                                    </tr>
+                              </tbody>
+                        </table>
+                  </div>
+            </div>
+      </div>
+
+      <script type="module" src="../../js/admin/admin.js"></script>
+</body>
+
+</html>

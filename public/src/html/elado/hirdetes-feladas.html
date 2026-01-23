@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>teras.hu - Új hirdetés</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+            .hatter-zold {
+                  background-color: #3D4A16;
+            }
+
+            .bevitel {
+                  background-color: rgba(255, 255, 255, 0.05);
+                  border: 1px solid rgba(226, 241, 176, 0.2);
+                  color: white;
+            }
+
+            .gomb-vilagos {
+                  background-color: #E2F1B0;
+                  color: #3D4A16;
+            }
+      </style>
+</head>
+
+<body class="hatter-zold text-white font-sans p-6">
+      <div class="max-w-4xl mx-auto space-y-10">
+
+            <div class="bg-black/20 p-8 rounded-3xl border border-white/10 shadow-2xl">
+                  <h2 id="urlap-cim" class="text-3xl font-bold mb-6 text-center">Ingatlan <span
+                              style="color: #E2F1B0;">rögzítése</span></h2>
+                  <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mb-6 relative">
+                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2 block text-white">
+                              Gyors kitöltés segítése (korábbi hirdetések alapján)
+                        </label>
+
+                        <div class="flex gap-2">
+                              <input type="text" id="ai-azonosito"
+                                    onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.gyorsKitoltesInditasa(this.value); }"
+                                    placeholder="Zugló, 2 szoba, 90 millió alatt..." class="bevitel flex-1">
+
+                              <button type="button"
+                                    onclick="window.gyorsKitoltesInditasa(document.getElementById('ai-azonosito').value)"
+                                    class="bg-lime-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-lime-500 transition-colors">
+                                    Elemzés
+                              </button>
+
+                              <button type="button" onclick="window.urlapUrites()"
+                                    class="bg-white/10 text-white px-4 py-3 rounded-xl hover:bg-red-500/20 transition-colors"
+                                    title="Űrlap ürítése">
+                                    🗑️
+                              </button>
+                        </div>
+                        <div id="kereso-talalatok"
+                              class="absolute left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-50 hidden max-h-60 overflow-y-auto">
+                        </div>
+                  </div>
+
+                  <form id="hirdetes-urlap">
+                        <div id="dinamikus-urlap-kontener" class="space-y-4"></div>
+                        <button type="submit" id="hirdetes-bekuldes" disabled
+                              class="w-full mt-10 bg-lime-400 text-black font-bold py-4 rounded-full hover:scale-105 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                              Hirdetés véglegesítése
+                        </button>
+                  </form>
+
+
+            </div>
+
+            <div class="bg-black/10 p-8 rounded-3xl border border-white/5">
+                  <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-lime-400 rounded-full animate-pulse"></span>
+                        Eddigi hirdetéseim
+                  </h3>
+                  <div id="sajat-lista" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <p class="text-xs opacity-40 italic">Hirdetések betöltése...</p>
+                  </div>
+            </div>
+      </div>
+
+      <script type="module" src="../../js/elado/ai-bridge.js"></script>
+      <script type="module" src="../../js/elado/gyors-kitoltes.js"></script>
+
+      <script type="module">
+            import { urlapGeneralas } from "../../js/elado/form-generator.js";
+            import { helyszinFigyelo } from "../../js/elado/feladas.js";
+            import { hirdeteseimListazasa } from "../../js/elado/lista.js";
+            import { adatokBetolteseSzerkeszteshez } from "../../js/elado/szerkesztes.js";
+
+            // Inicializálás
+            urlapGeneralas("dinamikus-urlap-kontener");
+            helyszinFigyelo();
+            hirdeteseimListazasa();
+            adatokBetolteseSzerkeszteshez();
+      </script>
+
+</body>
+
+</html>
