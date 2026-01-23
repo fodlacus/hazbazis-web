@@ -112,7 +112,7 @@ window.ertelmezdAkeresest = async function (szoveg) {
   console.log("AI elemzés indítása (Hazbazis Proxy)...", szoveg);
 
   // FONTOS: Ez az útvonal a Cloudflare Functions végpontodra mutat
-  const PROXY_URL = "/functions/ai-proxy";
+  const PROXY_URL = "/ai-proxy";
 
   try {
     const response = await fetch(PROXY_URL, {
