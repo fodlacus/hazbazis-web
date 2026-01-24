@@ -123,7 +123,19 @@ async function elsoLekeresFirebasebol(f) {
     });
 
     belsoFlat = eredmenyek;
-    valaszoljAfelhasznalonak(belsoFlat);
+    megjelenitTalalatokat();
+
+    if (belsoFlat.length === 0) {
+      hozzaadBuborekot(
+        "Sajnos ilyen paraméterekkel most nincs ingatlanunk.",
+        "ai"
+      );
+    } else {
+      hozzaadBuborekot(
+        `Találtam ${belsoFlat.length} ingatlant, ami megfelel a szempontjaidnak!`,
+        "ai"
+      );
+    }
   } catch (error) {
     console.error("Hiba a részletes keresésben:", error);
     hozzaadBuborekot("Sajnos hiba történt a technikai szűrés során.", "ai");
@@ -160,26 +172,39 @@ function megjelenitTalalatokat() {
   const szamlalo = document.getElementById("talalat-szam");
 
   szamlalo.innerText = `${belsoFlat.length} talált`;
+
   panel.innerHTML = belsoFlat
-    .map(
-      (ing) => `
-        <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group">
-            <img src="${
-              ing.kepek_horiz?.[0] || ""
-            }" class="w-24 h-24 rounded-2xl object-cover">
-            <div class="flex flex-col justify-center">
-                <h3 class="font-bold text-sm group-hover:text-[#E2F1B0] transition-colors">${
-                  ing.nev
+    .map((ing) => {
+      // Biztonsági átszámítás, hogy ne legyen NaN Ft
+      const ar = Number(ing.vételár);
+      const formatalAr = !isNaN(ar)
+        ? ar.toLocaleString() + " Ft"
+        : "Ár kérésre";
+
+      // Kép útvonalának javítása: ha nincs kép, egy üres keretet mutatunk
+      const kepUrl =
+        ing.kepek_horiz && ing.kepek_horiz[0]
+          ? ing.kepek_horiz[0]
+          : "../../../nincs-kep.jpg";
+
+      return `
+        <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4">
+            <div class="w-24 h-24 rounded-2xl bg-gray-800 overflow-hidden flex-shrink-0">
+                <img src="${kepUrl}" class="w-full h-full object-cover" onerror="this.src='../../../nincs-kep.jpg'">
+            </div>
+            <div class="flex flex-col justify-center overflow-hidden">
+                <h3 class="font-bold text-sm group-hover:text-[#E2F1B0] transition-colors truncate">${
+                  ing.nev || "Ingatlan"
                 }</h3>
-                <p class="text-[#E2F1B0] font-black mt-1">${Number(
-                  ing.vételár
-                ).toLocaleString()} Ft</p>
-                <p class="text-[10px] opacity-40 uppercase mt-1">${
-                  ing.kerulet
-                } kerület • ${ing.alapterület} m²</p>
+                <p class="text-[#E2F1B0] font-black mt-1">${formatalAr}</p>
+                <p class="text-[10px] opacity-40 uppercase mt-1">
+                    ${ing.kerulet || ing.telepules || "Ismeretlen"} • ${
+        ing.alapterület || "?"
+      } m²
+                </p>
             </div>
         </div>
-    `
-    )
+    `;
+    })
     .join("");
 }
