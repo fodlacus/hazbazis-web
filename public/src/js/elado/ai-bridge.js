@@ -34,28 +34,31 @@ window.ertelmezdAkeresest = async function (szoveg) {
         messages: [
           {
             role: "system",
-            content:
-              "Ingatlanos asszisztens vagy. Használd a 'ingatlan_szures' eszközt.",
+            content: "Ingatlanos vagy. Használd a szűrés eszközt.",
           },
           { role: "user", content: szoveg },
         ],
-        tools: ingatlanTools,
+        tools: ingatlanTools, // Ellenőrizd, hogy ez a változó létezik és fel van töltve!
       }),
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Hálózati hiba");
+
+    // Ha az OpenAI hibát dob, ne null-t adjunk vissza, hanem egy üres objektumot
+    if (data.error || !data.choices) {
+      console.error("OpenAI hiba:", data.error);
+      return {};
+    }
 
     const aiMessage = data.choices[0].message;
-
     if (aiMessage.tool_calls) {
       return JSON.parse(aiMessage.tool_calls[0].function.arguments);
     }
 
-    return {}; // Üres objektum, ha nincs találat, így nincs 'null' hiba a chat-engine-ben
+    return {};
   } catch (hiba) {
-    console.error("AI hiba:", hiba.message);
-    return {}; // Itt is üres objektummal térünk vissza hiba esetén
+    console.error("Hálózati hiba:", hiba);
+    return {};
   }
 };
 
