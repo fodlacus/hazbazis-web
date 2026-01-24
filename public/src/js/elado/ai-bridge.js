@@ -46,6 +46,25 @@ const ingatlanTools = [
             type: "boolean",
             description: "True, ha a felhasználó liftet igényel.",
           },
+          parkolas_kulcsszo: {
+            type: "string",
+            description:
+              "Ha a felhasználó parkolást említ. Pl: 'garázs', 'beálló', 'udvar'.",
+          },
+          futes_tipus: {
+            type: "string",
+            description:
+              "Fűtés típusa kulcsszóként. Pl: 'gáz', 'cirkó', 'padlófűtés', 'távfűtés'.",
+          },
+          kell_klima: {
+            type: "boolean",
+            description: "True, ha a felhasználó klímát/légkondit kér.",
+          },
+          min_epites_eve: {
+            type: "number",
+            description:
+              "Melyik év után épült? Pl. 'új építésű' = 2020, '2010 utáni' = 2010.",
+          },
         },
         required: ["max_ar"],
       },

@@ -24,6 +24,46 @@ document
   .getElementById("send-btn")
   .addEventListener("click", inditsChatKeresest);
 
+// ... (A fájl többi része változatlan) ...
+
+// --- ÚJ GOMBOK KEZELÉSE ---
+
+// 1. VISSZA A FŐOLDALRA
+document.getElementById("btn-home")?.addEventListener("click", () => {
+  // A path-ot igazítsd a struktúrádhoz (pl. ../../../index.html vagy /)
+  window.location.href = "../../../index.html";
+});
+
+// 2. KUKA / RESET FUNKCIÓ
+document.getElementById("btn-trash")?.addEventListener("click", () => {
+  if (confirm("Biztosan törlöd a beszélgetést és új keresést kezdesz?")) {
+    resetChatEngine();
+  }
+});
+
+function resetChatEngine() {
+  // 1. Memória ürítése
+  belsoFlat = [];
+
+  // 2. Chat felület takarítása
+  const folyam = document.getElementById("chat-folyam");
+  if (folyam) folyam.innerHTML = "";
+
+  // 3. Eredmények panel alaphelyzetbe állítása
+  const panel = document.getElementById("eredmenyek-panel");
+  const szamlalo = document.getElementById("talalat-szam");
+  if (panel) panel.innerHTML = ""; // Vagy visszatehetsz placeholder kártyákat
+  if (szamlalo) szamlalo.innerText = "0 találat";
+
+  // 4. URL tisztítása (hogy frissítéskor ne hozza vissza a query-t)
+  const url = new URL(window.location);
+  url.searchParams.delete("query");
+  window.history.pushState({}, "", url);
+
+  // 5. Kezdő üzenet visszaírása
+  hozzaadBuborekot("Tiszta lap! Miben segíthetek?", "ai");
+}
+
 async function inditsChatKeresest() {
   const input = document.getElementById("chat-input");
   const uzenet = input.value.trim();
@@ -82,6 +122,10 @@ function normalizaldAFelteteleket(f) {
     kellErkely: f.van_erkely === true,
     minEmelet: f.min_emelet !== undefined ? Number(f.min_emelet) : null,
     kellLift: f.kell_lift === true,
+    parkolasKereses: f.parkolas_kulcsszo || null, // Pl. "garázs"
+    futesKereses: f.futes_tipus || null, // Pl. "cirkó"
+    kellKlima: f.kell_klima === true,
+    minEv: f.min_epites_eve || null,
   };
 }
 
@@ -139,6 +183,51 @@ function megfelelAzIngatlan(ing, f) {
     if (erkelyMeret <= 0) {
       ok = false;
       kizarasOka = `Nincs erkély (Adat: "${nyersErkely}")`;
+    }
+  }
+
+  // --- PARKOLÁS SZŰRÉS (Szöveges keresés) ---
+  if (ok && f.parkolasKereses) {
+    // Adatbázis mező: "parkolas" (ékezet nélkül láttam a json-ben)
+    const ingParkolas = (ing.parkolas || "").toLowerCase();
+    const keresett = f.parkolasKereses.toLowerCase();
+
+    // Ha a vevő "garázs"-t keres, de az adatban "udvari beálló" van -> KIESIK
+    // Ha a vevő "beálló"-t keres, az adat "udvari beálló" -> MARAD
+    if (!ingParkolas.includes(keresett)) {
+      ok = false; // kizarasOka = `Nincs ilyen parkolás (${ingParkolas} vs ${keresett})`;
+    }
+  }
+
+  // --- FŰTÉS SZŰRÉS ---
+  if (ok && f.futesKereses) {
+    // Adatbázis mező: "fűtés" (ékezetes!)
+    const ingFutes = (ing.fűtés || ing.futes || "").toLowerCase();
+    const keresett = f.futesKereses.toLowerCase();
+
+    if (!ingFutes.includes(keresett)) {
+      ok = false; // kizarasOka = `Más fűtés (${ingFutes} vs ${keresett})`;
+    }
+  }
+
+  // --- KLÍMA SZŰRÉS ---
+  if (ok && f.kellKlima) {
+    // Adatbázis mező: "hűtés" ("Van (1 beltéri)")
+    const ingHutes = (ing.hűtés || ing.hutes || "").toLowerCase();
+
+    // Akkor jó, ha van benne valami szöveg, és nem az, hogy "nincs"
+    if (ingHutes === "" || ingHutes.includes("nincs") || ingHutes === "-") {
+      ok = false;
+    }
+  }
+
+  // --- ÉPÍTÉSI ÉV ---
+  if (ok && f.minEv) {
+    // Adatbázis mező: "epites_eve" (string "2016")
+    const ingEv = parseInt(ing.epites_eve);
+
+    if (isNaN(ingEv) || ingEv < f.minEv) {
+      ok = false; // Túl régi
     }
   }
 
