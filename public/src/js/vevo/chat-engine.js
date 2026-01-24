@@ -56,18 +56,27 @@ async function inditsChatKeresest() {
 // Importok maradnak a régiek...
 
 async function elsoLekeresFirebasebol(f) {
-  // A 'f' objektum most már a tiszta JSON az AI-tól
+  console.log("Nyers AI adatok a szűréshez:", f); // Debugoláshoz
 
   // 1. Technikai feltételek előkészítése
   const keresettFeltetelek = {
-    maxAr: f.vételár || null, // Az AI 'vételár' mezője a limit
-    minSzoba: f.szobák || null, // A 'szobák' a minimum
-    minTerulet: f.alapterület || null,
+    // ÁR: Figyeljük a magyar 'vételár', az angol 'max_price', 'price' és a 'maxAr' kulcsokat is
+    maxAr: f.vételár || f.max_price || f.price || f.maxAr || null,
+
+    // SZOBA: Figyeljük a 'szobák', 'rooms', 'szobaszam' kulcsokat
+    minSzoba: f.szobák || f.rooms || f.szobaszam || null,
+
+    // TERÜLET: 'alapterület', 'area', 'size'
+    minTerulet: f.alapterület || f.area || f.size || null,
+
+    // Egyéb fix mezők
     kerulet: f.kerulet || null,
     telepules: f.telepules || null,
-    tipus: f.tipus || null,
-    allapot: f.allapot || null,
+    tipus: f.tipus || f.type || null,
+    allapot: f.allapot || f.condition || null,
   };
+
+  console.log("Feldolgozott szűrő feltételek:", keresettFeltetelek);
 
   try {
     let q = collection(adatbazis, "lakasok");
