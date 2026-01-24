@@ -34,31 +34,32 @@ window.ertelmezdAkeresest = async function (szoveg) {
         messages: [
           {
             role: "system",
-            content: "Ingatlanos vagy. Használd a szűrés eszközt.",
+            content:
+              "Ingatlan JSON exportáló vagy. Csak tiszta JSON-t válaszolj!",
           },
           { role: "user", content: szoveg },
         ],
-        tools: ingatlanTools, // Ellenőrizd, hogy ez a változó létezik és fel van töltve!
+        // Megjegyzés: Ha itt nem küldünk 'tools'-t, akkor response_format kell
       }),
     });
 
     const data = await response.json();
+    let nyersTartalom = data.choices[0].message.content;
 
-    // Ha az OpenAI hibát dob, ne null-t adjunk vissza, hanem egy üres objektumot
-    if (data.error || !data.choices) {
-      console.error("OpenAI hiba:", data.error);
+    // JAVÍTÁS: Ha az AI kódblokkba (```json) tette a választ, takarítsuk ki
+    nyersTartalom = nyersTartalom.replace(/```json|```/g, "").trim();
+
+    try {
+      const eredmeny = JSON.parse(nyersTartalom);
+      console.log("Sikeres elemzés:", eredmeny);
+      return eredmeny || {}; // Soha ne adjunk vissza null-t
+    } catch (e) {
+      console.error("JSON parse hiba a takarítás után is:", nyersTartalom);
       return {};
     }
-
-    const aiMessage = data.choices[0].message;
-    if (aiMessage.tool_calls) {
-      return JSON.parse(aiMessage.tool_calls[0].function.arguments);
-    }
-
-    return {};
   } catch (hiba) {
-    console.error("Hálózati hiba:", hiba);
-    return {};
+    console.error("Proxy hiba:", hiba);
+    return {}; // Biztonsági háló a null hiba ellen
   }
 };
 
