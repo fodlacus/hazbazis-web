@@ -56,24 +56,17 @@ async function inditsChatKeresest() {
 // Importok maradnak a régiek...
 
 async function elsoLekeresFirebasebol(f) {
-  console.log("Nyers AI adatok a szűréshez:", f); // Debugoláshoz
-
-  // 1. Technikai feltételek előkészítése
+  console.log("Bejövő AI adatok:", f);
+  
   const keresettFeltetelek = {
-    // ÁR: Figyeljük a magyar 'vételár', az angol 'max_price', 'price' és a 'maxAr' kulcsokat is
-    maxAr: f.vételár || f.max_price || f.price || f.maxAr || null,
-
-    // SZOBA: Figyeljük a 'szobák', 'rooms', 'szobaszam' kulcsokat
-    minSzoba: f.szobák || f.rooms || f.szobaszam || null,
-
-    // TERÜLET: 'alapterület', 'area', 'size'
-    minTerulet: f.alapterület || f.area || f.size || null,
-
-    // Egyéb fix mezők
+    // Figyeld meg: most már a 'max_ar' a fő, amit az AI-nak tanítottunk
+    maxAr: f.max_ar || f.vételár || f.price || null,
+    minSzoba: f.min_szoba || f.szobák || null,
+    minTerulet: f.min_terulet || f.alapterület || null,
     kerulet: f.kerulet || null,
     telepules: f.telepules || null,
-    tipus: f.tipus || f.type || null,
-    allapot: f.allapot || f.condition || null,
+    tipus: f.tipus || null,
+    allapot: f.allapot || null,
   };
 
   console.log("Feldolgozott szűrő feltételek:", keresettFeltetelek);

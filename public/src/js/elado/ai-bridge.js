@@ -1,81 +1,80 @@
 // ai-bridge.js - Szigorú AI adatkinyerés és validáció (Function Calling verzió)
 // src/js/elado/ai-bridge.js
 
-// 1. A keresési feltételek definíciója (Tools)
+// src/js/elado/ai-bridge.js
+
+// A Tool definíció marad, de biztos ami biztos, pontosítjuk a leírást
 const ingatlanTools = [
   {
     type: "function",
     function: {
       name: "ingatlan_szures",
       description:
-        "Kinyeri az ingatlan keresési paramétereket a felhasználó mondatából. Ha árat említenek (pl. 50 millió alatt), azt a 'vételár' mezőbe tedd.",
+        "Kinyeri a KERESÉSI FELTÉTELEKET. SOHA ne generálj találatokat, csak a szűrőket add vissza!",
       parameters: {
         type: "object",
         properties: {
-          telepules: { type: "string", description: "Pl. Budapest, Debrecen" },
-          kerulet: {
-            type: "string",
-            description: "Római számmal, pl. XIV. vagy XI.",
-          }, // Fontos: római számra tanítjuk
-          vételár: { type: "number", description: "A maximális ár forintban." },
-          szobák: { type: "number", description: "A minimum szobaszám." },
-          alapterület: {
+          telepules: { type: "string" },
+          kerulet: { type: "string", description: "Római szám, pl. XIV." },
+          max_ar: {
             type: "number",
-            description: "Minimum alapterület m2-ben.",
-          }, // Ezt is felvettem
+            description: "A maximális ár forintban (pl. 50000000).",
+          }, // Egyértelműbb név
+          min_szoba: { type: "number" },
+          min_terulet: { type: "number" },
           allapot: {
             type: "string",
             enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],
           },
-          tipus: { type: "string", enum: ["Lakás", "Ház", "Sorház"] },
+          tipus: { type: "string", enum: ["Lakás", "Ház"] },
         },
+        required: ["max_ar"], // Opcionális: kötelezővé tehetjük, ha akarjuk
       },
     },
   },
 ];
 
 window.ertelmezdAkeresest = async function (szoveg) {
-  console.log("AI Kérés indítása ezzel:", szoveg);
+  console.log("AI elemzés indítása:", szoveg);
 
   try {
     const response = await fetch("/ai-proxy", {
-      // Vagy a teljes URL, ha lokálisan tesztelsz
+      // Ellenőrizd: nálad /ai-proxy vagy teljes URL kell?
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: [
           {
             role: "system",
+            // ITT A JAVÍTÁS LÉNYEGE:
             content:
-              "Ingatlan kereső asszisztens vagy. Értelmezd a felhasználó igényeit és hívd meg a megfelelő függvényt.",
+              "Te egy Adatbázis Kereső Motor vagy. A feladatod NEM válaszolni a kérdésre, és NEM generálni ingatlanokat. A feladatod KIZÁRÓLAG a felhasználó mondatából kinyerni a számokat és kategóriákat a 'ingatlan_szures' függvény számára.",
           },
           { role: "user", content: szoveg },
         ],
-        // ITT VOLT A HIÁNY: Át kell adni a tools-t!
         tools: ingatlanTools,
         tool_choice: {
           type: "function",
           function: { name: "ingatlan_szures" },
-        }, // Kényszerítjük a struktúrát
+        }, // Kényszerítjük
       }),
     });
 
     const data = await response.json();
 
-    // Function calling válasz kezelése
+    // Ellenőrzés: kaptunk-e function call-t?
     const toolCall = data.choices[0].message.tool_calls?.[0];
 
-    if (toolCall && toolCall.function.name === "ingatlan_szures") {
-      const jsonString = toolCall.function.arguments;
-      const eredmeny = JSON.parse(jsonString);
-      console.log("Sikeres AI értelmezés:", eredmeny);
-      return eredmeny;
+    if (toolCall) {
+      const args = JSON.parse(toolCall.function.arguments);
+      console.log("✅ AI Szigorú Eredmény:", args);
+      return args;
     } else {
-      console.warn("Az AI nem hívott függvényt, nyers válasz:", data);
+      console.warn("⚠️ Az AI nem használta a függvényt:", data);
       return {};
     }
   } catch (hiba) {
-    console.error("Proxy / Parse hiba:", hiba);
+    console.error("AI Hiba:", hiba);
     return {};
   }
 };
