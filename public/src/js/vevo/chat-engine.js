@@ -60,56 +60,73 @@ async function inditsChatKeresest() {
 }
 
 async function elsoLekeresFirebasebol(f) {
-  // 1. Megpróbáljuk kinyerni a kerületet bármilyen formátumban
-  let talaltKerulet =
-    f.kerulet || f.szo || f.XIV || f["XIV."] || f.kerulet_neve || "";
+  // 1. Kinyerjük az összes lehetséges technikai feltételt az AI válaszából
+  const technikaiFeltetelek = {
+    allapot: f.allapot || null,
+    anyag: f.anyag || null,
+    tipus: f.tipus || null,
+    lift: f.lift || null,
+    futes: f.fűtés || null,
+    epites_eve: f.epites_eve || null,
+  };
 
-  // 2. Ha az AI egy összetett mezőbe tette (pl. 'Zugló sorház'), abból is kiszedjük
-  if (!talaltKerulet && f.ingatlan_neve) {
-    if (f.ingatlan_neve.includes("Zugló")) talaltKerulet = "Zugló";
-    if (f.ingatlan_neve.includes("XIV")) talaltKerulet = "XIV. kerület";
-  }
-
-  // 3. Végső ellenőrzés: ha még mindig nincs meg, megkérdezzük a felhasználót
-  if (!talaltKerulet || talaltKerulet === "undefined") {
-    hozzaadBuborekot(
-      "Segíts nekem: melyik kerületben keressek pontosan?",
-      "ai"
-    );
-    return;
-  }
-
-  // Normalizálás az adatbázisodhoz (pl. XIV. kerület vagy Zugló)
-  const keresettErtek = talaltKerulet.toString().trim();
-
-  console.log("🔥 Firebase szűrés indítása ezzel:", keresettErtek);
+  const szamszeruFeltetelek = {
+    maxAr: f.maximum || f.maxAr || f.vételár || null,
+    minSzoba: f.szobák || f.szobaszam || null,
+    minTerulet: f.alapterület || null,
+  };
 
   try {
-    const q = query(
-      collection(adatbazis, "lakasok"),
-      where("kerulet", "==", keresettErtek)
-    );
+    let q = collection(adatbazis, "lakasok");
+
+    // FÖLDRAJZI SZŰRÉS (Firebase szinten)
+    if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
+    if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
 
     const snap = await getDocs(q);
-    belsoFlat = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let eredmenyek = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    if (belsoFlat.length === 0) {
-      hozzaadBuborekot(
-        `Sajnos a(z) ${keresettErtek} részen jelenleg nincs eladó ingatlanunk.`,
-        "ai"
-      );
-    } else {
-      hozzaadBuborekot(
-        `Szuper! Találtam ${belsoFlat.length} ingatlant. Nézd meg őket a jobb oldalon!`,
-        "ai"
-      );
-    }
+    // DINAMIKUS MEMÓRIA SZŰRÉS (A "belso-flat" finomhangolása)
+    // Ez a rész bármilyen mezőt lekezel, amit az AI felismert
+    eredmenyek = eredmenyek.filter((ing) => {
+      let ok = true;
+
+      // Szöveges egyezések (pl. állapot: "Felújított")
+      if (
+        technikaiFeltetelek.allapot &&
+        ing.allapot !== technikaiFeltetelek.allapot
+      )
+        ok = false;
+      if (technikaiFeltetelek.anyag && ing.anyag !== technikaiFeltetelek.anyag)
+        ok = false;
+
+      // Számszaki szűrések
+      if (
+        szamszeruFeltetelek.maxAr &&
+        Number(ing.vételár) > Number(szamszeruFeltetelek.maxAr)
+      )
+        ok = false;
+      if (
+        szamszeruFeltetelek.minSzoba &&
+        Number(ing.szobák) < Number(szamszeruFeltetelek.minSzoba)
+      )
+        ok = false;
+
+      // Építési év (pl. "2010 utáni")
+      if (
+        technikaiFeltetelek.epites_eve &&
+        Number(ing.epites_eve) < Number(technikaiFeltetelek.epites_eve)
+      )
+        ok = false;
+
+      return ok;
+    });
+
+    belsoFlat = eredmenyek;
+    valaszoljAfelhasznalonak(belsoFlat);
   } catch (error) {
-    console.error("Firebase hiba:", error);
-    hozzaadBuborekot(
-      "Hiba történt az adatok lekérésekor. Próbáljuk meg másképp!",
-      "ai"
-    );
+    console.error("Hiba a részletes keresésben:", error);
+    hozzaadBuborekot("Sajnos hiba történt a technikai szűrés során.", "ai");
   }
 }
 
