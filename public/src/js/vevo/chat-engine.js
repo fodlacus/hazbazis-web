@@ -33,29 +33,22 @@ async function inditsChatKeresest() {
   input.value = "";
 
   try {
-    // AI értelmezés hívása (Cloudflare proxy-n keresztül)
-    // Ellenőrizzük, hogy az ai-bridge.js be van-e töltve!
-    if (typeof window.ertelmezdAkeresest !== "function") {
-      throw new Error("Az AI modul nem töltődött be.");
-    }
-
     const feltetelek = await window.ertelmezdAkeresest(uzenet);
+    if (!feltetelek || Object.keys(feltetelek).length === 0) return;
 
     if (belsoFlat.length === 0) {
       hozzaadBuborekot("Pillanat, átnézem a kínálatot...", "ai");
       await elsoLekeresFirebasebol(feltetelek);
     } else {
       hozzaadBuborekot("Szűröm a listát az új szempontok alapján...", "ai");
-      szuresMemoriaban(feltetelek);
+      szuresMemoriaban(feltetelek); // Itt történik a második szűrés
     }
 
+    // FONTOS: Minden szűrés után újra ki kell rajzolni a kártyákat!
     megjelenitTalalatokat();
   } catch (error) {
     console.error("Hiba:", error);
-    hozzaadBuborekot(
-      "Sajnos hiba történt a kapcsolódáskor. Próbáld újra!",
-      "ai"
-    );
+    hozzaadBuborekot("Sajnos hiba történt a művelet közben.", "ai");
   }
 }
 
@@ -143,11 +136,22 @@ async function elsoLekeresFirebasebol(f) {
 }
 
 function szuresMemoriaban(f) {
-  // További szűrés már csak a memóriában lévő belsoFlat-en
+  console.log("Finomhangolás a memóriában:", f);
+
   belsoFlat = belsoFlat.filter((ing) => {
-    if (f.maxAr && ing.vételár > f.maxAr) return false;
-    if (f.szobak && ing.szobák < f.szobak) return false;
-    return true;
+    let megfelel = true;
+
+    // Alapterület szűrés (pl. "52 m2 alatt")
+    if (f.alapterület && Number(ing.alapterület) > Number(f.alapterület))
+      megfelel = false;
+
+    // Ár szűrés (ha a második körben is van árkorlát)
+    if (f.vételár && Number(ing.vételár) > Number(f.vételár)) megfelel = false;
+
+    // Szobaszám szűrés
+    if (f.szobák && Number(ing.szobák) < Number(f.szobák)) megfelel = false;
+
+    return megfelel;
   });
 }
 
@@ -171,26 +175,32 @@ function megjelenitTalalatokat() {
   const panel = document.getElementById("eredmenyek-panel");
   const szamlalo = document.getElementById("talalat-szam");
 
+  // Frissítjük a számlálót a fejlécben
   szamlalo.innerText = `${belsoFlat.length} talált`;
+
+  if (belsoFlat.length === 0) {
+    panel.innerHTML = `<p class="text-center opacity-40 mt-10">Nincs a feltételeknek megfelelő ingatlan.</p>`;
+    return;
+  }
 
   panel.innerHTML = belsoFlat
     .map((ing) => {
-      // Biztonsági átszámítás, hogy ne legyen NaN Ft
       const ar = Number(ing.vételár);
       const formatalAr = !isNaN(ar)
         ? ar.toLocaleString() + " Ft"
         : "Ár kérésre";
 
-      // Kép útvonalának javítása: ha nincs kép, egy üres keretet mutatunk
+      // Képkezelés: ha még nincs fotó, egy stabil sötét hátteret mutatunk vibrálás helyett
       const kepUrl =
-        ing.kepek_horiz && ing.kepek_horiz[0]
-          ? ing.kepek_horiz[0]
-          : "../../../nincs-kep.jpg";
+        ing.kepek_horiz && ing.kepek_horiz[0] ? ing.kepek_horiz[0] : "";
+      const kepPlaceholder = kepUrl
+        ? `<img src="${kepUrl}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=text-[10px]>Feltöltés alatt</div>'">`
+        : `<div class="flex items-center justify-center h-full text-[10px] opacity-30 text-center p-2">Hamarosan fotóval</div>`;
 
       return `
         <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4">
-            <div class="w-24 h-24 rounded-2xl bg-gray-800 overflow-hidden flex-shrink-0">
-                <img src="${kepUrl}" class="w-full h-full object-cover" onerror="this.src='../../../nincs-kep.jpg'">
+            <div class="w-24 h-24 rounded-2xl bg-black/40 overflow-hidden flex-shrink-0 flex items-center justify-center border border-white/5">
+                ${kepPlaceholder}
             </div>
             <div class="flex flex-col justify-center overflow-hidden">
                 <h3 class="font-bold text-sm group-hover:text-[#E2F1B0] transition-colors truncate">${
@@ -198,13 +208,11 @@ function megjelenitTalalatokat() {
                 }</h3>
                 <p class="text-[#E2F1B0] font-black mt-1">${formatalAr}</p>
                 <p class="text-[10px] opacity-40 uppercase mt-1">
-                    ${ing.kerulet || ing.telepules || "Ismeretlen"} • ${
-        ing.alapterület || "?"
-      } m²
+                    ${ing.kerulet || "Budapest"} • ${ing.alapterület || "?"} m²
                 </p>
             </div>
         </div>
-    `;
+      `;
     })
     .join("");
 }
