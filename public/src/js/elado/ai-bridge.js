@@ -5,107 +5,57 @@ const ingatlanTools = [
   {
     type: "function",
     function: {
-      name: "ingatlan_szures_futtatasa",
-      description:
-        "Lefuttat egy szűrést az ingatlanok között a megadott paraméterek alapján.",
+      name: "ingatlan_szures",
+      description: "Kinyeri az ingatlan keresési paramétereket.",
       parameters: {
         type: "object",
         properties: {
-          telepules: {
-            type: "string",
-            description: "A város neve, pl. 'Budapest', 'Debrecen'.",
-          },
-          kerulet: {
-            type: "string",
-            description:
-              "Budapesti kerület római számmal és ponttal, pl. 'XIV.', 'II.'.",
-          },
-          vételár: {
-            type: "number",
-            description: "A maximális vételár forintban (számként).",
-          },
-          szobák: {
-            type: "number",
-            description: "A szobák minimális száma (számként).",
-          },
+          telepules: { type: "string" },
+          kerulet: { type: "string" },
+          vételár: { type: "number" },
+          szobák: { type: "number" },
           allapot: {
             type: "string",
-            description: "Az ingatlan állapota.",
-            enum: [
-              "Felújított",
-              "Újszerű",
-              "Felújítandó",
-              "Jó állapotú",
-              "Befejezetlen",
-            ],
+            enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],
           },
-          tipus: {
-            type: "string",
-            description: "Az ingatlan típusa.",
-            enum: ["Lakás", "Ház", "Telek", "Iroda", "Sorház"],
-          },
-          anyag: {
-            type: "string",
-            enum: ["Tégla", "Panel", "Vályog"],
-            description: "Építési anyag.",
-          },
-          epites_eve: {
-            type: "number",
-            description: "Az építés éve (számként).",
-          },
-          lift: {
-            type: "string",
-            enum: ["Van", "Nincs"],
-            description: "Van-e lift az épületben.",
-          },
+          tipus: { type: "string", enum: ["Lakás", "Ház", "Sorház"] },
         },
-        required: [],
       },
     },
   },
 ];
 
 window.ertelmezdAkeresest = async function (szoveg) {
-  console.log("AI elemzés indítása (Tools Mode)...", szoveg);
-  const PROXY_URL = "/ai-proxy";
-
   try {
-    const response = await fetch(PROXY_URL, {
+    const response = await fetch("/ai-proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Gazdaságosabb és gyorsabb erre a feladatra
         messages: [
           {
             role: "system",
             content:
-              "Te egy ingatlanos asszisztens vagy. A feladatod a felhasználó kéréséből a paraméterek kinyerése és a 'ingatlan_szures_futtatasa' függvény meghívása. Sose használj ékezetes kulcsokat a paraméterekben (pl. állapot helyett allapot).",
+              "Ingatlanos asszisztens vagy. Használd a 'ingatlan_szures' eszközt.",
           },
           { role: "user", content: szoveg },
         ],
         tools: ingatlanTools,
-        tool_choice: "auto",
       }),
     });
 
-    if (!response.ok) throw new Error(`Proxy hiba: ${response.status}`);
-
     const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Hálózati hiba");
 
-    // Az OpenAI válaszának feldolgozása (Tool Call kinyerése)
     const aiMessage = data.choices[0].message;
 
-    if (aiMessage.tool_calls && aiMessage.tool_calls.length > 0) {
-      const feltetelek = JSON.parse(aiMessage.tool_calls[0].function.arguments);
-      console.log("✅ AI által kinyert tiszta paraméterek:", feltetelek);
-      return feltetelek;
-    } else {
-      console.warn("Az AI nem talált szűrhető paramétereket.");
-      return {};
+    if (aiMessage.tool_calls) {
+      return JSON.parse(aiMessage.tool_calls[0].function.arguments);
     }
+
+    return {}; // Üres objektum, ha nincs találat, így nincs 'null' hiba a chat-engine-ben
   } catch (hiba) {
     console.error("AI hiba:", hiba.message);
-    return null;
+    return {}; // Itt is üres objektummal térünk vissza hiba esetén
   }
 };
 
