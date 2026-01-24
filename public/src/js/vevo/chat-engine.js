@@ -60,27 +60,34 @@ async function inditsChatKeresest() {
 }
 
 async function elsoLekeresFirebasebol(f) {
-  // Megkeressük a kerület értékét bármelyik mezőben, amit az AI küldhet (kerulet vagy szo)
-  let nyersKerulet = f.kerulet || f.szo || f["kerület neve Budapesten"];
+  // 1. Megpróbáljuk kinyerni a kerületet bármilyen formátumban
+  let talaltKerulet =
+    f.kerulet || f.szo || f.XIV || f["XIV."] || f.kerulet_neve || "";
 
-  if (!nyersKerulet) {
+  // 2. Ha az AI egy összetett mezőbe tette (pl. 'Zugló sorház'), abból is kiszedjük
+  if (!talaltKerulet && f.ingatlan_neve) {
+    if (f.ingatlan_neve.includes("Zugló")) talaltKerulet = "Zugló";
+    if (f.ingatlan_neve.includes("XIV")) talaltKerulet = "XIV. kerület";
+  }
+
+  // 3. Végső ellenőrzés: ha még mindig nincs meg, megkérdezzük a felhasználót
+  if (!talaltKerulet || talaltKerulet === "undefined") {
     hozzaadBuborekot(
-      "Sajnos nem tudtam beazonosítani a kerületet. Megadnád újra?",
+      "Segíts nekem: melyik kerületben keressek pontosan?",
       "ai"
     );
     return;
   }
 
-  // Normalizálás: Az adatbázisban "Zugló" van, az AI pedig "zuglo"-t küldhet
-  const keresettKerulet =
-    nyersKerulet.charAt(0).toUpperCase() + nyersKerulet.slice(1).toLowerCase();
+  // Normalizálás az adatbázisodhoz (pl. XIV. kerület vagy Zugló)
+  const keresettErtek = talaltKerulet.toString().trim();
 
-  console.log("Keresés indítása a Firebase-ben:", keresettKerulet);
+  console.log("🔥 Firebase szűrés indítása ezzel:", keresettErtek);
 
   try {
     const q = query(
       collection(adatbazis, "lakasok"),
-      where("kerulet", "==", keresettKerulet)
+      where("kerulet", "==", keresettErtek)
     );
 
     const snap = await getDocs(q);
@@ -88,18 +95,21 @@ async function elsoLekeresFirebasebol(f) {
 
     if (belsoFlat.length === 0) {
       hozzaadBuborekot(
-        `Sajnos a ${keresettKerulet} kerületben jelenleg nincs eladó ingatlanunk.`,
+        `Sajnos a(z) ${keresettErtek} részen jelenleg nincs eladó ingatlanunk.`,
         "ai"
       );
     } else {
       hozzaadBuborekot(
-        `Találtam ${belsoFlat.length} ingatlant. Mit szeretnél még tudni róluk?`,
+        `Szuper! Találtam ${belsoFlat.length} ingatlant. Nézd meg őket a jobb oldalon!`,
         "ai"
       );
     }
   } catch (error) {
-    console.error("Firebase lekérdezési hiba:", error);
-    hozzaadBuborekot("Hiba történt az adatok lekérésekor.", "ai");
+    console.error("Firebase hiba:", error);
+    hozzaadBuborekot(
+      "Hiba történt az adatok lekérésekor. Próbáljuk meg másképp!",
+      "ai"
+    );
   }
 }
 
