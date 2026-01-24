@@ -17,7 +17,14 @@ const ingatlanTools = [
           kerulet: { type: "string", description: "Római szám, pl. XIV." },
           max_ar: { type: "number", description: "A maximális ár forintban." },
           min_szoba: { type: "number" },
-          min_terulet: { type: "number" },
+          min_terulet: {
+            type: "number",
+            description: "Minimum méret (pl. '50 m2 felett').",
+          },
+          max_terulet: {
+            type: "number",
+            description: "Maximum méret (pl. '60 m2 alatt', 'kicsi lakás').",
+          },
           allapot: {
             type: "string",
             enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],

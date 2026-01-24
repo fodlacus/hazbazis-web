@@ -70,13 +70,16 @@ function normalizaldAFelteteleket(f) {
   return {
     maxAr: f.max_ar || f.vételár || f.price || null,
     minSzoba: f.min_szoba || f.szobák || null,
-    minTerulet: f.min_terulet || f.alapterület || f.area || null,
+
+    // Itt kezeljük a min és max területet is:
+    minTerulet: f.min_terulet || f.alapterület || null,
+    maxTerulet: f.max_terulet || null, // <--- EZT ADD HOZZÁ!
+
     kerulet: f.kerulet || null,
     telepules: f.telepules || null,
     tipus: f.tipus || null,
     allapot: f.allapot || null,
-    // Bool & Extra mezők
-    kellErkely: f.van_erkely === true, // Csak ha explicit true
+    kellErkely: f.van_erkely === true,
     minEmelet: f.min_emelet !== undefined ? Number(f.min_emelet) : null,
     kellLift: f.kell_lift === true,
   };
@@ -110,11 +113,20 @@ function megfelelAzIngatlan(ing, f) {
   }
 
   // 3. TERÜLET SZŰRÉS
-  if (ok && f.minTerulet) {
-    const ingTerulet = Number(ing.alapterület);
-    if (ingTerulet < Number(f.minTerulet)) {
+
+  if (ok) {
+    const ingTerulet = Number(ing.alapterület); // Biztos ami biztos
+
+    // Minimum vizsgálat
+    if (f.minTerulet && ingTerulet < Number(f.minTerulet)) {
       ok = false;
       kizarasOka = `Kicsi (${ingTerulet} < ${f.minTerulet})`;
+    }
+
+    // Maximum vizsgálat (ÚJ RÉSZ)
+    if (ok && f.maxTerulet && ingTerulet > Number(f.maxTerulet)) {
+      ok = false;
+      kizarasOka = `Túl nagy (${ingTerulet} > ${f.maxTerulet})`;
     }
   }
 
