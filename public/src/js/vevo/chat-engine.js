@@ -60,32 +60,50 @@ async function inditsChatKeresest() {
 }
 
 async function elsoLekeresFirebasebol(f) {
-  // Megkeressük a kerület értékét, bárhogy is nevezte el az AI
-  const keruletErtek = f.kerulet || f["kerület neve Budapesten"] || f.szo;
+  // Megkeressük a kerület értékét bármelyik mezőben, amit az AI használhat
+  // A log alapján most az 'szo' mezőben küldte: {szo: 'zuglo'}
+  const keruletErtek = f.kerulet || f.szo || f["kerület neve Budapesten"];
 
   if (!keruletErtek) {
     hozzaadBuborekot(
-      "Kérlek, add meg pontosabban, melyik kerületben keresel!",
+      "Szia! Kérlek add meg pontosabban, melyik kerületben keresel, hogy szűrni tudjam a listát!",
       "ai"
     );
     return;
   }
 
-  console.log("Keresés a Firebase-ben:", keruletErtek);
+  // Normalizáljuk az értéket (pl. Zugló vagy zuglo is jó legyen)
+  const keresettKerulet =
+    keruletErtek.charAt(0).toUpperCase() + keruletErtek.slice(1).toLowerCase();
 
-  const q = query(
-    collection(adatbazis, "lakasok"),
-    where("kerulet", "==", keruletErtek)
+  console.log(
+    "Keresés indítása a Firebase-ben erre a kerületre:",
+    keresettKerulet
   );
 
-  const snap = await getDocs(q);
-  belsoFlat = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-  if (belsoFlat.length === 0) {
-    hozzaadBuborekot(
-      `Sajnos ebben a kerületben (${keruletErtek}) jelenleg nincs eladó ingatlanunk.`,
-      "ai"
+  try {
+    const q = query(
+      collection(adatbazis, "lakasok"),
+      where("kerulet", "==", keresettKerulet)
     );
+
+    const snap = await getDocs(q);
+    belsoFlat = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    if (belsoFlat.length === 0) {
+      hozzaadBuborekot(
+        `Sajnos jelenleg nincs eladó ingatlanunk a ${keresettKerulet} kerületben.`,
+        "ai"
+      );
+    } else {
+      hozzaadBuborekot(
+        `Találtam ${belsoFlat.length} ingatlant itt: ${keresettKerulet}. Mit szeretnél még tudni róluk?`,
+        "ai"
+      );
+    }
+  } catch (error) {
+    console.error("Firebase lekérdezési hiba:", error);
+    throw error;
   }
 }
 
