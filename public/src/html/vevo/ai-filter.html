@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>hazbazis.hu - AI Asszisztens</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+
+      <!-- <link rel="stylesheet" href="../../css/style.css"> -->
+      <script src="../../js/elado/ai-bridge.js"></script>
+
+      <style>
+            .hatter-zold {
+                  background-color: #3D4A16;
+            }
+
+            .szoveg-vilagos {
+                  color: #E2F1B0;
+            }
+
+            .szegely-zold {
+                  border-color: rgba(226, 241, 176, 0.2);
+            }
+      </style>
+</head>
+
+<body class="hatter-zold text-white font-sans overflow-hidden">
+
+      <div class="flex h-screen max-w-6xl mx-auto border-x szegely-zold">
+            <div class="w-full md:w-1/2 flex flex-col border-r szegely-zold">
+                  <div class="p-6 border-b szegely-zold flex items-center gap-4 bg-white/5">
+                        <img src="../../../AI-no.png"
+                              class="w-16 h-16 rounded-full object-cover border-2 border-[#E2F1B0]">
+                        <div>
+                              <h1 class="text-xl font-bold szoveg-vilagos">Házbázis Asszisztens</h1>
+                              <p class="text-xs opacity-60 italic">Digitális ingatlan tanácsadó</p>
+                        </div>
+                  </div>
+
+                  <div id="chat-folyam" class="flex-1 overflow-y-auto p-6 space-y-4">
+                  </div>
+
+                  <div class="p-6 bg-black/10">
+                        <div class="relative">
+                              <input type="text" id="chat-input" placeholder="Miben segíthetek?"
+                                    class="w-full bg-white/5 border border-white/20 rounded-full py-4 px-6 outline-none">
+                              <button id="send-btn"
+                                    class="absolute right-3 top-2.5 bg-[#E2F1B0] text-[#3D4A16] px-6 py-2 rounded-full font-bold">
+                                    Küldés
+                              </button>
+                        </div>
+                  </div>
+            </div>
+
+            <div class="hidden md:flex flex-col w-1/2 bg-black/5">
+                  <div class="p-6 border-b szegely-zold flex justify-between items-center">
+                        <h2 class="font-bold uppercase tracking-widest text-xs opacity-50">Ajánlatok neked</h2>
+                        <span id="talalat-szam"
+                              class="bg-[#E2F1B0] text-[#3D4A16] text-[10px] font-bold px-2 py-0.5 rounded">0
+                              talált</span>
+                  </div>
+                  <div id="eredmenyek-panel" class="flex-1 overflow-y-auto p-6 space-y-4">
+                  </div>
+            </div>
+      </div>
+
+      <script type="module" src="../../js/vevo/chat-engine.js"></script>
+</body>
+
+</html>

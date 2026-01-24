@@ -4,10 +4,10 @@
 <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>teras.hu - Prémium ingatlanok</title>
+      <title>hazbazis.hu - Ahol a kényelem és a természet összeér</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
-            /* A csatolt kép alapján beállított színek */
+            /* Visszaállított eredeti színek */
             .hatter-zold {
                   background-color: #3D4A16;
             }
@@ -17,24 +17,24 @@
                   color: #E2F1B0;
             }
 
-            /* Világos lime/krém a kiemeléshez */
+            /* Világos krém/lime */
             .gomb-vilagos {
                   background-color: #E2F1B0;
                   color: #3D4A16;
             }
 
             .szegely-zold {
-                  border-color: rgba(226, 241, 176, 0.3);
+                  border-color: rgba(226, 241, 176, 0.2);
             }
       </style>
 </head>
 
-<body class="hatter-zold text-white font-sans selection:bg-lime-900">
+<body class="hatter-zold text-white font-sans">
 
-      <nav class="flex items-center justify-between p-6 max-w-7xl mx-auto border-b szegely-zold">
+      <nav class="flex items-center justify-between p-5 max-w-7xl mx-auto border-b szegely-zold">
             <div class="flex items-center gap-10">
-                  <h1 class="text-3xl font-bold tracking-tight">teras<span class="szoveg-vilagos">.hu</span></h1>
-                  <div class="hidden md:flex gap-8 text-sm uppercase tracking-widest font-medium">
+                  <h1 class="text-3xl font-bold tracking-tight">haz<span class="szoveg-vilagos">bazis</span>.hu</h1>
+                  <div class="hidden md:flex gap-8 text-sm uppercase tracking-widest font-medium opacity-80">
                         <a href="src/html/vevo/shorts.html" class="hover:szoveg-vilagos transition-colors">Videók</a>
                         <a href="#" class="hover:szoveg-vilagos transition-colors">Kereső</a>
                         <a href="#" class="hover:szoveg-vilagos transition-colors">Kapcsolat</a>
@@ -44,29 +44,50 @@
                   class="text-sm border border-white/20 px-5 py-2 rounded-full hover:bg-white/10 transition-all">Belépés</a>
       </nav>
 
-      <main class="max-w-7xl mx-auto px-6 py-20 flex flex-col items-start justify-center min-h-[70vh]">
-            <h2 class="text-5xl md:text-8xl font-semibold leading-[1.1] max-w-4xl mb-10">
-                  Ahol a kényelem és a <span class="szoveg-vilagos italic">természet</span> összeér
+      <main class="max-w-7xl mx-auto px-6 py-20 text-center">
+            <h2 class="text-5xl md:text-8xl font-semibold leading-[1.1] mb-10 tracking-tight">
+                  Ahol a kényelem és a <br> <span class="szoveg-vilagos italic">természet</span> összeér
             </h2>
 
-            <div class="flex flex-col md:flex-row gap-6 w-full md:w-auto">
+            <div class="flex flex-col items-center gap-10">
                   <button onclick="window.location.href='src/html/vevo/shorts.html'"
-                        class="gomb-vilagos px-10 py-5 rounded-full font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-3">
-                        Ingatlanok megtekintése <span class="text-2xl">→</span>
+                        class="gomb-vilagos px-12 py-6 rounded-full font-black text-2xl hover:scale-110 transition-transform flex items-center gap-4 shadow-2xl shadow-lime-900/50">
+                        VIDEÓK PÖRGETÉSE 🎬
                   </button>
-                  <button
-                        class="border border-white/30 px-10 py-5 rounded-full font-bold text-lg hover:bg-white/5 transition-all">
-                        Ajánlatot kérek
-                  </button>
-            </div>
 
-            <div
-                  class="mt-20 border-t szegely-zold pt-8 w-full flex flex-wrap gap-12 opacity-70 text-sm uppercase tracking-widest">
-                  <div><span class="szoveg-vilagos font-bold">8K</span> Felbontás</div>
-                  <div><span class="szoveg-vilagos font-bold">360°</span> Bejárás</div>
-                  <div><span class="szoveg-vilagos font-bold">AI</span> Kereső</div>
+                  <div class="relative w-full max-w-xl group mt-4">
+                        <input type="text" id="fooldali-ai-kereso"
+                              placeholder="Vagy keress konkrétan: Zugló, 3 szoba..."
+                              class="w-full bg-white/5 border border-white/20 px-6 py-4 rounded-full text-lg outline-none focus:border-lime-400/50 transition-all placeholder:text-white/20 text-center">
+                        <button onclick="inditsKeresest()"
+                              class="absolute right-6 top-4 opacity-30 hover:opacity-100">🔍</button>
+                  </div>
+
+                  <div class="flex gap-8 opacity-40 text-[10px] uppercase tracking-[0.3em] font-bold">
+                        <span>8K Minőség</span>
+                        <span>•</span>
+                        <span>360° Bejárás</span>
+                        <span>•</span>
+                        <span>AI Asszisztens</span>
+                  </div>
             </div>
       </main>
+      <section class="max-w-7xl mx-auto px-6 py-16 border-t szegely-zold">
+            <div class="flex justify-between items-end mb-10">
+                  <h3 class="text-3xl font-bold">Kiemelt <span class="szoveg-vilagos">ajánlatok</span></h3>
+                  <div class="flex gap-3">
+                        <button class="p-3 border szegely-zold rounded-full hover:bg-white/5">❮</button>
+                        <button class="p-3 border szegely-zold rounded-full hover:bg-white/5">❯</button>
+                  </div>
+            </div>
+
+            <div id="kiemelt-lista" class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
+                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
+                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
+                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
+            </div>
+      </section>
 
       <script type="module" src="src/js/index.js"></script>
 </body>
