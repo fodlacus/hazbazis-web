@@ -60,13 +60,33 @@ async function inditsChatKeresest() {
 }
 
 async function elsoLekeresFirebasebol(f) {
-  // Első körben a kerület alapján kérünk le mindent a memóriába
+  // Megkeressük a kerület értékét, bárhogy is nevezte el az AI
+  const keruletErtek = f.kerulet || f["kerület neve Budapesten"] || f.szo;
+
+  if (!keruletErtek) {
+    hozzaadBuborekot(
+      "Kérlek, add meg pontosabban, melyik kerületben keresel!",
+      "ai"
+    );
+    return;
+  }
+
+  console.log("Keresés a Firebase-ben:", keruletErtek);
+
   const q = query(
     collection(adatbazis, "lakasok"),
-    where("kerulet", "==", f.kerulet)
+    where("kerulet", "==", keruletErtek)
   );
+
   const snap = await getDocs(q);
   belsoFlat = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  if (belsoFlat.length === 0) {
+    hozzaadBuborekot(
+      `Sajnos ebben a kerületben (${keruletErtek}) jelenleg nincs eladó ingatlanunk.`,
+      "ai"
+    );
+  }
 }
 
 function szuresMemoriaban(f) {
