@@ -1,25 +1,21 @@
 // ai-bridge.js - Szigorú AI adatkinyerés és validáció (Function Calling verzió)
-// src/js/elado/ai-bridge.js
 
 // src/js/elado/ai-bridge.js
 
-// A Tool definíció marad, de biztos ami biztos, pontosítjuk a leírást
 const ingatlanTools = [
   {
     type: "function",
     function: {
       name: "ingatlan_szures",
       description:
-        "Kinyeri a KERESÉSI FELTÉTELEKET. SOHA ne generálj találatokat, csak a szűrőket add vissza!",
+        "Kinyeri a KERESÉSI FELTÉTELEKET. SOHA ne generálj találatokat!",
       parameters: {
         type: "object",
         properties: {
+          // --- Alap mezők ---
           telepules: { type: "string" },
           kerulet: { type: "string", description: "Római szám, pl. XIV." },
-          max_ar: {
-            type: "number",
-            description: "A maximális ár forintban (pl. 50000000).",
-          }, // Egyértelműbb név
+          max_ar: { type: "number", description: "A maximális ár forintban." },
           min_szoba: { type: "number" },
           min_terulet: { type: "number" },
           allapot: {
@@ -27,8 +23,24 @@ const ingatlanTools = [
             enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],
           },
           tipus: { type: "string", enum: ["Lakás", "Ház"] },
+
+          // --- ÚJ "EXTRA" MEZŐK ---
+          van_erkely: {
+            type: "boolean",
+            description:
+              "True, ha a felhasználó kifejezetten erkélyt/teraszt/loggiát kér.",
+          },
+          min_emelet: {
+            type: "number",
+            description:
+              "A legalacsonyabb emelet. Földszint = 0. Ha azt kérik 'ne földszint', akkor ez legyen 1.",
+          },
+          kell_lift: {
+            type: "boolean",
+            description: "True, ha a felhasználó liftet igényel.",
+          },
         },
-        required: ["max_ar"], // Opcionális: kötelezővé tehetjük, ha akarjuk
+        required: ["max_ar"],
       },
     },
   },

@@ -55,11 +55,13 @@ async function inditsChatKeresest() {
 // src/js/vevo/chat-engine.js
 // Importok maradnak a régiek...
 
+// src/js/vevo/chat-engine.js
+
 async function elsoLekeresFirebasebol(f) {
   console.log("Bejövő AI adatok:", f);
-  
+
+  // 1. Paraméterek összerendezése
   const keresettFeltetelek = {
-    // Figyeld meg: most már a 'max_ar' a fő, amit az AI-nak tanítottunk
     maxAr: f.max_ar || f.vételár || f.price || null,
     minSzoba: f.min_szoba || f.szobák || null,
     minTerulet: f.min_terulet || f.alapterület || null,
@@ -67,55 +69,81 @@ async function elsoLekeresFirebasebol(f) {
     telepules: f.telepules || null,
     tipus: f.tipus || null,
     allapot: f.allapot || null,
+    // Újak:
+    kellErkely: f.van_erkely || false,
+    minEmelet: f.min_emelet !== undefined ? f.min_emelet : null,
+    kellLift: f.kell_lift || false,
   };
-
-  console.log("Feldolgozott szűrő feltételek:", keresettFeltetelek);
 
   try {
     let q = collection(adatbazis, "lakasok");
 
-    // 1. LÉPÉS: Durva szűrés Firebase-ben (Csak az indexelt mezőkre!)
-    // Ha van település vagy kerület, azzal szűkítjük a legjobban a listát
+    // Firebase "Durva szűrés" (Indexelt mezőkre)
     if (keresettFeltetelek.telepules) {
       q = query(q, where("telepules", "==", keresettFeltetelek.telepules));
     }
-    // Ha az AI jól felismerte a kerületet (pl. "XIV."), akkor szűrünk rá
     if (keresettFeltetelek.kerulet) {
       q = query(q, where("kerulet", "==", keresettFeltetelek.kerulet));
-    }
-
-    // Tipp: Ha a típus (Lakás/Ház) nagyon fontos, azt is beteheted Firebase where-be,
-    // de akkor kellhet összetett index (Composite Index).
-    if (keresettFeltetelek.tipus) {
-      q = query(q, where("tipus", "==", keresettFeltetelek.tipus));
     }
 
     const snap = await getDocs(q);
     let eredmenyek = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    // 2. LÉPÉS: Finomhangolás memóriában (JS filter)
-    // Itt végezzük a relációs (<, >) és szöveges szűréseket
+    // 2. "Finomhangolás" memóriában (Itt történik a varázslat!)
     eredmenyek = eredmenyek.filter((ing) => {
       let ok = true;
 
-      // Ár vizsgálat (Ingatlan ára <= Keresett max ár)
-      if (keresettFeltetelek.maxAr) {
-        // Biztosítjuk, hogy számként kezeljük
-        if (Number(ing.vételár) > Number(keresettFeltetelek.maxAr)) ok = false;
-      }
-
-      // Szobaszám (Ingatlan szobái >= Keresett min szoba)
-      if (keresettFeltetelek.minSzoba) {
-        if (Number(ing.szobák) < Number(keresettFeltetelek.minSzoba))
-          ok = false;
-      }
-
-      // Állapot (Pontos egyezés)
+      // --- Ár szűrés ---
       if (
-        keresettFeltetelek.allapot &&
-        ing.allapot !== keresettFeltetelek.allapot
-      ) {
+        keresettFeltetelek.maxAr &&
+        Number(ing.vételár) > Number(keresettFeltetelek.maxAr)
+      )
         ok = false;
+
+      // --- Szoba szűrés ---
+      if (
+        keresettFeltetelek.minSzoba &&
+        Number(ing.szobák) < Number(keresettFeltetelek.minSzoba)
+      )
+        ok = false;
+
+      // --- Terület szűrés ---
+      if (
+        keresettFeltetelek.minTerulet &&
+        Number(ing.alapterület) < Number(keresettFeltetelek.minTerulet)
+      )
+        ok = false;
+
+      // --- ERKÉLY OKOS SZŰRÉS ---
+      // Az adatbázisban: "8" (string) vagy "" (üres)
+      if (keresettFeltetelek.kellErkely) {
+        // A parseFloat("8") -> 8. A parseFloat("") -> NaN.
+        const erkelyMeret = parseFloat(ing.erkély_terasz) || 0;
+        if (erkelyMeret <= 0) ok = false;
+      }
+
+      // --- EMELET OKOS SZŰRÉS ---
+      if (keresettFeltetelek.minEmelet !== null) {
+        let ingEmelet = -1; // Alapértelmezett, ha ismeretlen
+
+        if (ing.emelet) {
+          const szoveg = ing.emelet.toString().toLowerCase();
+          if (szoveg.includes("földszint")) {
+            ingEmelet = 0;
+          } else {
+            // "1. emelet" vagy "3" -> kinyeri a számot
+            ingEmelet = parseInt(szoveg) || 0;
+          }
+        }
+
+        // Ha a kért emelet (pl. 1) nagyobb, mint az ingatlané (pl. 0), akkor kuka
+        if (ingEmelet < keresettFeltetelek.minEmelet) ok = false;
+      }
+
+      // --- LIFT SZŰRÉS ---
+      if (keresettFeltetelek.kellLift) {
+        const liftInfo = ing.lift ? ing.lift.toLowerCase() : "";
+        if (!liftInfo.includes("van")) ok = false;
       }
 
       return ok;
@@ -124,21 +152,20 @@ async function elsoLekeresFirebasebol(f) {
     belsoFlat = eredmenyek;
     megjelenitTalalatokat();
 
-    // Visszajelzés a felhasználónak
     if (belsoFlat.length === 0) {
       hozzaadBuborekot(
-        "Sajnos ilyen paraméterekkel most nincs ingatlanunk.",
+        "Sajnos a részletes szűrés alapján nincs találat.",
         "ai"
       );
     } else {
       hozzaadBuborekot(
-        `Találtam ${belsoFlat.length} ingatlant, ami megfelel a szempontjaidnak!`,
+        `Találtam ${belsoFlat.length} ingatlant az igényeid alapján!`,
         "ai"
       );
     }
   } catch (error) {
-    console.error("Hiba a keresésben:", error);
-    hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
+    console.error("Hiba:", error);
+    hozzaadBuborekot("Hiba történt a keresés közben.", "ai");
   }
 }
 
