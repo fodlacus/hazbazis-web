@@ -1,19 +1,28 @@
 // ai-bridge.js - Szigorú AI adatkinyerés és validáció (Function Calling verzió)
+// src/js/elado/ai-bridge.js
 
-// 1. A keresési feltételek definíciója (Tools) - Ez tanítja meg az AI-nak a mezőneveket
+// 1. A keresési feltételek definíciója (Tools)
 const ingatlanTools = [
   {
     type: "function",
     function: {
       name: "ingatlan_szures",
-      description: "Kinyeri az ingatlan keresési paramétereket.",
+      description:
+        "Kinyeri az ingatlan keresési paramétereket a felhasználó mondatából. Ha árat említenek (pl. 50 millió alatt), azt a 'vételár' mezőbe tedd.",
       parameters: {
         type: "object",
         properties: {
-          telepules: { type: "string" },
-          kerulet: { type: "string" },
-          vételár: { type: "number" },
-          szobák: { type: "number" },
+          telepules: { type: "string", description: "Pl. Budapest, Debrecen" },
+          kerulet: {
+            type: "string",
+            description: "Római számmal, pl. XIV. vagy XI.",
+          }, // Fontos: római számra tanítjuk
+          vételár: { type: "number", description: "A maximális ár forintban." },
+          szobák: { type: "number", description: "A minimum szobaszám." },
+          alapterület: {
+            type: "number",
+            description: "Minimum alapterület m2-ben.",
+          }, // Ezt is felvettem
           allapot: {
             type: "string",
             enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],
@@ -26,8 +35,11 @@ const ingatlanTools = [
 ];
 
 window.ertelmezdAkeresest = async function (szoveg) {
+  console.log("AI Kérés indítása ezzel:", szoveg);
+
   try {
     const response = await fetch("/ai-proxy", {
+      // Vagy a teljes URL, ha lokálisan tesztelsz
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -35,31 +47,36 @@ window.ertelmezdAkeresest = async function (szoveg) {
           {
             role: "system",
             content:
-              "Ingatlan JSON exportáló vagy. Csak tiszta JSON-t válaszolj!",
+              "Ingatlan kereső asszisztens vagy. Értelmezd a felhasználó igényeit és hívd meg a megfelelő függvényt.",
           },
           { role: "user", content: szoveg },
         ],
-        // Megjegyzés: Ha itt nem küldünk 'tools'-t, akkor response_format kell
+        // ITT VOLT A HIÁNY: Át kell adni a tools-t!
+        tools: ingatlanTools,
+        tool_choice: {
+          type: "function",
+          function: { name: "ingatlan_szures" },
+        }, // Kényszerítjük a struktúrát
       }),
     });
 
     const data = await response.json();
-    let nyersTartalom = data.choices[0].message.content;
 
-    // JAVÍTÁS: Ha az AI kódblokkba (```json) tette a választ, takarítsuk ki
-    nyersTartalom = nyersTartalom.replace(/```json|```/g, "").trim();
+    // Function calling válasz kezelése
+    const toolCall = data.choices[0].message.tool_calls?.[0];
 
-    try {
-      const eredmeny = JSON.parse(nyersTartalom);
-      console.log("Sikeres elemzés:", eredmeny);
-      return eredmeny || {}; // Soha ne adjunk vissza null-t
-    } catch (e) {
-      console.error("JSON parse hiba a takarítás után is:", nyersTartalom);
+    if (toolCall && toolCall.function.name === "ingatlan_szures") {
+      const jsonString = toolCall.function.arguments;
+      const eredmeny = JSON.parse(jsonString);
+      console.log("Sikeres AI értelmezés:", eredmeny);
+      return eredmeny;
+    } else {
+      console.warn("Az AI nem hívott függvényt, nyers válasz:", data);
       return {};
     }
   } catch (hiba) {
-    console.error("Proxy hiba:", hiba);
-    return {}; // Biztonsági háló a null hiba ellen
+    console.error("Proxy / Parse hiba:", hiba);
+    return {};
   }
 };
 

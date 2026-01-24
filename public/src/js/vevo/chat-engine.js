@@ -52,65 +52,69 @@ async function inditsChatKeresest() {
   }
 }
 
-async function elsoLekeresFirebasebol(f) {
-  // 1. Kinyerjük az összes lehetséges technikai feltételt az AI válaszából
-  const technikaiFeltetelek = {
-    allapot: f.allapot || null,
-    anyag: f.anyag || null,
-    tipus: f.tipus || null,
-    lift: f.lift || null,
-    futes: f.fűtés || null,
-    epites_eve: f.epites_eve || null,
-  };
+// src/js/vevo/chat-engine.js
+// Importok maradnak a régiek...
 
-  const szamszeruFeltetelek = {
-    maxAr: f.maximum || f.maxAr || f.vételár || null,
-    minSzoba: f.szobák || f.szobaszam || null,
+async function elsoLekeresFirebasebol(f) {
+  // A 'f' objektum most már a tiszta JSON az AI-tól
+
+  // 1. Technikai feltételek előkészítése
+  const keresettFeltetelek = {
+    maxAr: f.vételár || null, // Az AI 'vételár' mezője a limit
+    minSzoba: f.szobák || null, // A 'szobák' a minimum
     minTerulet: f.alapterület || null,
+    kerulet: f.kerulet || null,
+    telepules: f.telepules || null,
+    tipus: f.tipus || null,
+    allapot: f.allapot || null,
   };
 
   try {
     let q = collection(adatbazis, "lakasok");
 
-    // FÖLDRAJZI SZŰRÉS (Firebase szinten)
-    if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
-    if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
+    // 1. LÉPÉS: Durva szűrés Firebase-ben (Csak az indexelt mezőkre!)
+    // Ha van település vagy kerület, azzal szűkítjük a legjobban a listát
+    if (keresettFeltetelek.telepules) {
+      q = query(q, where("telepules", "==", keresettFeltetelek.telepules));
+    }
+    // Ha az AI jól felismerte a kerületet (pl. "XIV."), akkor szűrünk rá
+    if (keresettFeltetelek.kerulet) {
+      q = query(q, where("kerulet", "==", keresettFeltetelek.kerulet));
+    }
+
+    // Tipp: Ha a típus (Lakás/Ház) nagyon fontos, azt is beteheted Firebase where-be,
+    // de akkor kellhet összetett index (Composite Index).
+    if (keresettFeltetelek.tipus) {
+      q = query(q, where("tipus", "==", keresettFeltetelek.tipus));
+    }
 
     const snap = await getDocs(q);
     let eredmenyek = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    // DINAMIKUS MEMÓRIA SZŰRÉS (A "belso-flat" finomhangolása)
-    // Ez a rész bármilyen mezőt lekezel, amit az AI felismert
+    // 2. LÉPÉS: Finomhangolás memóriában (JS filter)
+    // Itt végezzük a relációs (<, >) és szöveges szűréseket
     eredmenyek = eredmenyek.filter((ing) => {
       let ok = true;
 
-      // Szöveges egyezések (pl. állapot: "Felújított")
-      if (
-        technikaiFeltetelek.allapot &&
-        ing.allapot !== technikaiFeltetelek.allapot
-      )
-        ok = false;
-      if (technikaiFeltetelek.anyag && ing.anyag !== technikaiFeltetelek.anyag)
-        ok = false;
+      // Ár vizsgálat (Ingatlan ára <= Keresett max ár)
+      if (keresettFeltetelek.maxAr) {
+        // Biztosítjuk, hogy számként kezeljük
+        if (Number(ing.vételár) > Number(keresettFeltetelek.maxAr)) ok = false;
+      }
 
-      // Számszaki szűrések
-      if (
-        szamszeruFeltetelek.maxAr &&
-        Number(ing.vételár) > Number(szamszeruFeltetelek.maxAr)
-      )
-        ok = false;
-      if (
-        szamszeruFeltetelek.minSzoba &&
-        Number(ing.szobák) < Number(szamszeruFeltetelek.minSzoba)
-      )
-        ok = false;
+      // Szobaszám (Ingatlan szobái >= Keresett min szoba)
+      if (keresettFeltetelek.minSzoba) {
+        if (Number(ing.szobák) < Number(keresettFeltetelek.minSzoba))
+          ok = false;
+      }
 
-      // Építési év (pl. "2010 utáni")
+      // Állapot (Pontos egyezés)
       if (
-        technikaiFeltetelek.epites_eve &&
-        Number(ing.epites_eve) < Number(technikaiFeltetelek.epites_eve)
-      )
+        keresettFeltetelek.allapot &&
+        ing.allapot !== keresettFeltetelek.allapot
+      ) {
         ok = false;
+      }
 
       return ok;
     });
@@ -118,6 +122,7 @@ async function elsoLekeresFirebasebol(f) {
     belsoFlat = eredmenyek;
     megjelenitTalalatokat();
 
+    // Visszajelzés a felhasználónak
     if (belsoFlat.length === 0) {
       hozzaadBuborekot(
         "Sajnos ilyen paraméterekkel most nincs ingatlanunk.",
@@ -130,8 +135,8 @@ async function elsoLekeresFirebasebol(f) {
       );
     }
   } catch (error) {
-    console.error("Hiba a részletes keresésben:", error);
-    hozzaadBuborekot("Sajnos hiba történt a technikai szűrés során.", "ai");
+    console.error("Hiba a keresésben:", error);
+    hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
   }
 }
 
