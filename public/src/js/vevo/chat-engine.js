@@ -60,26 +60,22 @@ async function inditsChatKeresest() {
 }
 
 async function elsoLekeresFirebasebol(f) {
-  // Megkeressük a kerület értékét bármelyik mezőben, amit az AI használhat
-  // A log alapján most az 'szo' mezőben küldte: {szo: 'zuglo'}
-  const keruletErtek = f.kerulet || f.szo || f["kerület neve Budapesten"];
+  // Megkeressük a kerület értékét bármelyik mezőben, amit az AI küldhet (kerulet vagy szo)
+  let nyersKerulet = f.kerulet || f.szo || f["kerület neve Budapesten"];
 
-  if (!keruletErtek) {
+  if (!nyersKerulet) {
     hozzaadBuborekot(
-      "Szia! Kérlek add meg pontosabban, melyik kerületben keresel, hogy szűrni tudjam a listát!",
+      "Sajnos nem tudtam beazonosítani a kerületet. Megadnád újra?",
       "ai"
     );
     return;
   }
 
-  // Normalizáljuk az értéket (pl. Zugló vagy zuglo is jó legyen)
+  // Normalizálás: Az adatbázisban "Zugló" van, az AI pedig "zuglo"-t küldhet
   const keresettKerulet =
-    keruletErtek.charAt(0).toUpperCase() + keruletErtek.slice(1).toLowerCase();
+    nyersKerulet.charAt(0).toUpperCase() + nyersKerulet.slice(1).toLowerCase();
 
-  console.log(
-    "Keresés indítása a Firebase-ben erre a kerületre:",
-    keresettKerulet
-  );
+  console.log("Keresés indítása a Firebase-ben:", keresettKerulet);
 
   try {
     const q = query(
@@ -92,18 +88,18 @@ async function elsoLekeresFirebasebol(f) {
 
     if (belsoFlat.length === 0) {
       hozzaadBuborekot(
-        `Sajnos jelenleg nincs eladó ingatlanunk a ${keresettKerulet} kerületben.`,
+        `Sajnos a ${keresettKerulet} kerületben jelenleg nincs eladó ingatlanunk.`,
         "ai"
       );
     } else {
       hozzaadBuborekot(
-        `Találtam ${belsoFlat.length} ingatlant itt: ${keresettKerulet}. Mit szeretnél még tudni róluk?`,
+        `Találtam ${belsoFlat.length} ingatlant. Mit szeretnél még tudni róluk?`,
         "ai"
       );
     }
   } catch (error) {
     console.error("Firebase lekérdezési hiba:", error);
-    throw error;
+    hozzaadBuborekot("Hiba történt az adatok lekérésekor.", "ai");
   }
 }
 
