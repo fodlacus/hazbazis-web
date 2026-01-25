@@ -172,3 +172,11 @@ function generateAutoName(f) {
 
   return parts.length > 0 ? parts.join(", ") : "Mentett keresés";
 }
+
+// Minden checkboxot kivesz
+export function uncheckAllFilters() {
+  const checkboxes = document.querySelectorAll(".saved-search-checkbox");
+  checkboxes.forEach((cb) => {
+    cb.checked = false;
+  });
+}

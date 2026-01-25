@@ -6,7 +6,11 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { adatbazis } from "../util/firebase-config.js";
 import { initMentesManager, saveCurrentSearch } from "./mentes-manager.js";
-
+import {
+  initMentesManager,
+  saveCurrentSearch,
+  uncheckAllFilters,
+} from "./mentes-manager.js";
 let belsoFlat = []; // Ez a "flat" állomány a memóriában
 
 // Globális változó a szűrők tárolására (Fontos, hogy itt legyen legfelül!)
@@ -108,6 +112,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 function resetChatEngine() {
   // 1. Memória ürítése
   belsoFlat = [];
+  aktualisSzuroFeltetelek = {}; // Ezt is nullázzuk!
+
+  // CHECKBOXOK TÖRLÉSE
+  uncheckAllFilters();
 
   // 2. Chat felület takarítása
   const folyam = document.getElementById("chat-folyam");
