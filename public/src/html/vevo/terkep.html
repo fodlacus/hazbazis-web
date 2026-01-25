@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Ingatlantérkép - Házbázis</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+      <style>
+            /* Sötét térkép stílushoz (opcionális, CSS filterrel sötétítjük az ingyenes térképet) */
+            .dark-map-tiles {
+                  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+            }
+
+            /* Egyedi görgetősáv */
+            .custom-scrollbar::-webkit-scrollbar {
+                  width: 6px;
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-track {
+                  background: rgba(0, 0, 0, 0.1);
+            }
+
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                  background: rgba(226, 241, 176, 0.5);
+                  border-radius: 10px;
+            }
+      </style>
+</head>
+
+<body class="bg-[#3D4A16] h-screen w-screen overflow-hidden flex flex-col">
+
+      <nav class="absolute top-0 left-0 w-full z-[1000] p-4 pointer-events-none">
+            <div class="max-w-7xl mx-auto flex justify-between items-center pointer-events-auto">
+                  <a href="../../../index.html"
+                        class="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-full hover:bg-[#E2F1B0] hover:text-[#3D4A16] transition-all flex items-center gap-2 text-sm font-bold border border-white/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Vissza
+                  </a>
+                  <div class="text-white/80 text-sm font-bold bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
+                        Ingatlantérkép
+                  </div>
+            </div>
+      </nav>
+
+      <div class="relative flex-1 w-full h-full flex">
+
+            <div id="map" class="absolute inset-0 z-0 bg-[#2a3310]"></div>
+
+            <div class="absolute top-20 left-4 bottom-4 w-96 z-[999] pointer-events-none flex flex-col gap-4">
+                  <div
+                        class="pointer-events-auto bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl">
+                        <h2 class="text-[#E2F1B0] font-bold text-sm uppercase tracking-widest mb-1">Találatok</h2>
+                        <p class="text-white/60 text-xs" id="talalat-info">Betöltés...</p>
+                  </div>
+
+                  <div id="ingatlan-lista"
+                        class="pointer-events-auto flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                  </div>
+            </div>
+
+      </div>
+
+      <script type="module" src="../../js/vevo/terkep-engine.js"></script>
+</body>
+
+</html>
