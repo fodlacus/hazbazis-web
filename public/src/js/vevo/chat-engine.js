@@ -5,7 +5,6 @@ import {
   collection,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { adatbazis } from "../util/firebase-config.js";
-import { initMentesManager, saveCurrentSearch } from "./mentes-manager.js";
 import {
   initMentesManager,
   saveCurrentSearch,
