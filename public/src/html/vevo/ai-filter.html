@@ -132,12 +132,25 @@
             </div>
 
             <div class="hidden md:flex flex-col w-1/2 bg-black/5">
-                  <div class="p-6 border-b szegely-zold flex justify-between items-center">
-                        <h2 class="font-bold uppercase tracking-widest text-xs opacity-50">Ajánlatok neked</h2>
-                        <span id="talalat-szam"
-                              class="bg-[#E2F1B0] text-[#3D4A16] text-[10px] font-bold px-2 py-0.5 rounded">0
-                              talált</span>
+
+
+                  <div class="flex justify-between items-center mb-4 px-2">
+                        <span id="talalat-szam" class="text-[#E2F1B0] font-bold text-sm tracking-widest uppercase">
+                              0 találat
+                        </span>
+
+                        <div class="flex items-center gap-2">
+                              <span class="text-white/40 text-xs hidden sm:block">Rendezés:</span>
+                              <select id="rendezes-select"
+                                    class="bg-black/20 text-white text-xs border border-white/10 rounded-lg px-2 py-1 outline-none focus:border-[#E2F1B0] cursor-pointer hover:bg-white/5 transition-colors">
+                                    <option value="ar_nov">Ár szerint (Olcsóbb elöl)</option>
+                                    <option value="ar_csokk">Ár szerint (Drágább elöl)</option>
+                                    <option value="meret_csokk">Méret szerint (Nagyobb elöl)</option>
+                                    <option value="meret_nov">Méret szerint (Kisebb elöl)</option>
+                              </select>
+                        </div>
                   </div>
+
                   <div id="eredmenyek-panel" class="flex-1 overflow-y-auto p-6 space-y-4">
                   </div>
             </div>

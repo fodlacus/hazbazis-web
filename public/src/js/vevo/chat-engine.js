@@ -93,9 +93,17 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (sendBtn) {
     sendBtn.addEventListener("click", inditsChatKeresest);
   }
+
+  const sortSelect = document.getElementById("rendezes-select");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", (e) => {
+      const szempont = e.target.value;
+      listaRendezese(szempont);
+    });
+  }
 });
 
-// ... (Innentől jöhetnek a függvények: inditsChatKeresest, stb.) ...
+// Innentől jöhetnek a függvények: inditsChatKeresest, stb.)
 
 function resetChatEngine() {
   // 1. Memória ürítése
@@ -481,4 +489,25 @@ function megjelenitTalalatokat() {
         </div>`;
     })
     .join("");
+}
+
+function listaRendezese(szempont) {
+  if (belsoFlat.length === 0) return;
+
+  // Másolatot készítünk, hogy ne rontsuk el az eredeti sorrendet végleg
+  // (Bár itt nyugodtan rendezhetjük az eredetit is)
+
+  if (szempont === "ar_nov") {
+    belsoFlat.sort((a, b) => Number(a.vételár) - Number(b.vételár));
+  } else if (szempont === "ar_csokk") {
+    belsoFlat.sort((a, b) => Number(b.vételár) - Number(a.vételár));
+  } else if (szempont === "meret_csokk") {
+    // Figyeljünk, hogy az alapterület néha string lehet az adatbázisban!
+    belsoFlat.sort((a, b) => Number(b.alapterület) - Number(a.alapterület));
+  } else if (szempont === "meret_nov") {
+    belsoFlat.sort((a, b) => Number(a.alapterület) - Number(b.alapterület));
+  }
+
+  // Újrarajzoljuk a kártyákat a rendezett listából
+  megjelenitTalalatokat();
 }
