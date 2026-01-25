@@ -8,22 +8,31 @@ import { adatbazis } from "../util/firebase-config.js";
 import { initMentesManager, saveCurrentSearch } from "./mentes-manager.js";
 
 let belsoFlat = []; // Ez a "flat" állomány a memóriában
+
+// Globális változó a szűrők tárolására (Fontos, hogy itt legyen legfelül!)
 let aktualisSzuroFeltetelek = {};
 
-// 1. Betöltéskor ellenőrizzük, jött-e kérdés a főoldalról
+// ============================================================
+// INICIALIZÁLÁS (Amikor az oldal betöltődik)
+// ============================================================
 window.addEventListener("DOMContentLoaded", async () => {
+  console.log("🚀 Házbázis Chat Engine indul...");
+
+  // 1. URL PARAMÉTEREK KEZELÉSE (Ha a főoldalról jön kérdés)
   const urlParams = new URLSearchParams(window.location.search);
   const kezdőKérdés = urlParams.get("query");
 
   if (kezdőKérdés) {
-    document.getElementById("chat-input").value = kezdőKérdés;
+    console.log("📩 Bejövő kérdés:", kezdőKérdés);
+    const input = document.getElementById("chat-input");
+    if (input) input.value = kezdőKérdés;
     inditsChatKeresest();
   }
-  // MENTÉS MANAGER INDÍTÁSA
-  // Ez a függvény fut le, amikor a felhasználó pipálgat a listában
+
+  // 2. MENTÉS MANAGER INDÍTÁSA
+  // Ez kezeli a checkboxok pipálgatását (Multi-lista logika)
   initMentesManager(async (filterList, mode) => {
     if (mode === "clear") {
-      // Ha mindent kipipált -> Tiszta lap
       belsoFlat = [];
       hozzaadBuborekot(
         "Minden mentett szűrőt kikapcsoltál. A lista üres.",
@@ -38,41 +47,55 @@ window.addEventListener("DOMContentLoaded", async () => {
         `Összefésülöm a ${filterList.length} kiválasztott listát...`,
         "ai"
       );
-
-      // ITT TÖRTÉNIK A VARÁZSLAT:
-      // Minden filterhez lekérjük az adatokat, és egyesítjük őket
       await multiLekeresEsMerge(filterList);
     }
   });
 
-  // Mentés gomb bekötése
-  document.getElementById("btn-save-filter")?.addEventListener("click", () => {
-    // Azt mentjük el, ami éppen aktív volt az utolsó keresésnél
-    saveCurrentSearch(aktualisSzuroFeltetelek);
-  });
-});
+  // 3. GOMBOK BEKÖTÉSE (Debug logokkal!)
 
-// Küldés gomb figyelése
-document
-  .getElementById("send-btn")
-  .addEventListener("click", inditsChatKeresest);
+  // A) Mentés gomb
+  const saveBtn = document.getElementById("btn-save-filter");
+  if (saveBtn) {
+    console.log("✅ Mentés gomb (btn-save-filter) megtalálva.");
+    saveBtn.addEventListener("click", () => {
+      console.log(
+        "🖱️ Mentés gomb megnyomva. Mentendő:",
+        aktualisSzuroFeltetelek
+      );
+      saveCurrentSearch(aktualisSzuroFeltetelek);
+    });
+  } else {
+    console.error(
+      "❌ HIBA: Nem találom a 'btn-save-filter' gombot a HTML-ben!"
+    );
+  }
 
-// ... (A fájl többi része változatlan) ...
+  // B) Haza gomb
+  const homeBtn = document.getElementById("btn-home");
+  if (homeBtn) {
+    homeBtn.addEventListener("click", () => {
+      window.location.href = "../../../index.html";
+    });
+  }
 
-// --- ÚJ GOMBOK KEZELÉSE ---
+  // C) Kuka / Reset gomb
+  const trashBtn = document.getElementById("btn-trash");
+  if (trashBtn) {
+    trashBtn.addEventListener("click", () => {
+      if (confirm("Biztosan törlöd a beszélgetést és új keresést kezdesz?")) {
+        resetChatEngine();
+      }
+    });
+  }
 
-// 1. VISSZA A FŐOLDALRA
-document.getElementById("btn-home")?.addEventListener("click", () => {
-  // A path-ot igazítsd a struktúrádhoz (pl. ../../../index.html vagy /)
-  window.location.href = "../../../index.html";
-});
-
-// 2. KUKA / RESET FUNKCIÓ
-document.getElementById("btn-trash")?.addEventListener("click", () => {
-  if (confirm("Biztosan törlöd a beszélgetést és új keresést kezdesz?")) {
-    resetChatEngine();
+  // D) Küldés gomb (Chat)
+  const sendBtn = document.getElementById("send-btn");
+  if (sendBtn) {
+    sendBtn.addEventListener("click", inditsChatKeresest);
   }
 });
+
+// ... (Innentől jöhetnek a függvények: inditsChatKeresest, stb.) ...
 
 function resetChatEngine() {
   // 1. Memória ürítése
