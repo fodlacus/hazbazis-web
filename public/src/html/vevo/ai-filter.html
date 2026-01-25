@@ -30,6 +30,42 @@
       <div class="flex h-screen max-w-6xl mx-auto border-x szegely-zold">
             <div class="w-full md:w-1/2 flex flex-col border-r szegely-zold">
 
+                  <div class="max-w-7xl mx-auto px-4 mt-4 mb-2">
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+
+                              <div class="flex justify-between items-center mb-3">
+                                    <h3
+                                          class="text-[#E2F1B0] text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path
+                                                      d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z">
+                                                </path>
+                                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                                <polyline points="7 3 7 8 15 8"></polyline>
+                                          </svg>
+                                          Mentett szűrők
+                                    </h3>
+                              </div>
+
+                              <div id="mentett-lista"
+                                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto custom-scrollbar mb-4">
+                              </div>
+
+                              <div class="flex gap-2 border-t border-white/5 pt-3">
+                                    <input type="text" id="uj-mentes-nev"
+                                          placeholder="Aktuális szűrő elnevezése (pl. Zugló befektetés)..."
+                                          class="bg-black/20 text-white text-xs px-3 py-2 rounded-lg w-full border border-white/10 focus:border-[#E2F1B0] outline-none transition-colors">
+                                    <button id="btn-save-filter"
+                                          class="bg-[#E2F1B0] hover:bg-[#cde088] text-[#3D4A16] text-xs px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-lime-900/20 whitespace-nowrap">
+                                          Mentés +
+                                    </button>
+                              </div>
+
+                        </div>
+                  </div>
+
 
                   <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/5">
 

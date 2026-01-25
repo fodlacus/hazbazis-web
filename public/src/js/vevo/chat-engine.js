@@ -5,8 +5,10 @@ import {
   collection,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { adatbazis } from "../util/firebase-config.js";
+import { initMentesManager, saveCurrentSearch } from "./mentes-manager.js";
 
 let belsoFlat = []; // Ez a "flat" állomány a memóriában
+let aktualisSzuroFeltetelek = {};
 
 // 1. Betöltéskor ellenőrizzük, jött-e kérdés a főoldalról
 window.addEventListener("DOMContentLoaded", async () => {
@@ -17,6 +19,37 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("chat-input").value = kezdőKérdés;
     inditsChatKeresest();
   }
+  // MENTÉS MANAGER INDÍTÁSA
+  // Ez a függvény fut le, amikor a felhasználó pipálgat a listában
+  initMentesManager(async (filterList, mode) => {
+    if (mode === "clear") {
+      // Ha mindent kipipált -> Tiszta lap
+      belsoFlat = [];
+      hozzaadBuborekot(
+        "Minden mentett szűrőt kikapcsoltál. A lista üres.",
+        "ai"
+      );
+      megjelenitTalalatokat();
+      return;
+    }
+
+    if (mode === "merge") {
+      hozzaadBuborekot(
+        `Összefésülöm a ${filterList.length} kiválasztott listát...`,
+        "ai"
+      );
+
+      // ITT TÖRTÉNIK A VARÁZSLAT:
+      // Minden filterhez lekérjük az adatokat, és egyesítjük őket
+      await multiLekeresEsMerge(filterList);
+    }
+  });
+
+  // Mentés gomb bekötése
+  document.getElementById("btn-save-filter")?.addEventListener("click", () => {
+    // Azt mentjük el, ami éppen aktív volt az utolsó keresésnél
+    saveCurrentSearch(aktualisSzuroFeltetelek);
+  });
 });
 
 // Küldés gomb figyelése
@@ -88,6 +121,7 @@ async function inditsChatKeresest() {
 
     // A feltételek egységesítése
     const standardFeltetelek = normalizaldAFelteteleket(aiValasz);
+    aktualisSzuroFeltetelek = standardFeltetelek;
     console.log("✅ Standardizált szűrők:", standardFeltetelek);
 
     if (belsoFlat.length === 0) {
@@ -257,19 +291,36 @@ function megfelelAzIngatlan(ing, f) {
   return ok;
 }
 
+// ============================================================
+// 1. A MOTOR (ÚJ) - Ez végzi a tényleges munkát
+// ============================================================
+async function fetchListFromFirebase(f) {
+  // Ez ugyanaz a logika, ami eddig az elsoLekeresFirebasebol-ban volt,
+  // DE nem írja felül a belsoFlat-et, hanem VISSZAADJA (return) a listát.
+
+  let q = collection(adatbazis, "lakasok");
+
+  // Firebase "Indexelt" szűrés
+  if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
+  if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
+  // Ha használsz statusz szűrést:
+  // q = query(q, where("statusz", "==", "aktiv")); // Opcionális
+
+  const snap = await getDocs(q);
+  const nyersLista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  // Itt hívjuk meg a közös "Bírót" (megfelelAzIngatlan), amit már megírtunk
+  // Ez végzi az ár, erkély, emelet, stb. finomhangolást
+  return nyersLista.filter((ing) => megfelelAzIngatlan(ing, f));
+}
+
+// ============================================================
+// 2. SIMA KERESÉS (ÁTÍRVA) - Ezt hívja az AI
+// ============================================================
 async function elsoLekeresFirebasebol(f) {
   try {
-    let q = collection(adatbazis, "lakasok");
-
-    // Firebase "Indexelt" szűrés (Csak ami biztosan gyorsítja a lekérést)
-    if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
-    if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
-
-    const snap = await getDocs(q);
-    let nyersLista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-    // Minden más logikát a közös függvény végez
-    belsoFlat = nyersLista.filter((ing) => megfelelAzIngatlan(ing, f));
+    // Mostantól csak meghívjuk a "motort"
+    belsoFlat = await fetchListFromFirebase(f);
 
     if (belsoFlat.length === 0) {
       hozzaadBuborekot(
@@ -282,9 +333,55 @@ async function elsoLekeresFirebasebol(f) {
         "ai"
       );
     }
+
+    // Frissítjük a képernyőt
+    megjelenitTalalatokat();
   } catch (error) {
-    console.error("Hiba a részletes keresésben:", error);
-    hozzaadBuborekot("Sajnos hiba történt az adatbázis elérésekor.", "ai");
+    console.error("Hiba a keresésben:", error);
+    hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
+  }
+}
+
+// ============================================================
+// 3. MULTI KERESÉS (ÚJ) - Ezt hívja a MentesManager
+// ============================================================
+async function multiLekeresEsMerge(filterList) {
+  try {
+    let mergedMap = new Map(); // Map-et használunk, hogy ne legyenek duplikációk (azonos ID)
+
+    // Végig megyünk az összes bepipált szűrőn (pl. Zugló + XI. kerület)
+    for (const filter of filterList) {
+      // Minden körben meghívjuk a "motort"
+      const list = await fetchListFromFirebase(filter);
+
+      // Hozzáadjuk a közös kalaphoz
+      list.forEach((item) => {
+        if (!mergedMap.has(item.id)) {
+          mergedMap.set(item.id, item);
+        }
+      });
+    }
+
+    // A Map értékeit visszaalakítjuk tömbbé -> ez lesz az új belsoFlat
+    belsoFlat = Array.from(mergedMap.values());
+
+    // Eredmény kiírása
+    if (belsoFlat.length === 0) {
+      hozzaadBuborekot(
+        "A kiválasztott szűrők alapján sajnos nincs találat.",
+        "ai"
+      );
+    } else {
+      hozzaadBuborekot(
+        `Sikeres egyesítés! Összesen ${belsoFlat.length} ingatlant találtam a mentett kereséseid alapján.`,
+        "ai"
+      );
+    }
+
+    megjelenitTalalatokat();
+  } catch (error) {
+    console.error("Hiba az egyesítésnél:", error);
+    hozzaadBuborekot("Hiba történt a listák összefésülésekor.", "ai");
   }
 }
 
