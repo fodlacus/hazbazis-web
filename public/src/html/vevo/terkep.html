@@ -14,7 +14,7 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
       <style>
-            /* Sötét térkép stílushoz (opcionális, CSS filterrel sötétítjük az ingyenes térképet) */
+            /* Sötét térkép stílus (CartoDB Dark Matter-hez nem feltétlen kell filter, de maradhat) */
             .dark-map-tiles {
                   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
             }
@@ -38,10 +38,7 @@
 <body class="bg-[#3D4A16] h-screen w-screen overflow-hidden flex flex-col">
 
       <nav class="absolute top-0 left-0 w-full z-[1000] p-4 pointer-events-none">
-
-            <div class="absolute z-[999] flex flex-col gap-3 pointer-events-none
-            bottom-0 left-0 w-full h-[45vh] p-4 
-            md:top-20 md:left-4 md:bottom-4 md:h-auto md:w-96">
+            <div class="max-w-7xl mx-auto flex justify-between items-center pointer-events-auto">
                   <a href="../../../index.html"
                         class="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-full hover:bg-[#E2F1B0] hover:text-[#3D4A16] transition-all flex items-center gap-2 text-sm font-bold border border-white/10">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -56,24 +53,47 @@
             </div>
       </nav>
 
-      <div class="relative flex-1 w-full h-full flex">
+      <div class="relative flex-1 w-full h-full">
 
             <div id="map" class="absolute inset-0 z-0 bg-[#2a3310]"></div>
 
-            <div class="absolute top-20 left-4 bottom-4 w-96 z-[999] pointer-events-none flex flex-col gap-4">
+            <div class="absolute z-[999] flex flex-col gap-3 pointer-events-none transition-all duration-300
+                        /* MOBIL: Lent, széles, átlátszóbb háttér */
+                        bottom-0 left-0 w-full h-[45vh] p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent
+                        /* ASZTALI: Bal-fent, keskeny, nincs háttér (csak a dobozoknak) */
+                        md:top-20 md:left-4 md:bottom-4 md:h-auto md:w-96 md:bg-none">
+
                   <div
-                        class="pointer-events-auto bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl">
-                        <h2 class="text-[#E2F1B0] font-bold text-sm uppercase tracking-widest mb-1">Találatok</h2>
-                        <p class="text-white/60 text-xs" id="talalat-info">Betöltés...</p>
+                        class="pointer-events-auto bg-black/80 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl space-y-3 shrink-0">
+                        <h2
+                              class="text-[#E2F1B0] font-bold text-sm uppercase tracking-widest mb-2 flex justify-between items-center">
+                              Szűrés
+                              <span id="talalat-info"
+                                    class="text-white/60 text-xs normal-case bg-white/10 px-2 py-1 rounded">Betöltés...</span>
+                        </h2>
+
+                        <select id="filter-telepules"
+                              class="w-full bg-white/10 text-white text-xs border border-white/20 rounded-lg p-2 outline-none focus:border-[#E2F1B0]">
+                              <option value="">Összes település</option>
+                        </select>
+
+                        <select id="filter-kerulet"
+                              class="w-full bg-white/10 text-white text-xs border border-white/20 rounded-lg p-2 outline-none focus:border-[#E2F1B0] hidden">
+                              <option value="">Összes kerület</option>
+                        </select>
+
+                        <select id="filter-varosresz"
+                              class="w-full bg-white/10 text-white text-xs border border-white/20 rounded-lg p-2 outline-none focus:border-[#E2F1B0] disabled:opacity-50">
+                              <option value="">Összes városrész</option>
+                        </select>
                   </div>
 
                   <div id="ingatlan-lista"
-                        class="pointer-events-auto flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                        class="pointer-events-auto flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-20 md:pb-0">
                   </div>
+
             </div>
-
       </div>
-
       <script type="module" src="../../js/vevo/terkep-engine.js"></script>
 </body>
 

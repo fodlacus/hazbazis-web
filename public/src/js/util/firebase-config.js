@@ -23,7 +23,7 @@ const firebaseConfig = {
   appId: "1:1002443328434:web:508a6b1d4253eeb48172ab",
 };
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // Exportáljuk a példányokat
 export const adatbazis = getFirestore(app);
