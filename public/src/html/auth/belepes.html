@@ -4,61 +4,94 @@
 <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>teras.hu - Belépés</title>
+      <title>Belépés - Házbázis</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
             .hatter-zold {
                   background-color: #3D4A16;
             }
 
-            .bevitel {
-                  background-color: rgba(255, 255, 255, 0.05);
-                  border: 1px solid rgba(226, 241, 176, 0.2);
-            }
-
-            .gomb-vilagos {
-                  background-color: #E2F1B0;
-                  color: #3D4A16;
+            .accent-lime {
+                  color: #E2F1B0;
             }
       </style>
 </head>
 
-<body class="hatter-zold text-white flex items-center justify-center min-h-screen p-6">
-      <div class="max-w-md w-full bg-black/20 p-8 rounded-3xl backdrop-blur-lg border border-white/10">
-            <h2 class="text-3xl font-bold mb-2 text-center">Üdvözlünk a <span style="color: #E2F1B0;">hazbazis</span>-on!
-            </h2>
-            <p class="text-gray-400 text-center mb-8 text-sm uppercase tracking-widest">Ingatlan hirdetéskezelő</p>
+<body class="hatter-zold text-white font-sans h-screen flex items-center justify-center p-4">
 
-            <form id="belepese-urlap" class="space-y-4">
-                  <input type="email" id="email" placeholder="E-mail cím"
-                        class="bevitel w-full p-4 rounded-xl outline-none focus:border-lime-400 transition-all"
-                        required>
-                  <input type="password" id="jelszo" placeholder="Jelszó"
-                        class="bevitel w-full p-4 rounded-xl outline-none focus:border-lime-400 transition-all"
-                        required>
+      <div class="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8 shadow-2xl">
 
-                  <button type="submit" id="gomb-belep"
-                        class="gomb-vilagos w-full py-4 rounded-xl font-bold text-lg hover:scale-[1.02] transition-transform mt-4">
-                        Bejelentkezés
-                  </button>
-            </form>
+            <div class="text-center mb-8">
+                  <div class="inline-flex items-center gap-2 mb-2">
+                        <div class="w-3 h-3 bg-[#E2F1B0] rounded-full"></div>
+                        <span class="font-bold text-xl tracking-tighter">házbázis.hu</span>
+                  </div>
+                  <h1 class="text-2xl font-bold text-[#E2F1B0]">Bejelentkezés</h1>
+                  <p class="text-white/40 text-sm mt-1">Kezeld ingatlanügyeidet egyszerűen</p>
+            </div>
 
-            <div class="mt-6 text-center text-sm">
-                  <span class="opacity-60">Még nincs fiókod?</span>
-                  <button id="valtas-regisztraciora" class="font-bold border-b border-lime-400 ml-1"
-                        style="color: #E2F1B0;">Regisztráció
-                  </button>
+            <div class="space-y-4">
+
                   <div>
-                        <a href="../../index.html" class="text-xs opacity-50 hover:opacity-100 transition-all">
-                              ← Vissza a főoldalra
-                        </a>
+                        <label class="block text-xs uppercase tracking-widest text-white/50 mb-1">E-mail cím</label>
+                        <input type="email" id="login-email" placeholder="pelda@email.hu"
+                              class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 outline-none focus:border-[#E2F1B0] transition-colors">
                   </div>
 
+                  <div>
+                        <label class="block text-xs uppercase tracking-widest text-white/50 mb-1">Jelszó</label>
+                        <input type="password" id="login-pass" placeholder="••••••••"
+                              class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 outline-none focus:border-[#E2F1B0] transition-colors">
+                  </div>
+
+                  <button id="btn-login"
+                        class="w-full bg-[#E2F1B0] hover:bg-[#d4e695] text-[#3D4A16] font-bold py-3 rounded-lg mt-6 transition-all transform hover:scale-[1.02] shadow-lg shadow-lime-900/20">
+                        Belépés
+                  </button>
+
+            </div>
+
+            <div class="text-center mt-6 text-sm text-white/40">
+                  Nincs még fiókod?
+                  <a href="regisztracio.html" class="text-[#E2F1B0] hover:underline font-bold">Regisztrálj itt</a>
+            </div>
+
+            <div class="text-center mt-4">
+                  <a href="../../../index.html" class="text-xs text-white/20 hover:text-white transition-colors">←
+                        Vissza a főoldalra</a>
             </div>
 
       </div>
 
-      <script type="module" src="../js/util/auth.js"></script>
+      <script type="module">
+            // ITT A LÉNYEG: Kettőt lépünk vissza (../../) hogy elérjük a js mappát!
+            import { loginUser } from "../../js/auth/auth-handler.js";
+
+            document.getElementById("btn-login").addEventListener("click", async () => {
+                  const btn = document.getElementById("btn-login");
+                  const originalText = btn.innerText;
+
+                  const email = document.getElementById("login-email").value;
+                  const pass = document.getElementById("login-pass").value;
+
+                  if (!email || !pass) {
+                        alert("Kérlek add meg az email címed és a jelszavad!");
+                        return;
+                  }
+
+                  // Betöltés állapot
+                  btn.disabled = true;
+                  btn.innerText = "Bejelentkezés...";
+
+                  // Hívás
+                  await loginUser(email, pass);
+
+                  // Ha hiba volt és visszatér, visszaállítjuk a gombot
+                  btn.disabled = false;
+                  btn.innerText = originalText;
+            });
+      </script>
+
 </body>
 
 </html>
