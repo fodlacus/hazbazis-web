@@ -68,6 +68,10 @@ function adatokOsszegyujtese() {
   adatok.statusz = "Feldolgozás alatt";
   adatok.azon = generalAzonosito();
 
+  // ÚJ MEZŐK: GPS koordináták átvétele a globális ablakból
+  adatok.lat = window.aktualisLat || null;
+  adatok.lng = window.aktualisLng || null;
+
   return adatok;
 }
 

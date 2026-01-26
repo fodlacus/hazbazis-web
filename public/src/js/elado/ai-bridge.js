@@ -72,6 +72,9 @@ const ingatlanTools = [
   },
 ];
 
+let aktualisLat = null;
+let aktualisLng = null;
+
 window.ertelmezdAkeresest = async function (szoveg) {
   console.log("AI elemzés indítása:", szoveg);
 
@@ -177,20 +180,39 @@ window.automataCimEllenorzes = async function () {
       );
       const adatok = await response.json();
       const siker = adatok && adatok.length > 0;
+      if (siker) {
+        // SIKER: Kinyerjük a koordinátákat
+        window.aktualisLat = parseFloat(adatok[0].lat);
+        window.aktualisLng = parseFloat(adatok[0].lon);
 
-      ["iranyitoszam", "telepules", "utca", "hazszam"].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.style.borderColor = siker ? "#A3E635" : "#EF4444";
-          el.style.backgroundColor = siker
-            ? "rgba(163, 230, 53, 0.05)"
-            : "rgba(239, 68, 68, 0.05)";
+        console.log(
+          "📍 Koordináták rögzítve mentéshez:",
+          window.aktualisLat,
+          window.aktualisLng
+        );
+
+        ["iranyitoszam", "telepules", "utca", "hazszam"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.style.borderColor = siker ? "#A3E635" : "#EF4444";
+            el.style.backgroundColor = siker
+              ? "rgba(163, 230, 53, 0.05)"
+              : "rgba(239, 68, 68, 0.05)";
+          }
+        });
+
+        if (mentesGomb) {
+          mmentesGomb.disabled = false;
+          mentesGomb.style.opacity = "1";
         }
-      });
+      } else {
+        window.aktualisLat = null;
+        window.aktualisLng = null;
 
-      if (mentesGomb) {
-        mentesGomb.disabled = !siker;
-        mentesGomb.style.opacity = siker ? "1" : "0.5";
+        if (mentesGomb) {
+          mentesGomb.disabled = true;
+          mentesGomb.style.opacity = "0.5";
+        }
       }
     } catch (e) {
       console.error("Cím ellenőrzési hiba", e);
