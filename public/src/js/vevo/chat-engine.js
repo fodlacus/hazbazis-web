@@ -519,28 +519,116 @@ function listaRendezese(szempont) {
   megjelenitTalalatokat();
 }
 
-// Ezt hívja meg a mentes-manager, ha rákattintasz egy kártyára
+// ============================================================
+// MENTETT KERESÉS BETÖLTÉSE (Javított verzió)
+// ============================================================
 window.alkalmazSzuroket = async function (mentettSzurok) {
-  console.log("🔄 Mentett keresés alkalmazása...", mentettSzurok);
+  console.log("🔄 Mentett keresés betöltése...", mentettSzurok);
 
-  // 1. Frissítjük a globális változót
+  // 1. Frissítjük a globális változót a "tiszta" adatokkal
   window.aktualisSzuroFeltetelek = mentettSzurok;
 
-  // 2. Töröljük a képernyőt, mintha új keresés lenne
+  // 2. Chat ablak takarítása
   const folyam = document.getElementById("chat-folyam");
-  // Opcionális: folyam.innerHTML = "";
+  if (folyam) folyam.innerHTML = "";
 
-  // 3. Mesterségesen "lefuttatjuk" a keresést a mentett adatokkal
-  // (Feltételezem, van egy függvényed, ami a szűrők alapján lekérdezi a Firebase-t.
-  //  Ha 'ingatlanKereses' vagy 'adatbazisLekerdezes' a neve, azt írd ide!)
+  // 3. Visszajelzés a usernek
+  hozzaadBuborekot(
+    `Betöltöttem a mentett keresést: "${
+      mentettSzurok.telepules || "Bárhol"
+    } - ${
+      mentettSzurok.maxAr ? mentettSzurok.maxAr / 1000000 + "M Ft alatt" : ""
+    }"`,
+    "ai"
+  );
 
-  // Ha nincs külön függvényed, akkor itt hívd meg azt a részt, ami a találatokat rendereli.
-  // Példa (ha van ilyen függvényed):
-  // await ingatlanokListazasa(mentettSzurok);
+  // 4. KERESÉS LEFUTTATÁSA
+  try {
+    const eredmenyekPanel = document.getElementById("eredmenyek-panel");
+    const talalatSzamlalo = document.getElementById("talalat-szam");
 
-  // VAGY egy gyors trükk: generálunk egy üzenetet az AI-nak:
-  hozzaadBuborekot("Betöltöttem a mentett keresést. Máris mutatom!", "ai");
+    if (eredmenyekPanel)
+      eredmenyekPanel.innerHTML =
+        '<div class="text-white p-4 animate-pulse">Keresés az adatbázisban...</div>';
 
-  // Itt meg kell hívnod a tényleges kereső logikádat a `mentettSzurok` alapján.
-  // Ha elküldöd a chat-engine.js azon részét, ahol a Firebase lekérdezés van, megmondom pontosan mit írj ide!
+    // LEKÉRDEZÉS ÖSSZEÁLLÍTÁSA
+    // Figyelem: A 'mentettSzurok' kulcsait (amiket az AI adott: maxAr, minSzoba)
+    // át kell fordítanunk az Adatbázis mezőneveire (vételár, szobák)!
+
+    let q = query(collection(adatbazis, "lakasok"));
+    const f = mentettSzurok;
+
+    // Település
+    if (f.telepules) {
+      q = query(q, where("telepules", "==", f.telepules));
+    }
+
+    // Kerület (ha van)
+    if (f.kerulet) {
+      q = query(q, where("kerulet", "==", f.kerulet));
+    }
+
+    // Ár (maxAr -> vételár)
+    if (f.maxAr) {
+      q = query(q, where("vételár", "<=", Number(f.maxAr)));
+    }
+
+    // Szobaszám (minSzoba -> szobák)
+    if (f.minSzoba) {
+      q = query(q, where("szobák", ">=", Number(f.minSzoba)));
+    }
+
+    // LEKÉRDEZÉS VÉGREHAJTÁSA
+    const snapshot = await getDocs(q);
+    const talalatok = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    console.log("🔍 Találatok száma:", talalatok.length);
+
+    // MEGJELENÍTÉS
+    // Ha van a fájlban 'renderTalalatok' függvény, használd azt, ha nincs, itt egy egyszerű:
+    if (typeof renderTalalatok === "function") {
+      renderTalalatok(talalatok);
+    } else {
+      // Fallback megjelenítő, ha nincs külön render függvényed
+      if (eredmenyekPanel) {
+        eredmenyekPanel.innerHTML = "";
+        if (talalatok.length === 0) {
+          eredmenyekPanel.innerHTML =
+            '<div class="text-white/50 p-4">Nincs a feltételeknek megfelelő ingatlan.</div>';
+        } else {
+          talalatok.forEach((ing) => {
+            // Egyszerű kártya generálás
+            const imgUrl =
+              ing.kepek && ing.kepek.length > 0
+                ? ing.kepek[0]
+                : "https://via.placeholder.com/300x200";
+            eredmenyekPanel.innerHTML += `
+                          <div class="bg-white/5 border border-white/10 p-3 rounded-xl flex gap-3 mb-3 cursor-pointer hover:bg-white/10 transition">
+                              <img src="${imgUrl}" class="w-24 h-16 object-cover rounded-lg">
+                              <div>
+                                  <div class="text-[#E2F1B0] font-bold">${Number(
+                                    ing.vételár
+                                  ).toLocaleString()} Ft</div>
+                                  <div class="text-white text-xs">${
+                                    ing.telepules
+                                  }</div>
+                                  <div class="text-white/60 text-[10px]">${
+                                    ing.alapterület
+                                  } m² • ${ing.szobák} szoba</div>
+                              </div>
+                          </div>`;
+          });
+        }
+      }
+    }
+
+    if (talalatSzamlalo)
+      talalatSzamlalo.innerText = `${talalatok.length} TALÁLAT`;
+  } catch (err) {
+    console.error("Hiba a mentett keresés betöltésekor:", err);
+    hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
+  }
 };

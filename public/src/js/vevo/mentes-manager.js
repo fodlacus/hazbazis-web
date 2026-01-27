@@ -191,3 +191,5 @@ window.betoltMentes = function (jsonKriteriumok) {
 
 // Üres függvény a kompatibilitás miatt
 export function uncheckAllFilters() {}
+
+
