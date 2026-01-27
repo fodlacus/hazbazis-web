@@ -159,7 +159,7 @@ async function inditsChatKeresest() {
 
     // A feltételek egységesítése
     const standardFeltetelek = normalizaldAFelteteleket(aiValasz);
-    windows.aktualisSzuroFeltetelek = standardFeltetelek;
+    window.aktualisSzuroFeltetelek = standardFeltetelek;
     console.log("✅ Standardizált szűrők:", standardFeltetelek);
 
     if (belsoFlat.length === 0) {
