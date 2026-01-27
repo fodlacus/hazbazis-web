@@ -1,26 +1,27 @@
 // src/js/elado/feladas.js
 
-// 1. EGYSÉGES IMPORT: Mindent a configból (vagy ha onnan nem exportáltuk, akkor a CDN-ről, de következetesen)
+// 1. IMPORTÁLÁS (Konzisztensen a configból, amit lehet)
 import {
   adatbazis,
   auth,
   collection,
   addDoc,
   doc,
-  updateDoc, // Ezeket exportáltuk a configból? Ha igen, használd onnan. Ha nem, akkor a lenti CDN sor kell.
+  // updateDoc-ot külön húzzuk be, ha nincs a configban exportálva
 } from "../util/firebase-config.js";
 
-// Ha a configból nem exportáltad az updateDoc-ot, akkor ez kell, DE az 'adatbazis' példányt mindenképp a configból használd!
-// (Feltételezem a configban exportáltad a metódusokat is, ahogy tegnap beszéltük)
+// Ha az updateDoc nincs a configban, behúzzuk CDN-ről:
+import { updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { szerkesztendoId } from "./szerkesztes.js";
 import { budapestAdatok } from "../util/helyszin-adatok.js";
 
-// Helyszínfigyelő (Automatikusan fusson le, ha az oldal betöltött)
+// 2. AUTOMATIKUS INDÍTÁS (Ez hiányzott!)
 window.addEventListener("DOMContentLoaded", () => {
   helyszinFigyelo();
 });
 
+// Helyszín figyelő (Kerület -> Városrész kapcsolat)
 export function helyszinFigyelo() {
   const keruletSelect = document.getElementById("kerulet");
   const varosreszSelect = document.getElementById("varosresz");
@@ -38,12 +39,10 @@ export function helyszinFigyelo() {
   }
 }
 
+// Adatok összegyűjtése
 function adatokOsszegyujtese() {
   const adatok = {};
-  const generalAzonosito = () => {
-    const timestamp = Date.now().toString().slice(-6);
-    return `teras-${timestamp}`;
-  };
+  const generalAzonosito = () => `teras-${Date.now().toString().slice(-6)}`;
 
   const mezok = document.querySelectorAll(
     "#hirdetes-urlap input, #hirdetes-urlap select, #hirdetes-urlap textarea"
@@ -55,26 +54,28 @@ function adatokOsszegyujtese() {
 
     let ertek = mezo.value;
 
+    // Számok tisztítása
     if (["vételár", "alapterület", "szobák"].includes(id)) {
       ertek = Number(String(ertek).replace(/[^0-9]/g, "")) || 0;
     }
 
+    // Checkbox
     if (mezo.type === "checkbox") {
       ertek = mezo.checked;
     }
 
     if (ertek !== undefined && ertek !== "") {
-      // Üres stringet ne mentsünk feleslegesen
       adatok[id] = ertek;
     }
   });
 
-  // JAVÍTÁS: Ellenőrizzük, hogy van-e auth.currentUser
+  // Ellenőrzés: Be van-e lépve?
   if (!auth.currentUser) {
-    alert("Hiba: Nem vagy bejelentkezve!");
+    alert("Hiba: A munkamenet lejárt vagy nem vagy bejelentkezve!");
     throw new Error("Nincs bejelentkezett felhasználó");
   }
 
+  // Kötelező rendszeradatok
   adatok.hirdeto_uid = auth.currentUser.uid;
   adatok.letrehozva = new Date().toISOString();
   adatok.statusz = "Feldolgozás alatt";
@@ -87,33 +88,37 @@ function adatokOsszegyujtese() {
   return adatok;
 }
 
-// Eseménykezelő felcsatolása (Csak ha létezik az űrlap)
+// Űrlap beküldése
 const urlap = document.getElementById("hirdetes-urlap");
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
     const mentesGomb = document.getElementById("hirdetes-bekuldes");
+
     if (mentesGomb) {
       mentesGomb.disabled = true;
-      mentesGomb.innerText = "Mentés...";
+      mentesGomb.innerText = "Mentés folyamatban...";
     }
 
     try {
       const adatok = adatokOsszegyujtese();
 
       if (szerkesztendoId) {
+        // Módosítás
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
-        alert("Módosítások mentve!");
+        alert("Sikeres módosítás!");
       } else {
+        // Új felvétel
         await addDoc(collection(adatbazis, "lakasok"), adatok);
-        alert("Új hirdetés sikeresen rögzítve!");
+        alert("Hirdetés sikeresen feladva!");
       }
 
+      // Frissítés (hogy tiszta legyen az űrlap)
       window.location.href = window.location.pathname;
     } catch (error) {
-      console.error("Hiba a mentés során:", error);
-      alert("Hiba történt a mentéskor: " + error.message);
+      console.error("Hiba:", error);
+      alert("Nem sikerült a mentés: " + error.message);
     } finally {
       if (mentesGomb) {
         mentesGomb.disabled = false;
@@ -123,14 +128,9 @@ if (urlap) {
   };
 }
 
+// Űrlap ürítése gombhoz
 window.urlapUrites = function () {
-  if (confirm("Biztosan törlöd az összes beírt adatot?")) {
-    const urlap = document.getElementById("hirdetes-urlap");
-    if (urlap) {
-      urlap.reset();
-      document
-        .querySelectorAll(".bevitel")
-        .forEach((el) => (el.style.backgroundColor = ""));
-    }
+  if (confirm("Biztosan törlöd az adatokat?")) {
+    document.getElementById("hirdetes-urlap")?.reset();
   }
 };
