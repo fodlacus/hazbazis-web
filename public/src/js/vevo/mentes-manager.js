@@ -55,7 +55,7 @@ export async function initMentesManager() {
 // 2. MENTÉS (EXPORTÁLVA ÉS ÁTNEVEZVE!)
 export async function saveCurrentSearch(nev, szurok) {
   const user = getUser();
-
+  const tisztaSzurok = JSON.parse(JSON.stringify(szurok));
   try {
     if (user) {
       // --- FIREBASE MENTÉS (Belépve) ---
