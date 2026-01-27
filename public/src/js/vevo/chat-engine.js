@@ -159,7 +159,7 @@ async function inditsChatKeresest() {
 
     // A feltételek egységesítése
     const standardFeltetelek = normalizaldAFelteteleket(aiValasz);
-    aktualisSzuroFeltetelek = standardFeltetelek;
+    windows.aktualisSzuroFeltetelek = standardFeltetelek;
     console.log("✅ Standardizált szűrők:", standardFeltetelek);
 
     if (belsoFlat.length === 0) {
@@ -518,3 +518,29 @@ function listaRendezese(szempont) {
   // Újrarajzoljuk a kártyákat a rendezett listából
   megjelenitTalalatokat();
 }
+
+// Ezt hívja meg a mentes-manager, ha rákattintasz egy kártyára
+window.alkalmazSzuroket = async function (mentettSzurok) {
+  console.log("🔄 Mentett keresés alkalmazása...", mentettSzurok);
+
+  // 1. Frissítjük a globális változót
+  window.aktualisSzuroFeltetelek = mentettSzurok;
+
+  // 2. Töröljük a képernyőt, mintha új keresés lenne
+  const folyam = document.getElementById("chat-folyam");
+  // Opcionális: folyam.innerHTML = "";
+
+  // 3. Mesterségesen "lefuttatjuk" a keresést a mentett adatokkal
+  // (Feltételezem, van egy függvényed, ami a szűrők alapján lekérdezi a Firebase-t.
+  //  Ha 'ingatlanKereses' vagy 'adatbazisLekerdezes' a neve, azt írd ide!)
+
+  // Ha nincs külön függvényed, akkor itt hívd meg azt a részt, ami a találatokat rendereli.
+  // Példa (ha van ilyen függvényed):
+  // await ingatlanokListazasa(mentettSzurok);
+
+  // VAGY egy gyors trükk: generálunk egy üzenetet az AI-nak:
+  hozzaadBuborekot("Betöltöttem a mentett keresést. Máris mutatom!", "ai");
+
+  // Itt meg kell hívnod a tényleges kereső logikádat a `mentettSzurok` alapján.
+  // Ha elküldöd a chat-engine.js azon részét, ahol a Firebase lekérdezés van, megmondom pontosan mit írj ide!
+};

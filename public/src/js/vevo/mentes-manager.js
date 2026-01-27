@@ -7,15 +7,12 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  query,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Segédfüggvény: Belépett felhasználó ellenőrzése
+// Segédfüggvény: Belépett felhasználó
 const getUser = () => auth.currentUser;
 
-// =================================================
-// 1. INICIALIZÁLÁS (Lista betöltése induláskor)
-// =================================================
+// 1. INICIALIZÁLÁS
 export async function initMentesManager() {
   const listaDiv = document.getElementById("mentett-lista");
   if (!listaDiv) return;
@@ -28,7 +25,6 @@ export async function initMentesManager() {
   // Gomb eseménykezelő (Mentés +)
   const saveBtn = document.getElementById("btn-save-filter");
   if (saveBtn) {
-    // Fontos: klónozzuk a gombot, hogy ne halmozódjanak fel az event listenerek
     const newBtn = saveBtn.cloneNode(true);
     saveBtn.parentNode.replaceChild(newBtn, saveBtn);
 
@@ -41,25 +37,23 @@ export async function initMentesManager() {
         return;
       }
 
-      // A globális szűrő változó (amit a chat-engine.js használ)
-      // Feltételezzük, hogy window.aktualisSzuroFeltetelek létezik és friss
+      // A globális szűrő változó (amit a chat-engine.js tölt fel)
       const szurok = window.aktualisSzuroFeltetelek || {};
 
       if (Object.keys(szurok).length === 0) {
-        alert("Nincs aktív szűrő, amit elmenthetnék!");
+        alert("Nincs aktív szűrő, amit elmenthetnék! (Keress valamire előbb)");
         return;
       }
 
-      await saveSearch(nev, szurok);
-      nevInput.value = ""; // Mező ürítése
+      // JAVÍTÁS: Itt hívjuk meg az exportált függvényt
+      await saveCurrentSearch(nev, szurok);
+      nevInput.value = "";
     });
   }
 }
 
-// =================================================
-// 2. MENTÉS (LocalStorage VAGY Firebase)
-// =================================================
-async function saveSearch(nev, szurok) {
+// 2. MENTÉS (EXPORTÁLVA ÉS ÁTNEVEZVE!)
+export async function saveCurrentSearch(nev, szurok) {
   const user = getUser();
 
   try {
@@ -91,7 +85,6 @@ async function saveSearch(nev, szurok) {
       console.log("Mentés helyben sikerült.");
     }
 
-    // Lista frissítése
     await renderMentettKeresesek();
   } catch (error) {
     console.error("Hiba mentéskor:", error);
@@ -99,20 +92,16 @@ async function saveSearch(nev, szurok) {
   }
 }
 
-// =================================================
 // 3. TÖRLÉS
-// =================================================
 async function deleteSearch(id) {
   const user = getUser();
 
   if (confirm("Biztosan törlöd ezt a mentést?")) {
     if (user && !id.startsWith("local-")) {
-      // Firebase törlés
       await deleteDoc(
         doc(adatbazis, "felhasznalok", user.uid, "mentett_keresesek", id)
       );
     } else {
-      // LocalStorage törlés
       const mentesek = JSON.parse(
         localStorage.getItem("hazbazis_mentesek") || "[]"
       );
@@ -123,9 +112,7 @@ async function deleteSearch(id) {
   }
 }
 
-// =================================================
-// 4. MEGJELENÍTÉS (Render)
-// =================================================
+// 4. MEGJELENÍTÉS
 async function renderMentettKeresesek() {
   const container = document.getElementById("mentett-lista");
   if (!container) return;
@@ -136,9 +123,7 @@ async function renderMentettKeresesek() {
   let mentesek = [];
   const user = getUser();
 
-  // ADATOK LEKÉRÉSE
   if (user) {
-    // Firebase
     const subColRef = collection(
       adatbazis,
       "felhasznalok",
@@ -148,19 +133,16 @@ async function renderMentettKeresesek() {
     const snapshot = await getDocs(subColRef);
     mentesek = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   } else {
-    // LocalStorage
     mentesek = JSON.parse(localStorage.getItem("hazbazis_mentesek") || "[]");
   }
 
   container.innerHTML = "";
-
   if (mentesek.length === 0) {
     container.innerHTML =
       '<div class="text-white/30 text-xs p-2 italic">Nincs mentett keresés.</div>';
     return;
   }
 
-  // KÁRTYÁK GENERÁLÁSA
   mentesek.forEach((mentes) => {
     const div = document.createElement("div");
     div.className =
@@ -178,18 +160,12 @@ async function renderMentettKeresesek() {
             </div>
         `;
 
-    // Törlés gomb (Kuka)
     const deleteBtn = document.createElement("button");
     deleteBtn.className =
       "text-white/20 hover:text-red-400 p-1 transition-colors";
-    deleteBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-        `;
+    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
     deleteBtn.onclick = (e) => {
-      e.stopPropagation(); // Ne töltse be a keresést törléskor
+      e.stopPropagation();
       deleteSearch(mentes.id);
     };
 
@@ -198,7 +174,7 @@ async function renderMentettKeresesek() {
   });
 }
 
-// Globális ablakfüggvény a betöltéshez (hogy a HTML stringből is elérhető legyen)
+// Globális betöltő (fontos!)
 window.betoltMentes = function (jsonKriteriumok) {
   const kriteriumok = JSON.parse(decodeURIComponent(jsonKriteriumok));
   console.log("Mentés betöltése:", kriteriumok);
@@ -207,11 +183,11 @@ window.betoltMentes = function (jsonKriteriumok) {
   if (window.alkalmazSzuroket) {
     window.alkalmazSzuroket(kriteriumok);
   } else {
-    console.error("Nincs definiálva az alkalmazSzuroket függvény!");
+    console.error(
+      "Nincs definiálva az alkalmazSzuroket függvény a chat-engine-ben!"
+    );
   }
 };
 
-// CHECKBOX törlő (ezt már használtuk)
-export function uncheckAllFilters() {
-  // Itt most nincs checkbox UI, de meghagyjuk a kompatibilitás miatt
-}
+// Üres függvény a kompatibilitás miatt
+export function uncheckAllFilters() {}
