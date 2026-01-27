@@ -71,13 +71,13 @@ export async function loginUser(email, password) {
 
       // IRÁNYÍTÁSI LOGIKA
       if (data.szerepkor.admin) {
-        window.location.href = "/dashboard.html"; // Admin -> Dashboard
+        window.location.href = "../admin/dashboard.html"; // Admin -> Dashboard
       } else {
-        window.location.href = "/index.html"; // Mindenki más -> Főoldal
+        window.location.href = "../../../index.html"; // Mindenki más -> Főoldal
       }
     } else {
       // Ha nincs Firestore adat (ritka hiba)
-      window.location.href = "/index.html";
+      window.location.href = "../../../index.html";
     }
   } catch (error) {
     console.error("Belépési hiba:", error);
