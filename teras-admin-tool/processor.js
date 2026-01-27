@@ -3,43 +3,49 @@ const fs = require("fs");
 const path = require("path");
 
 // --- BEÁLLÍTÁSOK ---
-const GUMLET_BASE = "https://media.hazbazis.hu";
-const SOURCE_ROOT = "./letoltott_drive_anyag"; // A Mac-eden lévő mappa
+const MEDIA_BASE_URL = "https://media.hazbazis.hu";
+const SOURCE_ROOT = "./letoltott_drive_anyag";
 
-// Firebase inicializálás
+// Firebase ellenőrzés és indítás
 if (fs.existsSync("./serviceAccountKey.json")) {
   admin.initializeApp({
     credential: admin.credential.cert(require("./serviceAccountKey.json")),
   });
+} else {
+  console.error("❌ HIBA: Nem találom a serviceAccountKey.json fájlt!");
+  process.exit(1);
 }
-const db = admin.apps.length ? admin.firestore() : null;
+const db = admin.firestore();
 
 async function runProcessor(ingatlanId) {
-  // ITT SZÚRJUK BE: Ez határozza meg, melyik lakás mappájába lépünk be
+  console.log(`🚀 Feldolgozás indítása: ${ingatlanId}`);
+
   const sourceBase = path.join(__dirname, SOURCE_ROOT, ingatlanId);
   const targetBase = path.join(__dirname, "feltoltesre", ingatlanId);
 
-  // Ellenőrizzük, hogy létezik-e a forrás mappa
+  // 1. Forrás mappa ellenőrzése
   if (!fs.existsSync(sourceBase)) {
     console.error(`❌ Hiba: A forrás mappa nem található: ${sourceBase}`);
     return;
   }
 
+  // 2. Adatstruktúra előkészítése
+  // A képeket tömbben tároljuk, az alaprajzot és videót stringben
   let updateData = {
-    id: ingatlanId,
     kepek_horiz: [],
     kepek_vert: [],
     kepek_pano: [],
+    floor_plan: "",
     shorts_video: "",
-    statusz: "aktiv",
     updatedAt: new Date().toISOString(),
   };
 
-  // Kategóriák az új, egyszerű nevekkel
+  // 3. KÉP KATEGÓRIÁK FELDOLGOZÁSA
+  // Fontos: A 'dir' a mappák nevei a fotóid alapján!
   const categories = [
-    { dir: "horiz", prefix: "h_", field: "kepek_horiz" },
-    { dir: "vert", prefix: "v_", field: "kepek_vert" },
-    { dir: "pano", prefix: "p_", field: "kepek_pano" },
+    { dir: "kepek_horiz", prefix: "h_", field: "kepek_horiz" },
+    { dir: "kepek_vert", prefix: "v_", field: "kepek_vert" },
+    { dir: "kepek_pano", prefix: "p_", field: "kepek_pano" },
   ];
 
   for (let cat of categories) {
@@ -47,66 +53,122 @@ async function runProcessor(ingatlanId) {
     const targetPath = path.join(targetBase, cat.dir);
 
     if (fs.existsSync(sourcePath)) {
+      // Csak a fájlokat listázzuk (rejtett fájlok és mappák nélkül)
       const files = fs
         .readdirSync(sourcePath)
-        .filter((f) => !f.startsWith("."));
-
-      if (!fs.existsSync(targetPath))
-        fs.mkdirSync(targetPath, { recursive: true });
-
-      files.sort().forEach((file, index) => {
-        const ext = path.extname(file).toLowerCase();
-        const newName = `${cat.prefix}${index + 1}${ext}`;
-
-        // Másolás az új néven a feltöltésre szánt mappába
-        fs.copyFileSync(
-          path.join(sourcePath, file),
-          path.join(targetPath, newName)
+        .filter(
+          (f) =>
+            !f.startsWith(".") &&
+            fs.lstatSync(path.join(sourcePath, f)).isFile()
         );
 
-        // Algoritmizált URL generálása
-        const url = `${GUMLET_BASE}/${ingatlanId}/${cat.dir}/${newName}`;
-        updateData[cat.field].push(url);
-      });
-      console.log(`✅ ${cat.dir}: ${files.length} fájl feldolgozva.`);
+      if (files.length > 0) {
+        if (!fs.existsSync(targetPath))
+          fs.mkdirSync(targetPath, { recursive: true });
+
+        // Név szerinti rendezés, hogy a sorrend fix legyen
+        files.sort().forEach((file, index) => {
+          // Kiterjesztés automatikus felismerése (.jpg, .png, .jpeg)
+          const ext = path.extname(file).toLowerCase();
+
+          // Eredeti név kiterjesztés nélkül (pl. "nappali", "konyha") -> EZT MENTJÜK EL NÉVKÉNT!
+          const originalName = path.basename(file, ext);
+
+          // Új, rendszer-barát fájlnév (pl. h_1.jpg)
+          const newName = `${cat.prefix}${index + 1}${ext}`;
+
+          // Fájl másolása a feltöltési mappába
+          fs.copyFileSync(
+            path.join(sourcePath, file),
+            path.join(targetPath, newName)
+          );
+
+          // URL generálása
+          const url = `${MEDIA_BASE_URL}/${ingatlanId}/${cat.dir}/${newName}`;
+
+          // --- ÚJ STRUKTÚRA: OBJEKTUMOKAT MENTÜNK ---
+          // Ez azért kell, hogy később tudjuk, melyik kép melyik szoba!
+          updateData[cat.field].push({
+            url: url,
+            nev: originalName, // pl: "Nappali"
+            file: newName, // pl: "p_1.jpg"
+          });
+        });
+        console.log(`✅ ${cat.dir}: ${files.length} db kép feldolgozva.`);
+      }
     }
   }
 
-  // Videó keresése az ingatlan fő mappájában
-  const videoFile = fs.readdirSync(sourceBase).find((f) => f.endsWith(".mp4"));
+  // 4. ALAPRAJZ KERESÉSE (A gyökérben)
+  // Megkeressük az első fájlt, aminek a nevében benne van a "floor_plan"
+  const allFiles = fs.readdirSync(sourceBase);
+  const fpFile = allFiles.find(
+    (f) => f.toLowerCase().includes("floor_plan") && !f.startsWith(".")
+  );
+
+  if (fpFile) {
+    const targetDir = path.join(targetBase, "floor_plan");
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    const ext = path.extname(fpFile).toLowerCase(); // pl. .png
+
+    // Átnevezzük egységesen 'alaprajz'-ra, de megtartjuk a kiterjesztést
+    fs.copyFileSync(
+      path.join(sourceBase, fpFile),
+      path.join(targetDir, `alaprajz${ext}`)
+    );
+
+    // Ez STRING, nem tömb!
+    updateData.floor_plan = `${MEDIA_BASE_URL}/${ingatlanId}/floor_plan/alaprajz${ext}`;
+    console.log(`✅ Alaprajz feldolgozva (${ext}).`);
+  } else {
+    console.log("⚠️  Nincs alaprajz a mappában (floor_plan nevű fájl).");
+  }
+
+  // 5. VIDEÓ KERESÉSE (A gyökérben)
+  const videoFile = allFiles.find((f) => f.endsWith(".mp4"));
   if (videoFile) {
-    const videoTarget = path.join(targetBase, "video");
-    if (!fs.existsSync(videoTarget))
-      fs.mkdirSync(videoTarget, { recursive: true });
+    const targetDir = path.join(targetBase, "shorts_video");
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
     fs.copyFileSync(
       path.join(sourceBase, videoFile),
-      path.join(videoTarget, "shorts.mp4")
+      path.join(targetDir, "video.mp4")
     );
-    updateData.shorts_video = `${GUMLET_BASE}/${ingatlanId}/video/shorts.mp4`;
-    console.log(`✅ Videó rendszerezve.`);
+
+    updateData.shorts_video = `${MEDIA_BASE_URL}/${ingatlanId}/shorts_video/video.mp4`;
+    console.log(`✅ Videó feldolgozva.`);
   }
 
-  // FIREBASE ÍRÁS
-  if (db) {
-    try {
-      await db
-        .collection("lakasok")
-        .doc(ingatlanId)
-        .set(updateData, { merge: true });
-      console.log(`🚀 Firebase sikeresen frissítve az URL címekkel!`);
-    } catch (err) {
-      console.error("❌ Firebase hiba:", err.message);
-    }
+  // 6. FIREBASE FRISSÍTÉS
+  try {
+    await db
+      .collection("lakasok")
+      .doc(ingatlanId)
+      .set(updateData, { merge: true });
+    console.log(`\n🎉 SIKER! Firebase frissítve: ${ingatlanId}`);
+    console.log(
+      `   Képek száma: ${
+        updateData.kepek_horiz.length +
+        updateData.kepek_vert.length +
+        updateData.kepek_pano.length
+      }`
+    );
+    if (updateData.floor_plan) console.log(`   + Alaprajz`);
+    if (updateData.shorts_video) console.log(`   + Videó`);
+  } catch (err) {
+    console.error("❌ Firebase hiba:", err.message);
   }
 
-  console.log(`\n--- KÉSZ ---`);
-  console.log(`A fájlok itt várnak az R2 feltöltésre: ${targetBase}`);
+  console.log(`\n📁 Fájlok előkészítve: ${targetBase}`);
+  console.log(`👉 Most húzd be a mappát az R2 bucket-be!`);
 }
 
+// Argumentum kezelés
 const id = process.argv[2];
 if (!id) {
   console.error(
-    "Hiba: Adj meg egy ID-t! (Példa: node processor.js teras-903754)"
+    "Hiba: Adj meg egy ID-t! (Példa: node processor.js teras-764967)"
   );
 } else {
   runProcessor(id);

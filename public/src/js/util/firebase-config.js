@@ -15,12 +15,12 @@ import {
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCmcNz9wKV9oc7Xwla7dxHXbfbkYaV5iz8",
-  authDomain: "teras-fe3e1.firebaseapp.com",
-  projectId: "teras-fe3e1",
-  storageBucket: "teras-fe3e1.firebasestorage.app",
-  messagingSenderId: "1002443328434",
-  appId: "1:1002443328434:web:508a6b1d4253eeb48172ab",
+  apiKey: "AIzaSyAKHxkRj41Y_e6x5TTfXbiBGRtN99V9SGM",
+  authDomain: "hazbazis.firebaseapp.com",
+  projectId: "hazbazis",
+  storageBucket: "hazbazis.firebasestorage.app",
+  messagingSenderId: "228035570741",
+  appId: "1:228035570741:web:58827ab31ede50f1f6157c",
 };
 
 export const app = initializeApp(firebaseConfig);

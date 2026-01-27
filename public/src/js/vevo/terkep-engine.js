@@ -180,42 +180,60 @@ function addPrivacyMarker(lat, lng, ing) {
   });
 }
 
-// JAVÍTOTT KÁRTYA GENERÁLÓ
+//  KÁRTYA GENERÁLÓ
+
 function createCard(ing, lat, lng) {
   const div = document.createElement("div");
   div.className =
     "bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/5 hover:border-[#E2F1B0] transition cursor-pointer group";
 
-  // Kép kezelés (ha nincs kép tömb)
-  const imgUrl =
-    ing.kepek && ing.kepek.length > 0
-      ? ing.kepek[0]
-      : "https://via.placeholder.com/300x200?text=Nincs+kép";
+  // --- ÚJ KÉP KIVÁLASZTÁSI LOGIKA (Objektum támogatással) ---
+  let boritoKep = "https://via.placeholder.com/300x200?text=Nincs+kép";
 
-  // JAVÍTÁS: Mezőnevek egyeztetése (szobák, azon)
+  // Segédfüggvény: URL kinyerése akár string, akár objektum
+  const getUrl = (item) => {
+    if (!item) return null;
+    return typeof item === "object" ? item.url : item;
+  };
+
+  // 1. Prioritás: Vízszintes kép
+  if (ing.kepek_horiz && ing.kepek_horiz.length > 0) {
+    boritoKep = getUrl(ing.kepek_horiz[0]);
+  }
+  // 2. Prioritás: Vertikális kép
+  else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
+    boritoKep = getUrl(ing.kepek_vert[0]);
+  }
+  // 3. Fallback: Régi rendszer
+  else if (ing.kepek && ing.kepek.length > 0) {
+    boritoKep = getUrl(ing.kepek[0]);
+  }
+
   div.innerHTML = `
-        <div class="flex gap-3">
-            <img src="${imgUrl}" class="w-20 h-20 object-cover rounded-lg bg-black/30">
-            <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-start">
-                    <div class="text-[#E2F1B0] font-bold text-sm truncate">${Number(
-                      ing.vételár
-                    ).toLocaleString()} Ft</div>
-                    <span class="text-[9px] text-white/30 font-mono bg-black/20 px-1 rounded">${
-                      ing.azon || "Nincs ID"
-                    }</span>
-                </div>
-                
-                <div class="text-white text-xs font-bold truncate mt-1">
-                    ${ing.telepules}, ${ing.varosresz || ing.kerulet || ""}
-                </div>
-                
-                <div class="text-white/60 text-[10px] mt-1">
-                    ${ing.alapterület} m² • ${ing["szobák"] || "?"} szoba
-                </div>
-            </div>
-        </div>
-    `;
+      <div class="flex gap-3">
+          <img src="${boritoKep}" class="w-20 h-20 object-cover rounded-lg bg-black/30">
+          <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start">
+                  <div class="text-[#E2F1B0] font-bold text-sm truncate">${Number(
+                    ing.vételár
+                  ).toLocaleString()} Ft</div>
+                  <span class="text-[9px] text-white/30 font-mono bg-black/20 px-1 rounded">${
+                    ing.azon || "ID?"
+                  }</span>
+              </div>
+              
+              <div class="text-white text-xs font-bold truncate mt-1">
+                  ${ing.telepules}, ${ing.varosresz || ing.kerulet || ""}
+              </div>
+              
+              <div class="text-white/60 text-[10px] mt-1">
+                  ${ing.alapterület} m² • ${
+    ing["szobák"] || ing.szobak || "?"
+  } szoba
+              </div>
+          </div>
+      </div>
+  `;
 
   div.addEventListener("click", () => {
     map.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
