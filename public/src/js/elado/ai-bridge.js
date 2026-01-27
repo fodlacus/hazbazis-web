@@ -180,36 +180,37 @@ window.automataCimEllenorzes = async function () {
       );
       const adatok = await response.json();
       const siker = adatok && adatok.length > 0;
+
       if (siker) {
-        // SIKER: Kinyerjük a koordinátákat
+        // SIKER
         window.aktualisLat = parseFloat(adatok[0].lat);
         window.aktualisLng = parseFloat(adatok[0].lon);
 
-        console.log(
-          "📍 Koordináták rögzítve mentéshez:",
-          window.aktualisLat,
-          window.aktualisLng
-        );
+        console.log("📍 Koordináták:", window.aktualisLat, window.aktualisLng);
 
+        // Zöld visszajelzés
         ["iranyitoszam", "telepules", "utca", "hazszam"].forEach((id) => {
           const el = document.getElementById(id);
-          if (el) {
-            el.style.borderColor = siker ? "#A3E635" : "#EF4444";
-            el.style.backgroundColor = siker
-              ? "rgba(163, 230, 53, 0.05)"
-              : "rgba(239, 68, 68, 0.05)";
-          }
+          if (el) el.style.borderColor = "#A3E635"; // Lime
         });
 
         if (mentesGomb) {
-          mmentesGomb.disabled = false;
+          mentesGomb.disabled = false;
           mentesGomb.style.opacity = "1";
         }
       } else {
+        // HIBA
         window.aktualisLat = null;
         window.aktualisLng = null;
 
+        // Piros visszajelzés
+        ["iranyitoszam", "telepules", "utca"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.style.borderColor = "#EF4444"; // Red
+        });
+
         if (mentesGomb) {
+          // JAVÍTÁS: Itt volt az elírás (mmentesGomb -> mentesGomb)
           mentesGomb.disabled = true;
           mentesGomb.style.opacity = "0.5";
         }
