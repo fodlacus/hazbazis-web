@@ -1,22 +1,22 @@
 // src/js/elado/feladas.js
 
-// 1. IMPORTÁLÁS (Konzisztensen a configból, amit lehet)
+// 1. IMPORTÁLÁS
+// FONTOS: A setDoc-ot is importálni kell a konkrét ID megadásához!
 import {
   adatbazis,
   auth,
   collection,
-  addDoc,
-  doc,
-  // updateDoc-ot külön húzzuk be, ha nincs a configban exportálva
+  doc, // Ez már itt volt
+  setDoc, // <--- EZT ADTAM HOZZÁ (addDoc helyett ezt használjuk)
 } from "../util/firebase-config.js";
 
-// Ha az updateDoc nincs a configban, behúzzuk CDN-ről:
+// Ha az updateDoc/setDoc nincs a configban exportálva, behúzzuk CDN-ről:
 import { updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { szerkesztendoId } from "./szerkesztes.js";
 import { budapestAdatok } from "../util/helyszin-adatok.js";
 
-// 2. AUTOMATIKUS INDÍTÁS (Ez hiányzott!)
+// 2. AUTOMATIKUS INDÍTÁS
 window.addEventListener("DOMContentLoaded", () => {
   helyszinFigyelo();
 });
@@ -42,7 +42,9 @@ export function helyszinFigyelo() {
 // Adatok összegyűjtése
 function adatokOsszegyujtese() {
   const adatok = {};
-  const generalAzonosito = () => `teras-${Date.now().toString().slice(-6)}`;
+
+  // --- MÓDOSÍTÁS 1: "teras" helyett "HB" ---
+  const generalAzonosito = () => `HB-${Date.now().toString().slice(-6)}`;
 
   const mezok = document.querySelectorAll(
     "#hirdetes-urlap input, #hirdetes-urlap select, #hirdetes-urlap textarea"
@@ -79,7 +81,11 @@ function adatokOsszegyujtese() {
   adatok.hirdeto_uid = auth.currentUser.uid;
   adatok.letrehozva = new Date().toISOString();
   adatok.statusz = "Feldolgozás alatt";
-  adatok.azon = generalAzonosito();
+
+  // Ha még nincs azonosító (új felvétel), generálunk egy HB-sat
+  if (!szerkesztendoId) {
+    adatok.azon = generalAzonosito();
+  }
 
   // GPS (Ha az ai-bridge.js beállította)
   adatok.lat = window.aktualisLat || null;
@@ -104,14 +110,20 @@ if (urlap) {
       const adatok = adatokOsszegyujtese();
 
       if (szerkesztendoId) {
-        // Módosítás
+        // --- MÓDOSÍTÁS ---
+        // Meglévő rekord frissítése (itt marad a régi logika)
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
         alert("Sikeres módosítás!");
       } else {
-        // Új felvétel
-        await addDoc(collection(adatbazis, "lakasok"), adatok);
-        alert("Hirdetés sikeresen feladva!");
+        // --- MÓDOSÍTÁS 2: ÚJ REKORD LÉTREHOZÁSA FIX ID-VAL ---
+        // addDoc helyett setDoc-ot használunk, hogy mi mondjuk meg a nevet!
+        // Így a dokumentum neve (ID) ugyanaz lesz, mint az adatok.azon (pl. HB-123456)
+
+        const docRef = doc(adatbazis, "lakasok", adatok.azon);
+        await setDoc(docRef, adatok);
+
+        alert(`Hirdetés sikeresen feladva! Azonosító: ${adatok.azon}`);
       }
 
       // Frissítés (hogy tiszta legyen az űrlap)
