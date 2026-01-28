@@ -5,6 +5,7 @@
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Ingatlantérkép - Házbázis</title>
+
       <script src="https://cdn.tailwindcss.com"></script>
 
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,15 +16,8 @@
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
       <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
       <style>
-            /* Sötét térkép stílus (CartoDB Dark Matter-hez nem feltétlen kell filter, de maradhat) */
-            .dark-map-tiles {
-                  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-            }
-
             /* Egyedi görgetősáv */
             .custom-scrollbar::-webkit-scrollbar {
                   width: 6px;
@@ -60,7 +54,7 @@
 
       <div class="relative flex-1 w-full h-full">
 
-            <div id="map" class="absolute inset-0 z-0 bg-[#2a3310]"></div>
+            <div id="map" class="absolute inset-0 z-0 bg-gray-200"></div>
 
             <div class="absolute z-[999] flex flex-col gap-3 pointer-events-none transition-all duration-300
                         /* MOBIL: Lent, széles, átlátszóbb háttér */
@@ -99,6 +93,7 @@
 
             </div>
       </div>
+
       <script type="module" src="../../js/vevo/terkep-engine.js"></script>
 </body>
 
