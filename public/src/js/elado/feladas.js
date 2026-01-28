@@ -1,18 +1,21 @@
 // src/js/elado/feladas.js
+// src/js/elado/feladas.js
 
-// 1. IMPORTÁLÁS
+// 1. SAJÁT CONFIG: Csak az adatbázis és auth példányokat hozzuk innen
+import { adatbazis, auth } from "../util/firebase-config.js";
+
+// 2. FIREBASE PARANCSOK: Ezeket közvetlenül a Firestore könyvtárból hozzuk
 import {
-  adatbazis,
-  auth,
   doc,
-  setDoc, // Új létrehozásához
-  updateDoc, // Meglévő frissítéséhez
-  getDoc, // <--- EZ KELL A USER PROFIL OLVASÁSÁHOZ
-} from "../util/firebase-config.js";
+  setDoc,
+  updateDoc,
+  getDoc,
+  collection,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// ... a többi import maradhat ...
 import { szerkesztendoId } from "./szerkesztes.js";
 import { budapestAdatok } from "../util/helyszin-adatok.js";
-
 // 2. AUTOMATIKUS INDÍTÁS
 window.addEventListener("DOMContentLoaded", () => {
   helyszinFigyelo();
