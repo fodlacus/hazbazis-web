@@ -223,11 +223,18 @@ function addPrivacyMarkerToGroups(lat, lng, ing) {
 }
 
 //  KÁRTYA GENERÁLÓ (Változatlan)
+// src/js/vevo/terkep-engine.js -> createCard cseréje
+
 function createCard(ing, lat, lng) {
   const div = document.createElement("div");
-  div.className =
-    "bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/5 hover:border-[#E2F1B0] transition cursor-pointer group";
 
+  // ITT A VÁLTOZÁS:
+  // bg-white/10 (áttetsző) helyett -> bg-gray-900/90 (sötét szürke, majdnem fekete)
+  // Így a fehér betűk tökéletesen olvashatók lesznek rajta.
+  div.className =
+    "bg-gray-900/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg hover:border-[#E2F1B0] hover:scale-[1.02] transition-all duration-200 cursor-pointer group mb-2";
+
+  // Kép kiválasztása (ez a logika marad a régi)
   let boritoKep = "https://via.placeholder.com/300x200?text=Nincs+kép";
 
   const getUrl = (item) => {
@@ -243,27 +250,32 @@ function createCard(ing, lat, lng) {
     boritoKep = getUrl(ing.kepek[0]);
   }
 
+  // A belső HTML marad, mert a fehér/zöld szöveg a sötét háttéren (gray-900) jól mutat
   div.innerHTML = `
       <div class="flex gap-3">
-          <img src="${boritoKep}" class="w-20 h-20 object-cover rounded-lg bg-black/30">
-          <div class="flex-1 min-w-0">
+          <img src="${boritoKep}" class="w-24 h-20 object-cover rounded-lg border border-white/10 bg-black">
+          
+          <div class="flex-1 min-w-0 flex flex-col justify-center">
               <div class="flex justify-between items-start">
-                  <div class="text-[#E2F1B0] font-bold text-sm truncate">${Number(
-                    ing.vételár
-                  ).toLocaleString()} Ft</div>
-                  <span class="text-[9px] text-white/30 font-mono bg-black/20 px-1 rounded">${
-                    ing.azon || "ID?"
-                  }</span>
+                  <div class="text-[#E2F1B0] font-bold text-sm truncate text-lg">
+                    ${Number(ing.vételár).toLocaleString()} Ft
+                  </div>
               </div>
               
-              <div class="text-white text-xs font-bold truncate mt-1">
+              <div class="text-white font-medium text-xs truncate mt-1">
                   ${ing.telepules}, ${ing.varosresz || ing.kerulet || ""}
               </div>
               
-              <div class="text-white/60 text-[10px] mt-1">
-                  ${ing.alapterület} m² • ${
-    ing["szobák"] || ing.szobak || "?"
-  } szoba
+              <div class="flex items-center gap-2 mt-2">
+                  <span class="text-gray-400 text-[11px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                    ${ing.alapterület} m²
+                  </span>
+                  <span class="text-gray-400 text-[11px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                    ${ing["szobák"] || ing.szobak || "?"} szoba
+                  </span>
+                  <span class="text-[9px] text-gray-500 font-mono ml-auto">
+                    ${ing.azon || ""}
+                  </span>
               </div>
           </div>
       </div>
