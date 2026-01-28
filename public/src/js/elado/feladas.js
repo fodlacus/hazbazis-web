@@ -1,6 +1,6 @@
 // src/js/elado/feladas.js
 
-// 1. IMPORTÁLÁS - A JAVÍTOTT VERZIÓ (Külön importálva a parancsok)
+// 1. IMPORTÁLÁS (A javított importokkal)
 import { adatbazis, auth } from "../util/firebase-config.js";
 
 import {
@@ -8,7 +8,6 @@ import {
   setDoc,
   updateDoc,
   getDoc,
-  collection,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { szerkesztendoId } from "./szerkesztes.js";
@@ -36,13 +35,11 @@ export function helyszinFigyelo() {
   }
 }
 
-// --- VISSZAÁLLÍTVA A RÉGI FORMÁTUMRA ---
-// Hirdetés azonosító generálása (Most újra HB- lesz az eleje!)
+// --- VISSZAÁLLÍTVA 6 SZÁMJEGYRE ---
 function generalHirdetesAzonosito() {
-  const timestamp = Date.now().toString().slice(-4);
-  const random = Math.floor(1000 + Math.random() * 9000);
-  // Visszatettem a "HB-" prefixet, hogy illeszkedjen a listádhoz
-  return `HB-${timestamp}${random}`;
+  // Generál egy véletlen számot 100000 és 999999 között (pontosan 6 jegy)
+  const hatjegyuSzam = Math.floor(100000 + Math.random() * 900000);
+  return `HB-${hatjegyuSzam}`;
 }
 
 // Űrlap adatok begyűjtése
@@ -91,7 +88,7 @@ if (urlap) {
         throw new Error("Nincs bejelentkezett felhasználó!");
       }
 
-      // 2. USER PROFIL LEKÉRDEZÉSE (hogy meglegyen a 'hb-...' user ID)
+      // 2. USER PROFIL LEKÉRDEZÉSE
       const userDocRef = doc(adatbazis, "felhasznalok", currentUser.uid);
       const userSnap = await getDoc(userDocRef);
 
@@ -100,23 +97,20 @@ if (urlap) {
       }
 
       const userData = userSnap.data();
-      const hirdetoEgyediAzonosito = userData.azon; // Ez a user 'hb-...' azonosítója
+      const hirdetoEgyediAzonosito = userData.azon; // A 'hb-...' azonosító
 
       // 3. Adatok begyűjtése
       const adatok = adatokOsszegyujtese();
 
       // 4. Kiegészítés
-      adatok.hirdeto_azon = hirdetoEgyediAzonosito; // Ez a "Ki hirdeti?"
+      adatok.hirdeto_azon = hirdetoEgyediAzonosito;
       adatok.hirdeto_uid = currentUser.uid;
       adatok.letrehozva = new Date().toISOString();
       adatok.statusz = "Feldolgozás alatt";
 
-      // --- ITT A JAVÍTÁS: HB-s azonosító generálása ---
       if (!szerkesztendoId) {
-        // A dokumentum ID-ja újra HB- kezdetű lesz
+        // Most már 6 jegyű lesz!
         adatok.azon = generalHirdetesAzonosito();
-        // Ha a régi rendszerben az 'azon' mezőt használtad, akkor ez így jó.
-        // A képen láttam 'lakas_azon'-t is, ha egységesíteni akarod, használd ezt is:
         adatok.lakas_azon = adatok.azon;
       }
 
@@ -130,7 +124,7 @@ if (urlap) {
         await updateDoc(docRef, adatok);
         alert("Sikeres módosítás!");
       } else {
-        // Új létrehozása: A dokumentum neve = adatok.azon (ami most már HB-...)
+        // Új létrehozása a 6 jegyű ID-val
         const docRef = doc(adatbazis, "lakasok", adatok.azon);
         await setDoc(docRef, adatok);
 
