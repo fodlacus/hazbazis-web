@@ -1,17 +1,14 @@
 // src/js/elado/feladas.js
 
 // 1. IMPORTÁLÁS
-// FONTOS: A setDoc-ot is importálni kell a konkrét ID megadásához!
 import {
   adatbazis,
   auth,
-  collection,
-  doc, // Ez már itt volt
-  setDoc, // <--- EZT ADTAM HOZZÁ (addDoc helyett ezt használjuk)
+  doc,
+  setDoc, // Új létrehozásához
+  updateDoc, // Meglévő frissítéséhez
+  getDoc, // <--- EZ KELL A USER PROFIL OLVASÁSÁHOZ
 } from "../util/firebase-config.js";
-
-// Ha az updateDoc/setDoc nincs a configban exportálva, behúzzuk CDN-ről:
-import { updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { szerkesztendoId } from "./szerkesztes.js";
 import { budapestAdatok } from "../util/helyszin-adatok.js";
@@ -21,7 +18,7 @@ window.addEventListener("DOMContentLoaded", () => {
   helyszinFigyelo();
 });
 
-// Helyszín figyelő (Kerület -> Városrész kapcsolat)
+// Helyszín figyelő
 export function helyszinFigyelo() {
   const keruletSelect = document.getElementById("kerulet");
   const varosreszSelect = document.getElementById("varosresz");
@@ -30,7 +27,6 @@ export function helyszinFigyelo() {
     keruletSelect.addEventListener("change", () => {
       const valasztott = keruletSelect.value;
       const reszek = budapestAdatok[valasztott] || [];
-
       varosreszSelect.innerHTML =
         reszek.length > 0
           ? reszek.map((r) => `<option value="${r}">${r}</option>`).join("")
@@ -39,13 +35,17 @@ export function helyszinFigyelo() {
   }
 }
 
-// Adatok összegyűjtése
+// Lakás egyedi azonosító generálása (Pl. LAKAS-1234)
+// Ez a DOKUMENTUM NEVE lesz, nem keverendő össze a felhasználó "hb-" azonosítójával
+function generalLakasAzonosito() {
+  const timestamp = Date.now().toString().slice(-4);
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `LAKAS-${timestamp}${random}`;
+}
+
+// Űrlap adatok begyűjtése
 function adatokOsszegyujtese() {
   const adatok = {};
-
-  // --- MÓDOSÍTÁS 1: "teras" helyett "HB" ---
-  const generalAzonosito = () => `HB-${Date.now().toString().slice(-6)}`;
-
   const mezok = document.querySelectorAll(
     "#hirdetes-urlap input, #hirdetes-urlap select, #hirdetes-urlap textarea"
   );
@@ -56,45 +56,21 @@ function adatokOsszegyujtese() {
 
     let ertek = mezo.value;
 
-    // Számok tisztítása
     if (["vételár", "alapterület", "szobák"].includes(id)) {
       ertek = Number(String(ertek).replace(/[^0-9]/g, "")) || 0;
     }
-
-    // Checkbox
     if (mezo.type === "checkbox") {
       ertek = mezo.checked;
     }
-
     if (ertek !== undefined && ertek !== "") {
       adatok[id] = ertek;
     }
   });
 
-  // Ellenőrzés: Be van-e lépve?
-  if (!auth.currentUser) {
-    alert("Hiba: A munkamenet lejárt vagy nem vagy bejelentkezve!");
-    throw new Error("Nincs bejelentkezett felhasználó");
-  }
-
-  // Kötelező rendszeradatok
-  adatok.hirdeto_uid = auth.currentUser.uid;
-  adatok.letrehozva = new Date().toISOString();
-  adatok.statusz = "Feldolgozás alatt";
-
-  // Ha még nincs azonosító (új felvétel), generálunk egy HB-sat
-  if (!szerkesztendoId) {
-    adatok.azon = generalAzonosito();
-  }
-
-  // GPS (Ha az ai-bridge.js beállította)
-  adatok.lat = window.aktualisLat || null;
-  adatok.lng = window.aktualisLng || null;
-
   return adatok;
 }
 
-// Űrlap beküldése
+// --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
 if (urlap) {
   urlap.onsubmit = async (e) => {
@@ -107,30 +83,77 @@ if (urlap) {
     }
 
     try {
+      // 1. Ellenőrzés: Be van lépve?
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("Nincs bejelentkezett felhasználó!");
+      }
+
+      // 2. USER PROFIL LEKÉRDEZÉSE (Itt szerezzük meg a hb-... azonosítót)
+      // Feltételezzük, hogy a 'felhasznalok' kollekcióban a dokumentum neve = auth.uid
+      const userDocRef = doc(adatbazis, "felhasznalok", currentUser.uid);
+      const userSnap = await getDoc(userDocRef);
+
+      if (!userSnap.exists()) {
+        throw new Error("A felhasználói profil nem található az adatbázisban!");
+      }
+
+      const userData = userSnap.data();
+      // Itt vesszük ki a 'hb-...' azonosítót a user profiljából
+      const hirdetoEgyediAzonosito = userData.azon;
+
+      if (!hirdetoEgyediAzonosito) {
+        console.warn(
+          "A felhasználónak nincs 'azon' mezője, generálás szükséges lenne?"
+        );
+        // Ha nagyon szigorúak vagyunk, itt hibát is dobhatunk
+      }
+
+      // 3. Űrlap adatok begyűjtése
       const adatok = adatokOsszegyujtese();
 
+      // --- 4. ADATOK KIEGÉSZÍTÉSE ---
+
+      // Elmentjük a User "hb-..." azonosítóját a lakásba!
+      // Fontos: 'hirdeto_azon' nevet adtam neki, hogy tiszta legyen
+      adatok.hirdeto_azon = hirdetoEgyediAzonosito;
+
+      // Elmentjük a technikai UID-t is (biztonsági okokból jó, ha megvan)
+      adatok.hirdeto_uid = currentUser.uid;
+
+      adatok.letrehozva = new Date().toISOString();
+      adatok.statusz = "Feldolgozás alatt";
+
+      // Ha új lakás, kell neki saját azonosító (ami a doksi neve lesz)
+      if (!szerkesztendoId) {
+        adatok.lakas_azon = generalLakasAzonosito();
+      }
+
+      // GPS (ha van)
+      adatok.lat = window.aktualisLat || null;
+      adatok.lng = window.aktualisLng || null;
+
+      // 5. MENTÉS AZ ADATBÁZISBA
       if (szerkesztendoId) {
-        // --- MÓDOSÍTÁS ---
-        // Meglévő rekord frissítése (itt marad a régi logika)
+        // Frissítés
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
         alert("Sikeres módosítás!");
       } else {
-        // --- MÓDOSÍTÁS 2: ÚJ REKORD LÉTREHOZÁSA FIX ID-VAL ---
-        // addDoc helyett setDoc-ot használunk, hogy mi mondjuk meg a nevet!
-        // Így a dokumentum neve (ID) ugyanaz lesz, mint az adatok.azon (pl. HB-123456)
-
-        const docRef = doc(adatbazis, "lakasok", adatok.azon);
+        // Új létrehozása
+        // A dokumentum neve a lakás saját azonosítója lesz
+        const docRef = doc(adatbazis, "lakasok", adatok.lakas_azon);
         await setDoc(docRef, adatok);
-
-        alert(`Hirdetés sikeresen feladva! Azonosító: ${adatok.azon}`);
+        alert(
+          `Hirdetés sikeresen feladva!\nHirdető kódja: ${hirdetoEgyediAzonosito}`
+        );
       }
 
-      // Frissítés (hogy tiszta legyen az űrlap)
+      // 6. TISZTÍTÁS
       window.location.href = window.location.pathname;
     } catch (error) {
       console.error("Hiba:", error);
-      alert("Nem sikerült a mentés: " + error.message);
+      alert("Hiba történt: " + error.message);
     } finally {
       if (mentesGomb) {
         mentesGomb.disabled = false;
@@ -140,7 +163,6 @@ if (urlap) {
   };
 }
 
-// Űrlap ürítése gombhoz
 window.urlapUrites = function () {
   if (confirm("Biztosan törlöd az adatokat?")) {
     document.getElementById("hirdetes-urlap")?.reset();

@@ -155,6 +155,31 @@
                   });
             });
       </script>
+      <script>
+            // Biztosra megyünk: csak akkor futtatjuk, ha betöltött az oldal
+            document.addEventListener('DOMContentLoaded', () => {
+
+                  // 1. Keresd meg a gombot és a menüt az ID alapján
+                  // (Ellenőrizd a HTML-ben, hogy TÉNYLEG ezek-e az ID-k!)
+                  const menuGomb = document.getElementById('mobil-menu-gomb');
+                  const mobilMenu = document.getElementById('mobil-menu');
+
+                  // 2. Csak akkor adjunk hozzá eseményt, ha mindkettő létezik!
+                  if (menuGomb && mobilMenu) {
+                        menuGomb.addEventListener('click', () => {
+                              // A 'hidden' class levétele/rárakása (Tailwind)
+                              mobilMenu.classList.toggle('hidden');
+                        });
+
+                        // Opcionális: Ha rákattint egy menüpontra, záródjon be
+                        mobilMenu.addEventListener('click', () => {
+                              mobilMenu.classList.add('hidden');
+                        });
+                  } else {
+                        console.warn("Nem található a mobil menü vagy a gomb ID-ja!");
+                  }
+            });
+      </script>
 </body>
 
 </html>
