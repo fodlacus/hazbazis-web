@@ -1,10 +1,8 @@
 // src/js/elado/feladas.js
-// src/js/elado/feladas.js
 
-// 1. SAJÁT CONFIG: Csak az adatbázis és auth példányokat hozzuk innen
+// 1. IMPORTÁLÁS - A JAVÍTOTT VERZIÓ (Külön importálva a parancsok)
 import { adatbazis, auth } from "../util/firebase-config.js";
 
-// 2. FIREBASE PARANCSOK: Ezeket közvetlenül a Firestore könyvtárból hozzuk
 import {
   doc,
   setDoc,
@@ -13,9 +11,9 @@ import {
   collection,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ... a többi import maradhat ...
 import { szerkesztendoId } from "./szerkesztes.js";
 import { budapestAdatok } from "../util/helyszin-adatok.js";
+
 // 2. AUTOMATIKUS INDÍTÁS
 window.addEventListener("DOMContentLoaded", () => {
   helyszinFigyelo();
@@ -38,12 +36,13 @@ export function helyszinFigyelo() {
   }
 }
 
-// Lakás egyedi azonosító generálása (Pl. LAKAS-1234)
-// Ez a DOKUMENTUM NEVE lesz, nem keverendő össze a felhasználó "hb-" azonosítójával
-function generalLakasAzonosito() {
+// --- VISSZAÁLLÍTVA A RÉGI FORMÁTUMRA ---
+// Hirdetés azonosító generálása (Most újra HB- lesz az eleje!)
+function generalHirdetesAzonosito() {
   const timestamp = Date.now().toString().slice(-4);
   const random = Math.floor(1000 + Math.random() * 9000);
-  return `LAKAS-${timestamp}${random}`;
+  // Visszatettem a "HB-" prefixet, hogy illeszkedjen a listádhoz
+  return `HB-${timestamp}${random}`;
 }
 
 // Űrlap adatok begyűjtése
@@ -86,73 +85,59 @@ if (urlap) {
     }
 
     try {
-      // 1. Ellenőrzés: Be van lépve?
+      // 1. Ellenőrzés
       const currentUser = auth.currentUser;
       if (!currentUser) {
         throw new Error("Nincs bejelentkezett felhasználó!");
       }
 
-      // 2. USER PROFIL LEKÉRDEZÉSE (Itt szerezzük meg a hb-... azonosítót)
-      // Feltételezzük, hogy a 'felhasznalok' kollekcióban a dokumentum neve = auth.uid
+      // 2. USER PROFIL LEKÉRDEZÉSE (hogy meglegyen a 'hb-...' user ID)
       const userDocRef = doc(adatbazis, "felhasznalok", currentUser.uid);
       const userSnap = await getDoc(userDocRef);
 
       if (!userSnap.exists()) {
-        throw new Error("A felhasználói profil nem található az adatbázisban!");
+        throw new Error("A felhasználói profil nem található!");
       }
 
       const userData = userSnap.data();
-      // Itt vesszük ki a 'hb-...' azonosítót a user profiljából
-      const hirdetoEgyediAzonosito = userData.azon;
+      const hirdetoEgyediAzonosito = userData.azon; // Ez a user 'hb-...' azonosítója
 
-      if (!hirdetoEgyediAzonosito) {
-        console.warn(
-          "A felhasználónak nincs 'azon' mezője, generálás szükséges lenne?"
-        );
-        // Ha nagyon szigorúak vagyunk, itt hibát is dobhatunk
-      }
-
-      // 3. Űrlap adatok begyűjtése
+      // 3. Adatok begyűjtése
       const adatok = adatokOsszegyujtese();
 
-      // --- 4. ADATOK KIEGÉSZÍTÉSE ---
-
-      // Elmentjük a User "hb-..." azonosítóját a lakásba!
-      // Fontos: 'hirdeto_azon' nevet adtam neki, hogy tiszta legyen
-      adatok.hirdeto_azon = hirdetoEgyediAzonosito;
-
-      // Elmentjük a technikai UID-t is (biztonsági okokból jó, ha megvan)
+      // 4. Kiegészítés
+      adatok.hirdeto_azon = hirdetoEgyediAzonosito; // Ez a "Ki hirdeti?"
       adatok.hirdeto_uid = currentUser.uid;
-
       adatok.letrehozva = new Date().toISOString();
       adatok.statusz = "Feldolgozás alatt";
 
-      // Ha új lakás, kell neki saját azonosító (ami a doksi neve lesz)
+      // --- ITT A JAVÍTÁS: HB-s azonosító generálása ---
       if (!szerkesztendoId) {
-        adatok.lakas_azon = generalLakasAzonosito();
+        // A dokumentum ID-ja újra HB- kezdetű lesz
+        adatok.azon = generalHirdetesAzonosito();
+        // Ha a régi rendszerben az 'azon' mezőt használtad, akkor ez így jó.
+        // A képen láttam 'lakas_azon'-t is, ha egységesíteni akarod, használd ezt is:
+        adatok.lakas_azon = adatok.azon;
       }
 
-      // GPS (ha van)
+      // GPS
       adatok.lat = window.aktualisLat || null;
       adatok.lng = window.aktualisLng || null;
 
-      // 5. MENTÉS AZ ADATBÁZISBA
+      // 5. Mentés
       if (szerkesztendoId) {
-        // Frissítés
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
         alert("Sikeres módosítás!");
       } else {
-        // Új létrehozása
-        // A dokumentum neve a lakás saját azonosítója lesz
-        const docRef = doc(adatbazis, "lakasok", adatok.lakas_azon);
+        // Új létrehozása: A dokumentum neve = adatok.azon (ami most már HB-...)
+        const docRef = doc(adatbazis, "lakasok", adatok.azon);
         await setDoc(docRef, adatok);
-        alert(
-          `Hirdetés sikeresen feladva!\nHirdető kódja: ${hirdetoEgyediAzonosito}`
-        );
+
+        alert(`Hirdetés sikeresen feladva!\nAzonosító: ${adatok.azon}`);
       }
 
-      // 6. TISZTÍTÁS
+      // 6. Frissítés
       window.location.href = window.location.pathname;
     } catch (error) {
       console.error("Hiba:", error);
