@@ -9,7 +9,10 @@ import { adatbazis } from "../util/firebase-config.js";
 
 let map;
 let allIngatlanok = [];
-let currentMarkers = [];
+
+// Két külön rétegcsoportot használunk:
+let markersGroup; // Ez a CLUSTER (csoportosító) réteg a gombostűknek
+let circlesGroup; // Ez a sima réteg a halvány köröknek (ezeket nem vonjuk össze)
 
 window.addEventListener("DOMContentLoaded", async () => {
   initMap();
@@ -17,15 +20,49 @@ window.addEventListener("DOMContentLoaded", async () => {
   initFilters();
 });
 
-// 1. TÉRKÉP BASE
+// 1. TÉRKÉP BASE ÉS CSOPORTOSÍTÓ BEÁLLÍTÁSA
 function initMap() {
   // Budapest központ
   map = L.map("map", { zoomControl: false }).setView([47.5079, 19.0993], 12);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution: "&copy; OpenStreetMap, &copy; CARTO",
-    maxZoom: 20,
-  }).addTo(map);
+
+  // VILÁGOS TÉRKÉP (Light)
+  L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: "abcd",
+      maxZoom: 20,
+    }
+  ).addTo(map);
+
   L.control.zoom({ position: "bottomright" }).addTo(map);
+
+  // --- CSOPORTOSÍTÓ (CLUSTER) KONFIGURÁCIÓ ---
+  markersGroup = L.markerClusterGroup({
+    showCoverageOnHover: false, // Kikapcsolja a zavaró kék/sárga terület-kört
+    zoomToBoundsOnClick: true, // Rákattintva közelít
+    spiderfyOnMaxZoom: true, // Ha már nem tud közelebb menni, szétugrasztja (Pókháló)
+    removeOutsideVisibleBounds: true,
+    animate: true,
+
+    // Egyedi ikon a csoportoknak (Sötét gomb fehér számmal)
+    iconCreateFunction: function (cluster) {
+      const count = cluster.getChildCount();
+      return L.divIcon({
+        html: `<div class="bg-gray-800 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-white text-sm">${count}</div>`,
+        className: "marker-cluster-custom", // Üres class, hogy ne legyen alap stílus
+        iconSize: L.point(30, 30),
+      });
+    },
+  });
+
+  // A köröknek sima LayerGroup (nem cluster)
+  circlesGroup = L.layerGroup();
+
+  // Hozzáadjuk őket a térképhez
+  map.addLayer(circlesGroup); // Először a körök (hogy alul legyenek)
+  map.addLayer(markersGroup); // Rá a markerek
 }
 
 // 2. ADATOK BETÖLTÉSE
@@ -37,7 +74,7 @@ async function loadIngatlanok() {
 
     allIngatlanok = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    // Kezdeti kirajzolás (Mindenkit)
+    // Kezdeti kirajzolás
     renderMapAndList(allIngatlanok);
 
     // Szűrő listák feltöltése
@@ -54,7 +91,6 @@ function populateDropdowns() {
   const selKerulet = document.getElementById("filter-kerulet");
   const selVarosresz = document.getElementById("filter-varosresz");
 
-  // Egyedi értékek (Set)
   const telepulesek = [
     ...new Set(allIngatlanok.map((i) => i.telepules).filter(Boolean)),
   ].sort();
@@ -65,12 +101,10 @@ function populateDropdowns() {
     ...new Set(allIngatlanok.map((i) => i.varosresz).filter(Boolean)),
   ].sort();
 
-  // Reset
   selTelepules.innerHTML = '<option value="">Összes település</option>';
   selKerulet.innerHTML = '<option value="">Összes kerület</option>';
   selVarosresz.innerHTML = '<option value="">Összes városrész</option>';
 
-  // Feltöltés
   telepulesek.forEach((t) => selTelepules.add(new Option(t, t)));
   keruletek.forEach((k) => selKerulet.add(new Option(k, k)));
   varosreszek.forEach((v) => selVarosresz.add(new Option(v, v)));
@@ -87,7 +121,6 @@ function initFilters() {
     const valKerulet = selKerulet.value;
     const valVarosresz = selVarosresz.value;
 
-    // Kerület szűrő megjelenítése csak Budapestnél
     if (valTelepules === "Budapest") {
       selKerulet.classList.remove("hidden");
     } else {
@@ -115,14 +148,16 @@ function initFilters() {
   selVarosresz.addEventListener("change", runFilter);
 }
 
-// 5. KIRAJZOLÁS
+// 5. KIRAJZOLÁS (Itt használjuk az új csoportokat)
 function renderMapAndList(list) {
   const listaDiv = document.getElementById("ingatlan-lista");
   const infoDiv = document.getElementById("talalat-info");
 
   listaDiv.innerHTML = "";
-  currentMarkers.forEach((m) => map.removeLayer(m));
-  currentMarkers = [];
+
+  // TÖRLÉS: A csoportokból törlünk, nem a mapról egyesével
+  markersGroup.clearLayers();
+  circlesGroup.clearLayers();
 
   if (infoDiv) infoDiv.innerText = `${list.length} találat`;
 
@@ -131,81 +166,80 @@ function renderMapAndList(list) {
   const bounds = L.latLngBounds();
 
   list.forEach((ing) => {
-    // Koordináta ellenőrzés
     let lat = ing.lat;
     let lng = ing.lng;
 
-    if (!lat || !lng) return; // Ha nincs koordináta, kihagyjuk
+    if (!lat || !lng) return;
 
-    // Jitter (Adatvédelem) - Kicsi eltolás
-    lat = lat + (Math.random() - 0.5) * 0.002;
-    lng = lng + (Math.random() - 0.5) * 0.002;
+    // Jitter (Kicsi eltolás, hogy ne teljesen fedjék egymást, de a cluster úgyis megoldja)
+    lat = lat + (Math.random() - 0.5) * 0.0005; // Kicsit visszavettem a mértékéből
+    lng = lng + (Math.random() - 0.5) * 0.0005;
 
-    addPrivacyMarker(lat, lng, ing);
+    // Külön adjuk hozzá a kört és a markert a megfelelő csoporthoz
+    addPrivacyMarkerToGroups(lat, lng, ing);
+
     const kartya = createCard(ing, lat, lng);
     listaDiv.appendChild(kartya);
 
     bounds.extend([lat, lng]);
   });
 
-  map.fitBounds(bounds, { padding: [50, 50] });
+  // Ha van találat, igazítsuk a térképet
+  if (list.length > 0) {
+    map.fitBounds(bounds, { padding: [50, 50] });
+  }
 }
 
-function addPrivacyMarker(lat, lng, ing) {
-  // Kör
+function addPrivacyMarkerToGroups(lat, lng, ing) {
+  // 1. KÖR -> circlesGroup (Nem csoportosítjuk)
   const circle = L.circle([lat, lng], {
     color: "#E2F1B0",
     fillColor: "#E2F1B0",
     fillOpacity: 0.2,
     radius: 250,
     weight: 1,
-  }).addTo(map);
-  currentMarkers.push(circle);
+  });
+  circlesGroup.addLayer(circle);
 
-  // Árcédula Marker
+  // 2. MARKER (Árcédula) -> markersGroup (Ezt csoportosítjuk!)
   const arMillio = Math.round(ing.vételár / 1000000);
-  const iconHtml = `<div class="bg-[#E2F1B0] text-[#3D4A16] font-bold text-xs px-2 py-1 rounded-lg shadow-lg border-2 border-[#3D4A16] whitespace-nowrap hover:scale-110 transition cursor-pointer">${arMillio} M Ft</div>`;
+  const iconHtml = `<div class="bg-[#E2F1B0] text-[#3D4A16] font-bold text-xs px-2 py-1 rounded-lg shadow-lg border-2 border-[#3D4A16] whitespace-nowrap hover:scale-110 transition cursor-pointer hover:z-50">${arMillio} M Ft</div>`;
 
   const customIcon = L.divIcon({
     html: iconHtml,
-    className: "",
+    className: "", // Üres class, hogy a Tailwind érvényesüljön
     iconSize: [60, 30],
     iconAnchor: [30, 15],
   });
-  const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
-  currentMarkers.push(marker);
+
+  const marker = L.marker([lat, lng], { icon: customIcon });
 
   marker.on("click", () => {
+    // Itt később megnyithatunk egy kis ablakot (Popup) vagy az adatlapot
     map.flyTo([lat, lng], 16, { duration: 1.5 });
   });
+
+  markersGroup.addLayer(marker);
 }
 
-//  KÁRTYA GENERÁLÓ
-
+//  KÁRTYA GENERÁLÓ (Változatlan)
 function createCard(ing, lat, lng) {
   const div = document.createElement("div");
   div.className =
     "bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/5 hover:border-[#E2F1B0] transition cursor-pointer group";
 
-  // --- ÚJ KÉP KIVÁLASZTÁSI LOGIKA (Objektum támogatással) ---
   let boritoKep = "https://via.placeholder.com/300x200?text=Nincs+kép";
 
-  // Segédfüggvény: URL kinyerése akár string, akár objektum
   const getUrl = (item) => {
     if (!item) return null;
     return typeof item === "object" ? item.url : item;
   };
 
-  // 1. Prioritás: Vízszintes kép
   if (ing.kepek_horiz && ing.kepek_horiz.length > 0) {
     boritoKep = getUrl(ing.kepek_horiz[0]);
-  }
-  // 2. Prioritás: Vertikális kép
-  else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
+  } else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
     boritoKep = getUrl(ing.kepek_vert[0]);
-  }
-  // 3. Fallback: Régi rendszer
-  else if (ing.kepek && ing.kepek.length > 0) {
+  } else if (ing.kepek && ing.kepek.length > 0) {
     boritoKep = getUrl(ing.kepek[0]);
   }
 
