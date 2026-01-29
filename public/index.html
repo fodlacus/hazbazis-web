@@ -4,7 +4,7 @@
 <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>hazbazis.hu - Ahol a kényelem és a természet összeér</title>
+      <title>Hazbazis.hu - Ahol a kényelem és a természet összeér</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
             .hatter-zold {
@@ -27,8 +27,6 @@
             html {
                   scroll-behavior: smooth;
             }
-
-            /* Finom görgetés a kereséshez */
       </style>
 </head>
 
@@ -50,11 +48,8 @@
                                           class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Főoldal</a>
                                     <a href="src/html/vevo/terkep.html"
                                           class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Térkép</a>
-                                    <a href="src/html/vevo/ai-filter.html"
-                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium">
-                                          Keresés
-                                    </a>
-
+                                    <a href="#kereses"
+                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium cursor-pointer">Keresés</a>
 
                                     <div id="desktop-vendeg-menu" class="flex items-center ml-4">
                                           <a href="src/html/auth/belepes.html"
@@ -63,9 +58,12 @@
                                           </a>
                                     </div>
 
-                                    <div id="desktop-user-menu" class="hidden flex items-center space-x-6 ml-4">
+                                    <div id="desktop-user-menu" class="hidden flex items-center space-x-4 ml-4">
+                                          <span id="desktop-user-email"
+                                                class="text-lime-400 text-xs font-bold mr-2 tracking-wide"></span>
+
                                           <a href="src/html/elado/hirdetes-feladas.html"
-                                                class="text-lime-400 hover:text-white transition-colors text-sm font-bold border border-lime-400/30 px-3 py-1 rounded-lg">
+                                                class="text-white hover:text-lime-400 transition-colors text-sm font-bold border border-white/20 hover:border-lime-400 px-3 py-1 rounded-lg">
                                                 + Hirdetés
                                           </a>
                                           <button onclick="window.kilepes()"
@@ -105,8 +103,12 @@
                         </div>
 
                         <div id="mobil-user-menu" class="hidden">
+                              <p id="mobil-user-email"
+                                    class="text-lime-400 text-sm font-bold text-center pb-2 border-b border-white/10">
+                              </p>
+
                               <a href="src/html/elado/hirdetes-feladas.html"
-                                    class="block text-white hover:text-lime-400 text-lg font-bold border-b border-white/5 pb-2">+
+                                    class="block text-white hover:text-lime-400 text-lg font-bold border-b border-white/5 pb-2 pt-2">+
                                     Új Hirdetés</a>
                               <button onclick="window.kilepes()"
                                     class="w-full text-left text-red-400 hover:text-red-300 block text-base font-medium pt-4">
@@ -166,7 +168,6 @@
       <script type="module" src="src/js/index.js"></script>
 
       <script type="module">
-            // FONTOS: Innen importáljuk a konfigurált auth-ot!
             import { auth } from "./src/js/util/firebase-config.js";
             import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -181,19 +182,30 @@
                   }
             }
 
-            // 2. MENÜ VÁLTOGATÁS
+            // 2. MENÜ VÁLTOGATÁS + E-MAIL KIÍRÁS
             onAuthStateChanged(auth, (user) => {
                   const desktopVendeg = document.getElementById('desktop-vendeg-menu');
                   const desktopUser = document.getElementById('desktop-user-menu');
                   const mobilVendeg = document.getElementById('mobil-vendeg-menu');
                   const mobilUser = document.getElementById('mobil-user-menu');
 
+                  // ÚJ: E-mail mezők
+                  const desktopEmail = document.getElementById('desktop-user-email');
+                  const mobilEmail = document.getElementById('mobil-user-email');
+
                   if (user) {
+                        // HA BE VAN LÉPVE
+
+                        // E-mail kiírása
+                        if (desktopEmail) desktopEmail.innerText = user.email;
+                        if (mobilEmail) mobilEmail.innerText = user.email;
+
                         if (desktopVendeg) desktopVendeg.classList.add('hidden');
                         if (mobilVendeg) mobilVendeg.classList.add('hidden');
                         if (desktopUser) desktopUser.classList.remove('hidden');
                         if (mobilUser) mobilUser.classList.remove('hidden');
                   } else {
+                        // HA NINCS BELÉPVE
                         if (desktopUser) desktopUser.classList.add('hidden');
                         if (mobilUser) mobilUser.classList.add('hidden');
                         if (desktopVendeg) desktopVendeg.classList.remove('hidden');
@@ -201,7 +213,7 @@
                   }
             });
 
-            // 3. MOBIL MENÜ
+            // 3. MOBIL MENÜ KEZELÉS
             const gomb = document.getElementById('mobil-menu-gomb');
             const menu = document.getElementById('mobil-menu');
             if (gomb && menu) {
