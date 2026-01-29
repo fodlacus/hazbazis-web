@@ -28,7 +28,7 @@
                   scroll-behavior: smooth;
             }
 
-            /* Finom görgetés */
+            /* Finom görgetés a kereséshez */
       </style>
 </head>
 
@@ -163,7 +163,7 @@
       <script type="module" src="src/js/index.js"></script>
 
       <script type="module">
-            // FONTOS: A saját configodat importáljuk, mert abban van az 'app' inicializálás!
+            // FONTOS: Innen importáljuk a konfigurált auth-ot!
             import { auth } from "./src/js/util/firebase-config.js";
             import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
