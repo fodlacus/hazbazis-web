@@ -7,17 +7,14 @@
       <title>hazbazis.hu - Ahol a kényelem és a természet összeér</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
-            /* Visszaállított eredeti színek */
             .hatter-zold {
                   background-color: #3D4A16;
             }
 
-            /* Mély olívazöld */
             .szoveg-vilagos {
                   color: #E2F1B0;
             }
 
-            /* Világos krém/lime */
             .gomb-vilagos {
                   background-color: #E2F1B0;
                   color: #3D4A16;
@@ -26,6 +23,12 @@
             .szegely-zold {
                   border-color: rgba(226, 241, 176, 0.2);
             }
+
+            html {
+                  scroll-behavior: smooth;
+            }
+
+            /* Finom görgetés */
       </style>
 </head>
 
@@ -37,7 +40,7 @@
 
                         <div class="flex-shrink-0">
                               <a href="index.html" class="text-2xl font-bold text-white">
-                                    hazbazis<span class="text-lime-400">.hu</span>
+                                    Hazbazis<span class="text-lime-400">.hu</span>
                               </a>
                         </div>
 
@@ -45,11 +48,10 @@
                               <div class="ml-10 flex items-baseline space-x-6">
                                     <a href="index.html"
                                           class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Főoldal</a>
-
                                     <a href="src/html/vevo/terkep.html"
                                           class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Térkép</a>
-                                    <a href="src/html/auth/ai-filter.html"
-                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Keresés</a>
+                                    <a href="#kereses"
+                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium cursor-pointer">Keresés</a>
 
                                     <div id="desktop-vendeg-menu" class="flex items-center ml-4">
                                           <a href="src/html/auth/belepes.html"
@@ -74,7 +76,7 @@
                         <div class="-mr-2 flex md:hidden">
                               <button id="mobil-menu-gomb" type="button"
                                     class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-lime-400 focus:outline-none">
-                                    <span class="sr-only">Menü megnyitása</span>
+                                    <span class="sr-only">Menü</span>
                                     <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none"
                                           viewBox="0 0 24 24" stroke="currentColor">
                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -95,7 +97,7 @@
                               class="block text-gray-300 hover:text-lime-400 text-lg font-medium border-b border-white/5 pb-2">Keresés</a>
 
                         <div id="mobil-vendeg-menu">
-                              <a href="src/html/auth/login.html"
+                              <a href="src/html/auth/belepes.html"
                                     class="block text-lime-400 font-bold text-lg pt-2">Belépés / Regisztráció</a>
                         </div>
 
@@ -112,12 +114,6 @@
             </div>
       </nav>
 
-
-      <script type="module">
-            import { initAuthMonitor } from "./src/js/auth/auth-handler.js";
-            initAuthMonitor();
-      </script>
-
       <main class="max-w-7xl mx-auto px-6 py-20 text-center">
             <h2 class="text-5xl md:text-8xl font-semibold leading-[1.1] mb-10 tracking-tight">
                   Ahol a kényelem és a <br> <span class="szoveg-vilagos italic">természet</span> összeér
@@ -129,7 +125,7 @@
                         VIDEÓK PÖRGETÉSE 🎬
                   </button>
 
-                  <div class="relative w-full max-w-xl group mt-4">
+                  <div id="kereses" class="relative w-full max-w-xl group mt-4">
                         <input type="text" id="fooldali-ai-kereso"
                               placeholder="Vagy keress konkrétan: Zugló, 3 szoba..."
                               class="w-full bg-white/5 border border-white/20 px-6 py-4 rounded-full text-lg outline-none focus:border-lime-400/50 transition-all placeholder:text-white/20 text-center">
@@ -167,14 +163,11 @@
       <script type="module" src="src/js/index.js"></script>
 
       <script type="module">
-            import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+            // FONTOS: A saját configodat importáljuk, mert abban van az 'app' inicializálás!
+            import { auth } from "./src/js/util/firebase-config.js";
+            import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            // Firebase inicializálása
-            const auth = getAuth();
-
-            // ---------------------------------------------------------
-            // 1. FUNKCIÓ: Kilépés (Globális, hogy a gomb elérje)
-            // ---------------------------------------------------------
+            // 1. KILÉPÉS
             window.kilepes = async function () {
                   try {
                         await signOut(auth);
@@ -185,9 +178,7 @@
                   }
             }
 
-            // ---------------------------------------------------------
-            // 2. FUNKCIÓ: Menü elemek váltogatása (Belépés figyelése)
-            // ---------------------------------------------------------
+            // 2. MENÜ VÁLTOGATÁS
             onAuthStateChanged(auth, (user) => {
                   const desktopVendeg = document.getElementById('desktop-vendeg-menu');
                   const desktopUser = document.getElementById('desktop-user-menu');
@@ -195,59 +186,34 @@
                   const mobilUser = document.getElementById('mobil-user-menu');
 
                   if (user) {
-                        // --- HA BE VAN LÉPVE ---
-                        console.log("Felhasználó bejelentkezve:", user.uid);
-
-                        // Vendég menük elrejtése
                         if (desktopVendeg) desktopVendeg.classList.add('hidden');
                         if (mobilVendeg) mobilVendeg.classList.add('hidden');
-
-                        // User menük mutatása
                         if (desktopUser) desktopUser.classList.remove('hidden');
                         if (mobilUser) mobilUser.classList.remove('hidden');
                   } else {
-                        // --- HA NINCS BELÉPVE ---
-                        console.log("Nincs bejelentkezett felhasználó (Vendég nézet)");
-
-                        // User menük elrejtése
                         if (desktopUser) desktopUser.classList.add('hidden');
                         if (mobilUser) mobilUser.classList.add('hidden');
-
-                        // Vendég menük mutatása
                         if (desktopVendeg) desktopVendeg.classList.remove('hidden');
                         if (mobilVendeg) mobilVendeg.classList.remove('hidden');
                   }
             });
 
-            // ---------------------------------------------------------
-            // 3. FUNKCIÓ: Mobil menü nyitás/zárás
-            // ---------------------------------------------------------
-            // Ezt nem kell DOMContentLoaded-be tenni, mert a modul a végén fut le
+            // 3. MOBIL MENÜ
             const gomb = document.getElementById('mobil-menu-gomb');
             const menu = document.getElementById('mobil-menu');
-
             if (gomb && menu) {
                   gomb.addEventListener('click', (e) => {
                         e.stopPropagation();
                         menu.classList.toggle('hidden');
                   });
-
                   document.addEventListener('click', (e) => {
                         if (!menu.contains(e.target) && !gomb.contains(e.target)) {
                               menu.classList.add('hidden');
                         }
                   });
-
-                  // Linkekre kattintva zárás
-                  menu.querySelectorAll('a').forEach(link => {
-                        link.addEventListener('click', () => {
-                              menu.classList.add('hidden');
-                        });
-                  });
-            } else {
-                  console.warn("Mobil menü elemek nem találhatók (ez asztali nézetben nem gond).");
             }
       </script>
+
 </body>
 
 </html>
