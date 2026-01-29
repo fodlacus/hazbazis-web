@@ -58,8 +58,8 @@ export async function hirdeteseimListazasa() {
           const hirdetes = documentum.data();
           const id = documentum.id;
 
-          // Kártya összeállítása
           const kartya = document.createElement("div");
+          // Itt is visszavettem kicsit a dizájnból a tegnapihoz képest, hogy illeszkedjen
           kartya.className =
             "bg-white/5 p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-lime-400/30 transition-all mb-4";
 
@@ -68,20 +68,33 @@ export async function hirdeteseimListazasa() {
                <span class="bg-lime-400/20 text-lime-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">
                     ${hirdetes.azon || id}
                </span>
-                <h4 class="font-bold text-white text-lg">${
-                  hirdetes.nev || "Név nélkül"
-                }</h4>
-                <p class="text-xs text-gray-400">${hirdetes.telepules || ""}</p>
+
+                <h4 class="font-bold text-white text-lg">
+                  ${hirdetes.nev || "Név nélkül"}
+                </h4>
+                
+                <p class="text-xs text-gray-400">
+                  ${hirdetes.telepules || ""} ${
+            hirdetes.varosresz ? "- " + hirdetes.varosresz : ""
+          }
+                </p>
+                
                 <p class="text-lime-400 font-mono text-lg font-bold">
                   ${Number(hirdetes.vételár || 0).toLocaleString()} Ft
                 </p>
             </div>
             
             <div class="flex flex-col gap-2 min-w-[140px]">
+                <button onclick="window.location.href='?id=${id}&mode=view'" 
+                        class="bg-lime-400/10 text-lime-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-lime-400 hover:text-black transition-all border border-lime-400/20">
+                    Megtekintés
+                </button>
+        
                 <button onclick="window.location.href='?id=${id}&mode=edit'" 
                         class="bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/20 transition-all border border-white/10">
                     Szerkesztés
                 </button>
+        
                 <button onclick="hirdetesTorlese('${id}')" 
                         class="bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all border border-red-500/20">
                     Törlés
@@ -89,7 +102,7 @@ export async function hirdeteseimListazasa() {
             </div>
         `;
           listaKontener.appendChild(kartya);
-        });
+        });f
       } catch (error) {
         console.error("Hiba:", error);
         listaKontener.innerHTML = `<p class="text-red-400 p-4">Hiba: ${error.message}</p>`;
