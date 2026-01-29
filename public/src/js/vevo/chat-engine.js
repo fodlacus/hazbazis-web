@@ -460,28 +460,38 @@ function hozzaadBuborekot(msg, tipus) {
 function megjelenitTalalatokat() {
   const panel = document.getElementById("eredmenyek-panel");
   const szamlalo = document.getElementById("talalat-szam");
-  szamlalo.innerText = `${belsoFlat.length} talált`;
+
+  if (szamlalo) szamlalo.innerText = `${belsoFlat.length} talált`;
 
   if (belsoFlat.length === 0) {
-    panel.innerHTML = `<p class="text-center opacity-40 mt-10">Nincs a feltételeknek megfelelő ingatlan.</p>`;
+    if (panel)
+      panel.innerHTML = `<p class="text-center opacity-40 mt-10">Nincs a feltételeknek megfelelő ingatlan.</p>`;
     return;
   }
 
-  panel.innerHTML = belsoFlat
-    .map((ing) => {
-      const ar = Number(ing.vételár);
-      const formatalAr = !isNaN(ar)
-        ? ar.toLocaleString() + " Ft"
-        : "Ár kérésre";
-      const kepUrl =
-        ing.kepek_horiz && ing.kepek_horiz[0] ? ing.kepek_horiz[0] : "";
-      const kepPlaceholder = kepUrl
-        ? `<img src="${kepUrl}" class="w-full h-full object-cover">`
-        : `<div class="flex items-center justify-center h-full text-[10px] opacity-30">Nincs fotó</div>`;
+  if (panel) {
+    panel.innerHTML = belsoFlat
+      .map((ing) => {
+        const ar = Number(ing.vételár);
+        const formatalAr = !isNaN(ar)
+          ? ar.toLocaleString() + " Ft"
+          : "Ár kérésre";
 
-      return `
-        <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4">
-            <div class="w-24 h-24 rounded-2xl bg-black/40 overflow-hidden flex-shrink-0 flex items-center justify-center border border-white/5">${kepPlaceholder}</div>
+        // --- FOTÓ JAVÍTÁS ---
+        // Itt javítottam: most már a 'kepek' tömböt nézi, nem a 'kepek_horiz'-t!
+        const vanKep =
+          ing.kepek && Array.isArray(ing.kepek) && ing.kepek.length > 0;
+        const kepUrl = vanKep
+          ? ing.kepek[0]
+          : "https://placehold.co/300x200/3D4A16/E2F1B0?text=Nincs+kép";
+
+        return `
+        <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4" onclick="window.location.href='adatlap.html?id=${
+          ing.id
+        }'">
+            <div class="w-24 h-24 rounded-2xl bg-black/40 overflow-hidden flex-shrink-0 flex items-center justify-center border border-white/5">
+                <img src="${kepUrl}" class="w-full h-full object-cover">
+            </div>
             <div class="flex flex-col justify-center overflow-hidden">
                 <h3 class="font-bold text-sm group-hover:text-[#E2F1B0] transition-colors truncate">${
                   ing.nev || "Ingatlan"
@@ -490,12 +500,13 @@ function megjelenitTalalatokat() {
                 <p class="text-[10px] opacity-40 uppercase mt-1">${
                   ing.kerulet || "Bp"
                 } • ${ing.alapterület || "?"} m² • ${
-        ing.erkély_terasz || 0
-      } m² erkély</p>
+          ing.erkély_terasz || 0
+        } m² erkély</p>
             </div>
         </div>`;
-    })
-    .join("");
+      })
+      .join("");
+  }
 }
 
 function listaRendezese(szempont) {
@@ -518,27 +529,19 @@ function listaRendezese(szempont) {
   // Újrarajzoljuk a kártyákat a rendezett listából
   megjelenitTalalatokat();
 }
-
-// ============================================================
-// MENTETT KERESÉS BETÖLTÉSE (Javított verzió)
-// ============================================================
 window.alkalmazSzuroket = async function (mentettSzurok) {
   console.log("🔄 Mentett keresés betöltése...", mentettSzurok);
 
-  // 1. Frissítjük a globális változót a "tiszta" adatokkal
+  // 1. Frissítjük a globális változót
   window.aktualisSzuroFeltetelek = mentettSzurok;
 
   // 2. Chat ablak takarítása
   const folyam = document.getElementById("chat-folyam");
   if (folyam) folyam.innerHTML = "";
 
-  // 3. Visszajelzés a usernek
+  // 3. Visszajelzés
   hozzaadBuborekot(
-    `Betöltöttem a mentett keresést: "${
-      mentettSzurok.telepules || "Bárhol"
-    } - ${
-      mentettSzurok.maxAr ? mentettSzurok.maxAr / 1000000 + "M Ft alatt" : ""
-    }"`,
+    `Betöltöttem a mentett keresést: "${mentettSzurok.telepules || "Bárhol"}"`,
     "ai"
   );
 
@@ -551,34 +554,15 @@ window.alkalmazSzuroket = async function (mentettSzurok) {
       eredmenyekPanel.innerHTML =
         '<div class="text-white p-4 animate-pulse">Keresés az adatbázisban...</div>';
 
-    // LEKÉRDEZÉS ÖSSZEÁLLÍTÁSA
-    // Figyelem: A 'mentettSzurok' kulcsait (amiket az AI adott: maxAr, minSzoba)
-    // át kell fordítanunk az Adatbázis mezőneveire (vételár, szobák)!
-
     let q = query(collection(adatbazis, "lakasok"));
     const f = mentettSzurok;
 
-    // Település
-    if (f.telepules) {
-      q = query(q, where("telepules", "==", f.telepules));
-    }
+    // Alapvető szűrők alkalmazása a mentésből
+    if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
+    if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
+    if (f.maxAr) q = query(q, where("vételár", "<=", Number(f.maxAr)));
+    if (f.minSzoba) q = query(q, where("szobák", ">=", Number(f.minSzoba)));
 
-    // Kerület (ha van)
-    if (f.kerulet) {
-      q = query(q, where("kerulet", "==", f.kerulet));
-    }
-
-    // Ár (maxAr -> vételár)
-    if (f.maxAr) {
-      q = query(q, where("vételár", "<=", Number(f.maxAr)));
-    }
-
-    // Szobaszám (minSzoba -> szobák)
-    if (f.minSzoba) {
-      q = query(q, where("szobák", ">=", Number(f.minSzoba)));
-    }
-
-    // LEKÉRDEZÉS VÉGREHAJTÁSA
     const snapshot = await getDocs(q);
     const talalatok = snapshot.docs.map((doc) => ({
       id: doc.id,
@@ -587,46 +571,11 @@ window.alkalmazSzuroket = async function (mentettSzurok) {
 
     console.log("🔍 Találatok száma:", talalatok.length);
 
-    // MEGJELENÍTÉS
-    // Ha van a fájlban 'renderTalalatok' függvény, használd azt, ha nincs, itt egy egyszerű:
-    if (typeof renderTalalatok === "function") {
-      renderTalalatok(talalatok);
-    } else {
-      // Fallback megjelenítő, ha nincs külön render függvényed
-      if (eredmenyekPanel) {
-        eredmenyekPanel.innerHTML = "";
-        if (talalatok.length === 0) {
-          eredmenyekPanel.innerHTML =
-            '<div class="text-white/50 p-4">Nincs a feltételeknek megfelelő ingatlan.</div>';
-        } else {
-          talalatok.forEach((ing) => {
-            // Egyszerű kártya generálás
-            const imgUrl =
-              ing.kepek && ing.kepek.length > 0
-                ? ing.kepek[0]
-                : "https://via.placeholder.com/300x200";
-            eredmenyekPanel.innerHTML += `
-                          <div class="bg-white/5 border border-white/10 p-3 rounded-xl flex gap-3 mb-3 cursor-pointer hover:bg-white/10 transition">
-                              <img src="${imgUrl}" class="w-24 h-16 object-cover rounded-lg">
-                              <div>
-                                  <div class="text-[#E2F1B0] font-bold">${Number(
-                                    ing.vételár
-                                  ).toLocaleString()} Ft</div>
-                                  <div class="text-white text-xs">${
-                                    ing.telepules
-                                  }</div>
-                                  <div class="text-white/60 text-[10px]">${
-                                    ing.alapterület
-                                  } m² • ${ing.szobák} szoba</div>
-                              </div>
-                          </div>`;
-          });
-        }
-      }
-    }
+    // FONTOS: Frissítjük a belső listát is, hogy a rendezés működjön!
+    belsoFlat = talalatok;
 
-    if (talalatSzamlalo)
-      talalatSzamlalo.innerText = `${talalatok.length} TALÁLAT`;
+    // MEGJELENÍTÉS (Most már a javított megjelenitTalalatokat hívjuk!)
+    megjelenitTalalatokat();
   } catch (err) {
     console.error("Hiba a mentett keresés betöltésekor:", err);
     hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");

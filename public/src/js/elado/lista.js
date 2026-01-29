@@ -2,11 +2,12 @@
 
 import {
   query,
-  where, // <--- ENNEK ITT KELL LENNIE
+  where,
   getDocs,
   collection,
   doc,
   deleteDoc,
+  orderBy,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { adatbazis, auth } from "../util/firebase-config.js";
@@ -30,27 +31,21 @@ export async function hirdeteseimListazasa() {
   const listaKontener = document.getElementById("sajat-lista");
   if (!listaKontener) return;
 
-  // Figyeljük a belépést
   auth.onAuthStateChanged(async (user) => {
     if (user) {
-      console.log("--- SZŰRÉS INDÍTÁSA ---");
-      console.log("Jelenlegi felhasználó:", user.uid);
-
       try {
         const lakasokRef = collection(adatbazis, "lakasok");
 
-        // --- ITT A LÉNYEG: HA EZ HIÁNYZIK, MINDEN LEJÖN ---
+        // Szűrés a saját hirdetésekre
         const q = query(lakasokRef, where("hirdeto_uid", "==", user.uid));
-        // --------------------------------------------------
 
         const querySnapshot = await getDocs(q);
-        console.log("Találatok száma szűrés után:", querySnapshot.size);
 
         listaKontener.innerHTML = "";
 
         if (querySnapshot.empty) {
           listaKontener.innerHTML =
-            '<p class="text-white/50 italic p-4">Nincs megjeleníthető saját hirdetésed.</p>';
+            '<p class="text-white/50 italic p-4">Nincs rögzített hirdetésed.</p>';
           return;
         }
 
@@ -58,19 +53,34 @@ export async function hirdeteseimListazasa() {
           const hirdetes = documentum.data();
           const id = documentum.id;
 
+          // --- FOTÓ LOGIKA ---
+          // Megnézzük, van-e 'kepek' tömb, és van-e benne elem
+          const vanKep =
+            hirdetes.kepek &&
+            Array.isArray(hirdetes.kepek) &&
+            hirdetes.kepek.length > 0;
+          const kepUrl = vanKep
+            ? hirdetes.kepek[0]
+            : "https://placehold.co/150x150/3D4A16/E2F1B0?text=Nincs+kép";
+
           const kartya = document.createElement("div");
-          // Itt is visszavettem kicsit a dizájnból a tegnapihoz képest, hogy illeszkedjen
+
+          // Flexbox elrendezés: Kép balra, szöveg középen, gombok jobbra
           kartya.className =
-            "bg-white/5 p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-lime-400/30 transition-all mb-4";
+            "bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row gap-4 items-center hover:border-lime-400/30 transition-all mb-4";
 
           kartya.innerHTML = `
-            <div class="flex-1 space-y-1">
+            <div class="w-full sm:w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-black/20 border border-white/5">
+                <img src="${kepUrl}" alt="Ingatlan kép" class="w-full h-full object-cover">
+            </div>
+
+            <div class="flex-1 w-full text-center sm:text-left space-y-1">
                <span class="bg-lime-400/20 text-lime-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">
                     ${hirdetes.azon || id}
                </span>
 
-                <h4 class="font-bold text-white text-lg">
-                  ${hirdetes.nev || "Név nélkül"}
+                <h4 class="font-bold text-white text-base truncate">
+                  ${hirdetes.nev || "Név nélküli ingatlan"}
                 </h4>
                 
                 <p class="text-xs text-gray-400">
@@ -84,8 +94,8 @@ export async function hirdeteseimListazasa() {
                 </p>
             </div>
             
-            <div class="flex flex-col gap-2 min-w-[140px]">
-                <button onclick="window.location.href='?id=${id}&mode=view'" 
+            <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto justify-center">
+                <button onclick="window.location.href='../../vevo/adatlap.html?id=${id}'" 
                         class="bg-lime-400/10 text-lime-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-lime-400 hover:text-black transition-all border border-lime-400/20">
                     Megtekintés
                 </button>
@@ -105,11 +115,11 @@ export async function hirdeteseimListazasa() {
         });
       } catch (error) {
         console.error("Hiba:", error);
-        listaKontener.innerHTML = `<p class="text-red-400 p-4">Hiba: ${error.message}</p>`;
+        listaKontener.innerHTML = `<p class="text-red-400 p-4">Hiba történt: ${error.message}</p>`;
       }
     } else {
       listaKontener.innerHTML =
-        '<p class="text-yellow-400 p-4">Jelentkezz be!</p>';
+        '<p class="text-yellow-400 p-4">Jelentkezz be a hirdetéseid megtekintéséhez!</p>';
     }
   });
 }
