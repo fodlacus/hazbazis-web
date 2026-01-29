@@ -53,15 +53,18 @@ export async function hirdeteseimListazasa() {
           const hirdetes = documentum.data();
           const id = documentum.id;
 
-          // --- FOTÓ LOGIKA ---
-          // Megnézzük, van-e 'kepek' tömb, és van-e benne elem
-          const vanKep =
-            hirdetes.kepek &&
-            Array.isArray(hirdetes.kepek) &&
-            hirdetes.kepek.length > 0;
-          const kepUrl = vanKep
-            ? hirdetes.kepek[0]
-            : "https://placehold.co/150x150/3D4A16/E2F1B0?text=Nincs+kép";
+          // --- FOTÓ JAVÍTÁS (OKOS VERZIÓ) ---
+          let kepUrl =
+            "https://placehold.co/150x150/3D4A16/E2F1B0?text=Nincs+kép";
+
+          // Ugyanaz a sorrend, mint a térképnél
+          if (hirdetes.kepek_horiz && hirdetes.kepek_horiz.length > 0) {
+            kepUrl = hirdetes.kepek_horiz[0].url || hirdetes.kepek_horiz[0];
+          } else if (hirdetes.kepek_vert && hirdetes.kepek_vert.length > 0) {
+            kepUrl = hirdetes.kepek_vert[0].url || hirdetes.kepek_vert[0];
+          } else if (hirdetes.kepek && hirdetes.kepek.length > 0) {
+            kepUrl = hirdetes.kepek[0].url || hirdetes.kepek[0];
+          }
 
           const kartya = document.createElement("div");
 

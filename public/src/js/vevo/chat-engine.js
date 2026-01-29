@@ -477,13 +477,18 @@ function megjelenitTalalatokat() {
           ? ar.toLocaleString() + " Ft"
           : "Ár kérésre";
 
-        // --- FOTÓ JAVÍTÁS ---
-        // Itt javítottam: most már a 'kepek' tömböt nézi, nem a 'kepek_horiz'-t!
-        const vanKep =
-          ing.kepek && Array.isArray(ing.kepek) && ing.kepek.length > 0;
-        const kepUrl = vanKep
-          ? ing.kepek[0]
-          : "https://placehold.co/300x200/3D4A16/E2F1B0?text=Nincs+kép";
+        // --- FOTÓ JAVÍTÁS (OKOS VERZIÓ) ---
+        // Megnézzük minden lehetséges helyen, ahogy a térkép is teszi
+        let kepUrl =
+          "https://placehold.co/300x200/3D4A16/E2F1B0?text=Nincs+kép";
+
+        if (ing.kepek_horiz && ing.kepek_horiz.length > 0) {
+          kepUrl = ing.kepek_horiz[0].url || ing.kepek_horiz[0]; // Kezeli ha objektum, vagy ha string
+        } else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
+          kepUrl = ing.kepek_vert[0].url || ing.kepek_vert[0];
+        } else if (ing.kepek && ing.kepek.length > 0) {
+          kepUrl = ing.kepek[0].url || ing.kepek[0];
+        }
 
         return `
         <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4" onclick="window.location.href='adatlap.html?id=${
