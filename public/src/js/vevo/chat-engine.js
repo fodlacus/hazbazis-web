@@ -457,6 +457,8 @@ function hozzaadBuborekot(msg, tipus) {
   folyam.scrollTop = folyam.scrollHeight;
 }
 
+// src/js/vevo/chat-engine.js része
+
 function megjelenitTalalatokat() {
   const panel = document.getElementById("eredmenyek-panel");
   const szamlalo = document.getElementById("talalat-szam");
@@ -477,32 +479,38 @@ function megjelenitTalalatokat() {
           ? ar.toLocaleString() + " Ft"
           : "Ár kérésre";
 
-        // --- FOTÓ JAVÍTÁS (OKOS VERZIÓ) ---
-        // Megnézzük minden lehetséges helyen, ahogy a térkép is teszi
+        // Okos képkeresés
         let kepUrl =
           "https://placehold.co/300x200/3D4A16/E2F1B0?text=Nincs+kép";
-
         if (ing.kepek_horiz && ing.kepek_horiz.length > 0) {
-          kepUrl = ing.kepek_horiz[0].url || ing.kepek_horiz[0]; // Kezeli ha objektum, vagy ha string
+          kepUrl = ing.kepek_horiz[0].url || ing.kepek_horiz[0];
         } else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
           kepUrl = ing.kepek_vert[0].url || ing.kepek_vert[0];
         } else if (ing.kepek && ing.kepek.length > 0) {
           kepUrl = ing.kepek[0].url || ing.kepek[0];
         }
 
+        // AZONOSÍTÓ KEZELÉS: Ha nincs 'azon', egy rövidített ID-t mutatunk
+        const azonosito = ing.azon || `#${ing.id.substring(0, 5)}`;
+
         return `
-        <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4" onclick="window.location.href='adatlap.html?id=${
+        <div class="bg-white/5 border border-white/10 p-4 rounded-3xl flex gap-4 hover:bg-white/10 transition-all cursor-pointer group mb-4 items-start" onclick="window.location.href='adatlap.html?id=${
           ing.id
         }'">
             <div class="w-24 h-24 rounded-2xl bg-black/40 overflow-hidden flex-shrink-0 flex items-center justify-center border border-white/5">
                 <img src="${kepUrl}" class="w-full h-full object-cover">
             </div>
-            <div class="flex flex-col justify-center overflow-hidden">
+            
+            <div class="flex flex-col justify-center overflow-hidden space-y-1">
+                <span class="bg-lime-400/20 text-lime-400 text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold self-start">
+                    ${azonosito}
+                </span>
+                
                 <h3 class="font-bold text-sm group-hover:text-[#E2F1B0] transition-colors truncate">${
                   ing.nev || "Ingatlan"
                 }</h3>
-                <p class="text-[#E2F1B0] font-black mt-1">${formatalAr}</p>
-                <p class="text-[10px] opacity-40 uppercase mt-1">${
+                <p class="text-[#E2F1B0] font-black">${formatalAr}</p>
+                <p class="text-[10px] opacity-40 uppercase">${
                   ing.kerulet || "Bp"
                 } • ${ing.alapterület || "?"} m² • ${
           ing.erkély_terasz || 0

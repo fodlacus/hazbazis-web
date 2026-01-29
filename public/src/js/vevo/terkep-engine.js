@@ -191,7 +191,7 @@ function renderMapAndList(list) {
 }
 
 function addPrivacyMarkerToGroups(lat, lng, ing) {
-  // 1. KÖR -> circlesGroup (Nem csoportosítjuk)
+  // 1. KÖR -> circlesGroup
   const circle = L.circle([lat, lng], {
     color: "#E2F1B0",
     fillColor: "#E2F1B0",
@@ -201,21 +201,36 @@ function addPrivacyMarkerToGroups(lat, lng, ing) {
   });
   circlesGroup.addLayer(circle);
 
-  // 2. MARKER (Árcédula) -> markersGroup (Ezt csoportosítjuk!)
+  // 2. MARKER -> markersGroup
   const arMillio = Math.round(ing.vételár / 1000000);
-  const iconHtml = `<div class="bg-[#E2F1B0] text-[#3D4A16] font-bold text-xs px-2 py-1 rounded-lg shadow-lg border-2 border-[#3D4A16] whitespace-nowrap hover:scale-110 transition cursor-pointer hover:z-50">${arMillio} M Ft</div>`;
+  // Ha nincs HB szám, az ID elejét használjuk
+  const azonosito = ing.azon || ing.id.substring(0, 5);
+
+  // HTML: Egy "emeletes" gombostűt csinálunk.
+  // Felül: Fekete címke a HB számmal
+  // Alul: Zöld címke az árral
+  const iconHtml = `
+    <div class="flex flex-col items-center group">
+        <div class="bg-gray-900 text-white text-[9px] px-1.5 py-0.5 rounded-t border-x border-t border-white/30 -mb-1 z-0 shadow-sm font-mono tracking-wider">
+            ${azonosito}
+        </div>
+        
+        <div class="bg-[#E2F1B0] text-[#3D4A16] font-bold text-xs px-2 py-1 rounded-lg shadow-lg border-2 border-[#3D4A16] whitespace-nowrap z-10 relative group-hover:scale-110 transition-transform">
+            ${arMillio} M Ft
+        </div>
+    </div>
+  `;
 
   const customIcon = L.divIcon({
     html: iconHtml,
-    className: "", // Üres class, hogy a Tailwind érvényesüljön
-    iconSize: [60, 30],
-    iconAnchor: [30, 15],
+    className: "", // Üres class
+    iconSize: [60, 45], // Kicsit magasabb lett a befoglaló méret
+    iconAnchor: [30, 22],
   });
 
   const marker = L.marker([lat, lng], { icon: customIcon });
 
   marker.on("click", () => {
-    // Itt később megnyithatunk egy kis ablakot (Popup) vagy az adatlapot
     map.flyTo([lat, lng], 16, { duration: 1.5 });
   });
 
@@ -228,15 +243,10 @@ function addPrivacyMarkerToGroups(lat, lng, ing) {
 function createCard(ing, lat, lng) {
   const div = document.createElement("div");
 
-  // ITT A VÁLTOZÁS:
-  // bg-white/10 (áttetsző) helyett -> bg-gray-900/90 (sötét szürke, majdnem fekete)
-  // Így a fehér betűk tökéletesen olvashatók lesznek rajta.
   div.className =
     "bg-gray-900/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg hover:border-[#E2F1B0] hover:scale-[1.02] transition-all duration-200 cursor-pointer group mb-2";
 
-  // Kép kiválasztása (ez a logika marad a régi)
   let boritoKep = "https://via.placeholder.com/300x200?text=Nincs+kép";
-
   const getUrl = (item) => {
     if (!item) return null;
     return typeof item === "object" ? item.url : item;
@@ -250,7 +260,9 @@ function createCard(ing, lat, lng) {
     boritoKep = getUrl(ing.kepek[0]);
   }
 
-  // A belső HTML marad, mert a fehér/zöld szöveg a sötét háttéren (gray-900) jól mutat
+  // Azonosító
+  const azonosito = ing.azon || `#${ing.id.substring(0, 5)}`;
+
   div.innerHTML = `
       <div class="flex gap-3">
           <img src="${boritoKep}" class="w-24 h-20 object-cover rounded-lg border border-white/10 bg-black">
@@ -267,14 +279,15 @@ function createCard(ing, lat, lng) {
               </div>
               
               <div class="flex items-center gap-2 mt-2">
-                  <span class="text-gray-400 text-[11px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                  <span class="text-gray-300 text-[11px] bg-white/10 px-1.5 py-0.5 rounded border border-white/5">
                     ${ing.alapterület} m²
                   </span>
-                  <span class="text-gray-400 text-[11px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                  <span class="text-gray-300 text-[11px] bg-white/10 px-1.5 py-0.5 rounded border border-white/5">
                     ${ing["szobák"] || ing.szobak || "?"} szoba
                   </span>
-                  <span class="text-[9px] text-gray-500 font-mono ml-auto">
-                    ${ing.azon || ""}
+                  
+                  <span class="ml-auto text-lime-400 font-bold text-[10px] font-mono tracking-wider border border-lime-400/30 px-1 rounded">
+                    ${azonosito}
                   </span>
               </div>
           </div>
