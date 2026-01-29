@@ -48,8 +48,11 @@
                                           class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Főoldal</a>
                                     <a href="src/html/vevo/terkep.html"
                                           class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Térkép</a>
-                                    <a href="#kereses"
-                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium cursor-pointer">Keresés</a>
+
+                                    <a href="src/html/vevo/ai-filter.html"
+                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium">
+                                          Keresés
+                                    </a>
 
                                     <div id="desktop-vendeg-menu" class="flex items-center ml-4">
                                           <a href="src/html/auth/belepes.html"
@@ -94,10 +97,10 @@
                               class="block text-gray-300 hover:text-lime-400 text-lg font-medium border-b border-white/5 pb-2">Főoldal</a>
                         <a href="src/html/vevo/terkep.html"
                               class="block text-gray-300 hover:text-lime-400 text-lg font-medium border-b border-white/5 pb-2">Térkép</a>
+
                         <a href="src/html/vevo/ai-filter.html"
-                              class="text-white hover:text-lime-400 transition-colors text-sm font-medium">
-                              Keresés
-                        </a>
+                              class="block text-gray-300 hover:text-lime-400 text-lg font-medium border-b border-white/5 pb-2">Keresés</a>
+
                         <div id="mobil-vendeg-menu">
                               <a href="src/html/auth/belepes.html"
                                     class="block text-lime-400 font-bold text-lg pt-2">Belépés / Regisztráció</a>
@@ -172,32 +175,25 @@
             import { auth } from "./src/js/util/firebase-config.js";
             import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            // 1. KILÉPÉS
             window.kilepes = async function () {
                   try {
                         await signOut(auth);
-                        console.log("Sikeres kijelentkezés");
                         window.location.href = "index.html";
                   } catch (error) {
                         console.error("Hiba kilépéskor:", error);
                   }
             }
 
-            // 2. MENÜ VÁLTOGATÁS + E-MAIL KIÍRÁS
             onAuthStateChanged(auth, (user) => {
                   const desktopVendeg = document.getElementById('desktop-vendeg-menu');
                   const desktopUser = document.getElementById('desktop-user-menu');
                   const mobilVendeg = document.getElementById('mobil-vendeg-menu');
                   const mobilUser = document.getElementById('mobil-user-menu');
 
-                  // ÚJ: E-mail mezők
                   const desktopEmail = document.getElementById('desktop-user-email');
                   const mobilEmail = document.getElementById('mobil-user-email');
 
                   if (user) {
-                        // HA BE VAN LÉPVE
-
-                        // E-mail kiírása
                         if (desktopEmail) desktopEmail.innerText = user.email;
                         if (mobilEmail) mobilEmail.innerText = user.email;
 
@@ -206,7 +202,6 @@
                         if (desktopUser) desktopUser.classList.remove('hidden');
                         if (mobilUser) mobilUser.classList.remove('hidden');
                   } else {
-                        // HA NINCS BELÉPVE
                         if (desktopUser) desktopUser.classList.add('hidden');
                         if (mobilUser) mobilUser.classList.add('hidden');
                         if (desktopVendeg) desktopVendeg.classList.remove('hidden');
@@ -214,7 +209,6 @@
                   }
             });
 
-            // 3. MOBIL MENÜ KEZELÉS
             const gomb = document.getElementById('mobil-menu-gomb');
             const menu = document.getElementById('mobil-menu');
             if (gomb && menu) {

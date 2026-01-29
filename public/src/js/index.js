@@ -15,14 +15,13 @@ window.inditsKeresest = function () {
 
   const kulcsszo = mezo.value.trim();
 
-  // Átirányítás a kereső oldalra a keresési paraméterrel
-  // Ellenőrizd: Ha a kereső oldalad neve más, írd át itt is!
-  window.location.href = `src/html/vevo/kereses.html?kereses=${encodeURIComponent(
+  // JAVÍTVA: Most már az ai-filter.html-re visz!
+  window.location.href = `src/html/vevo/ai-filter.html?kereses=${encodeURIComponent(
     kulcsszo
   )}`;
 };
 
-// Enter gomb figyelése a keresőmezőben
+// Enter gomb figyelése
 document.addEventListener("DOMContentLoaded", () => {
   const mezo = document.getElementById("fooldali-ai-kereso");
   if (mezo) {
@@ -37,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
   kiemeltAjanlatokBetoltese();
 });
 
-// 2. KIEMELT AJÁNLATOK (A főoldal alján)
+// 2. KIEMELT AJÁNLATOK
 async function kiemeltAjanlatokBetoltese() {
   const kontener = document.getElementById("kiemelt-lista");
   if (!kontener) return;
@@ -45,8 +44,8 @@ async function kiemeltAjanlatokBetoltese() {
   try {
     const q = query(
       collection(adatbazis, "lakasok"),
-      orderBy("letrehozva", "desc"), // Legfrissebbek elöl
-      limit(4) // Csak 4 db
+      orderBy("letrehozva", "desc"),
+      limit(4)
     );
 
     const snapshot = await getDocs(q);
@@ -57,13 +56,12 @@ async function kiemeltAjanlatokBetoltese() {
       return;
     }
 
-    kontener.innerHTML = ""; // Loader törlése
+    kontener.innerHTML = "";
 
     snapshot.forEach((doc) => {
       const adat = doc.data();
 
-      // FOTÓ KEZELÉS: Ha nincs kép, placeholder-t teszünk be
-      // Fontos: Az adatbázisban a 'kepek' tömböt keressük!
+      // Ha nincs kép, placeholder-t használunk
       const boritokep =
         adat.kepek && adat.kepek.length > 0
           ? adat.kepek[0]
