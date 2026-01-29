@@ -4,7 +4,7 @@
 <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>teras.hu - Új hirdetés</title>
+      <title>Hirdetésfeladás - Hazbazis.hu</title>
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
             .hatter-zold {
@@ -24,22 +24,80 @@
       </style>
 </head>
 
-<body class="hatter-zold text-white font-sans p-6">
-      <div class="max-w-4xl mx-auto space-y-10">
+<body class="hatter-zold text-white font-sans">
 
+      <nav class="bg-black/40 backdrop-blur-md fixed w-full z-50 border-b border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div class="flex items-center justify-between h-20">
 
-            <div class="flex justify-between items-center mb-6">
-                  <h1 class="text-3xl font-bold text-[#E2F1B0]">Ingatlan rögzítése</h1>
-                  <a href="../../../index.html"
-                        class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2">
-                        <span>←</span> Vissza a főoldalra
-                  </a>
+                        <div class="flex-shrink-0">
+                              <a href="../../../index.html" class="text-2xl font-bold text-white">
+                                    Hazbazis<span class="text-lime-400">.hu</span>
+                              </a>
+                        </div>
+
+                        <div class="hidden md:block">
+                              <div class="ml-10 flex items-baseline space-x-6">
+                                    <a href="../../../index.html"
+                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Főoldal</a>
+                                    <a href="../vevo/terkep.html"
+                                          class="text-white hover:text-lime-400 transition-colors text-sm font-medium">Térkép</a>
+
+                                    <div class="flex items-center space-x-6 ml-4">
+                                          <button onclick="window.kilepes()"
+                                                class="text-white/50 hover:text-red-400 transition-colors text-xs font-medium uppercase tracking-wider">
+                                                Kilépés
+                                          </button>
+                                    </div>
+                              </div>
+                        </div>
+
+                        <div class="-mr-2 flex md:hidden">
+                              <button id="mobil-menu-gomb" type="button"
+                                    class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-lime-400 focus:outline-none">
+                                    <span class="sr-only">Menü</span>
+                                    <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                          viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                              </button>
+                        </div>
+                  </div>
             </div>
 
+            <div id="mobil-menu" class="hidden md:hidden bg-black/95 border-b border-white/10">
+                  <div class="px-4 pt-4 pb-6 space-y-4">
+                        <a href="../../../index.html"
+                              class="block text-gray-300 hover:text-lime-400 text-lg font-medium border-b border-white/5 pb-2">Főoldal</a>
+                        <a href="../vevo/terkep.html"
+                              class="block text-gray-300 hover:text-lime-400 text-lg font-medium border-b border-white/5 pb-2">Térkép</a>
+
+                        <button onclick="window.kilepes()"
+                              class="w-full text-left text-red-400 hover:text-red-300 block text-base font-medium pt-4">
+                              Kijelentkezés
+                        </button>
+                  </div>
+            </div>
+      </nav>
+
+      <div class="max-w-4xl mx-auto space-y-10 pt-28 px-6 pb-20">
+
+            <div class="flex justify-between items-center mb-6">
+                  <h1 id="fejlec-email" class="text-xl md:text-3xl font-bold text-[#E2F1B0] break-all">
+                        Betöltés...
+                  </h1>
+
+                  <a href="../../../index.html"
+                        class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-sm">
+                        <span>←</span> Vissza
+                  </a>
+            </div>
 
             <div class="bg-black/20 p-8 rounded-3xl border border-white/10 shadow-2xl">
                   <h2 id="urlap-cim" class="text-3xl font-bold mb-6 text-center">Ingatlan <span
                               style="color: #E2F1B0;">rögzítése</span></h2>
+
                   <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mb-6 relative">
                         <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2 block text-white">
                               Gyors kitöltés segítése (korábbi hirdetések alapján)
@@ -48,11 +106,12 @@
                         <div class="flex gap-2">
                               <input type="text" id="ai-azonosito"
                                     onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.gyorsKitoltesInditasa(this.value); }"
-                                    placeholder="Zugló, 2 szoba, 90 millió alatt..." class="bevitel flex-1">
+                                    placeholder="Zugló, 2 szoba, 90 millió alatt..."
+                                    class="bevitel flex-1 px-4 py-2 rounded-xl">
 
                               <button type="button"
                                     onclick="window.gyorsKitoltesInditasa(document.getElementById('ai-azonosito').value)"
-                                    class="bg-lime-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-lime-500 transition-colors">
+                                    class="bg-lime-400 text-black px-4 md:px-6 py-3 rounded-xl font-bold hover:bg-lime-500 transition-colors">
                                     Elemzés
                               </button>
 
@@ -74,8 +133,6 @@
                               Hirdetés véglegesítése
                         </button>
                   </form>
-
-
             </div>
 
             <div class="bg-black/10 p-8 rounded-3xl border border-white/5">
@@ -83,7 +140,7 @@
                         <span class="w-2 h-2 bg-lime-400 rounded-full animate-pulse"></span>
                         Eddigi hirdetéseim
                   </h3>
-                  <div id="sajat-lista" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div id="sajat-lista" class="grid grid-cols-1 gap-4">
                         <p class="text-xs opacity-40 italic">Hirdetések betöltése...</p>
                   </div>
             </div>
@@ -98,11 +155,58 @@
             import { hirdeteseimListazasa } from "../../js/elado/lista.js";
             import { adatokBetolteseSzerkeszteshez } from "../../js/elado/szerkesztes.js";
 
-            // Inicializálás
-            urlapGeneralas("dinamikus-urlap-kontener");
-            helyszinFigyelo();
-            hirdeteseimListazasa();
-            adatokBetolteseSzerkeszteshez();
+            // Auth importok az e-mail cím kiíráshoz és kilépéshez
+            import { auth } from "../../util/firebase-config.js";
+            import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+            // 1. KILÉPÉS FUNKCIÓ
+            window.kilepes = async function () {
+                  try {
+                        await signOut(auth);
+                        window.location.href = "../../../index.html";
+                  } catch (error) {
+                        console.error("Hiba kilépéskor:", error);
+                  }
+            }
+
+            // 2. AUTH FIGYELŐ (E-mail cím kiírása felülre)
+            onAuthStateChanged(auth, (user) => {
+                  const emailMezo = document.getElementById('fejlec-email');
+
+                  if (user) {
+                        // Ha be van lépve, kiírjuk az e-mailt
+                        if (emailMezo) emailMezo.innerText = user.email;
+
+                        // És betöltjük a listát
+                        hirdeteseimListazasa();
+                  } else {
+                        // Ha nincs belépve, visszaküldjük a belépéshez (Biztonság)
+                        console.warn("Nincs belépve, visszairányítás...");
+                        window.location.href = "../auth/belepes.html";
+                  }
+            });
+
+            // 3. INICIALIZÁLÁS
+            document.addEventListener('DOMContentLoaded', () => {
+                  urlapGeneralas("dinamikus-urlap-kontener");
+                  helyszinFigyelo();
+                  adatokBetolteseSzerkeszteshez();
+
+                  // Mobil menü logika
+                  const gomb = document.getElementById('mobil-menu-gomb');
+                  const menu = document.getElementById('mobil-menu');
+                  if (gomb && menu) {
+                        gomb.addEventListener('click', (e) => {
+                              e.stopPropagation();
+                              menu.classList.toggle('hidden');
+                        });
+                        document.addEventListener('click', (e) => {
+                              if (!menu.contains(e.target) && !gomb.contains(e.target)) {
+                                    menu.classList.add('hidden');
+                              }
+                        });
+                  }
+            });
       </script>
 
 </body>

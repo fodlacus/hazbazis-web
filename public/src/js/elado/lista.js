@@ -102,7 +102,7 @@ export async function hirdeteseimListazasa() {
             </div>
         `;
           listaKontener.appendChild(kartya);
-        });f
+        });
       } catch (error) {
         console.error("Hiba:", error);
         listaKontener.innerHTML = `<p class="text-red-400 p-4">Hiba: ${error.message}</p>`;
