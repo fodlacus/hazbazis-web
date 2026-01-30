@@ -30,6 +30,26 @@ window.addEventListener("DOMContentLoaded", async () => {
     const input = document.getElementById("chat-input");
     if (input) input.value = kezdőKérdés;
     inditsChatKeresest();
+  } else {
+    // HA NINCS ÚJ KÉRDÉS -> NÉZZÜK MEG, VAN-E KORÁBBI (Vissza gombbal jöttünk)
+    const elozmeny = sessionStorage.getItem("hazbazis_utolso_kereses");
+    if (elozmeny) {
+      console.log("🔄 Korábbi keresés visszaállítása...");
+      const mentettFeltetelek = JSON.parse(elozmeny);
+
+      // Visszatöltjük a feltételeket és lefuttatjuk a keresést
+      // Kis késleltetés, hogy az oldal biztosan betöltődjön
+      setTimeout(() => {
+        if (typeof window.alkalmazSzuroket === "function") {
+          window.alkalmazSzuroket(mentettFeltetelek);
+          // Opcionális: kiírhatjuk a chatbe, hogy "Visszatértél"
+          hozzaadBuborekot(
+            "Üdv újra! Visszatöltöttem az előző keresésedet.",
+            "ai"
+          );
+        }
+      }, 500);
+    }
   }
 
   // 2. MENTÉS MANAGER INDÍTÁSA
@@ -160,6 +180,10 @@ async function inditsChatKeresest() {
     // A feltételek egységesítése
     const standardFeltetelek = normalizaldAFelteteleket(aiValasz);
     window.aktualisSzuroFeltetelek = standardFeltetelek;
+    sessionStorage.setItem(
+      "hazbazis_utolso_kereses",
+      JSON.stringify(standardFeltetelek)
+    );
     console.log("✅ Standardizált szűrők:", standardFeltetelek);
 
     if (belsoFlat.length === 0) {
@@ -547,6 +571,10 @@ window.alkalmazSzuroket = async function (mentettSzurok) {
 
   // 1. Frissítjük a globális változót
   window.aktualisSzuroFeltetelek = mentettSzurok;
+  sessionStorage.setItem(
+    "hazbazis_utolso_kereses",
+    JSON.stringify(mentettSzurok)
+  );
 
   // 2. Chat ablak takarítása
   const folyam = document.getElementById("chat-folyam");
