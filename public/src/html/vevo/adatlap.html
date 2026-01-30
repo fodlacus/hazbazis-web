@@ -52,10 +52,11 @@
 
       <nav
             class="fixed w-full z-50 px-4 py-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
-            <button onclick="goBack()"
-                  class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/20 transition text-sm font-bold flex items-center gap-2">
+            <button onclick="window.history.back()"
+                  class="pointer-events-auto bg-black/40 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/20 transition text-sm font-bold flex items-center gap-2 border border-white/10">
                   <i class="fa-solid fa-arrow-left"></i> Vissza
             </button>
+
             <div class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono text-arany"
                   id="header-azon">
                   HB-???

@@ -6,6 +6,7 @@ import {
   orderBy,
   limit,
   getDocs,
+  where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 1. KERESÉS INDÍTÁSA (Globális függvény)
