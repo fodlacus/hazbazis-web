@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Ingatlan Adatlap - Hazbazis.hu</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+      <style>
+            .hatter-zold {
+                  background-color: #3D4A16;
+            }
+
+            .text-arany {
+                  color: #E2F1B0;
+            }
+
+            .bg-arany {
+                  background-color: #E2F1B0;
+                  color: #3D4A16;
+            }
+
+            /* Swiper egyedi stílusok */
+            .swiper {
+                  width: 100%;
+                  height: 100%;
+            }
+
+            .swiper-slide {
+                  background-position: center;
+                  background-size: cover;
+                  border-radius: 20px;
+            }
+
+            .swiper-pagination-bullet-active {
+                  background: #E2F1B0 !important;
+            }
+
+            /* 3D Kocka árnyék javítása sötét háttéren */
+            .swiper-cube-shadow {
+                  opacity: 0.1 !important;
+            }
+      </style>
+</head>
+
+<body class="hatter-zold text-white font-sans overflow-x-hidden">
+
+      <nav
+            class="fixed w-full z-50 px-4 py-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
+            <button onclick="history.back()"
+                  class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/20 transition text-sm font-bold flex items-center gap-2">
+                  <i class="fa-solid fa-arrow-left"></i> Vissza
+            </button>
+            <div class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono text-arany"
+                  id="header-azon">
+                  HB-???
+            </div>
+      </nav>
+
+      <div class="relative w-full h-[50vh] md:h-[70vh] flex items-center justify-center pt-20 pb-10 overflow-hidden">
+            <div class="swiper mySwiper w-full max-w-5xl h-full px-4">
+                  <div class="swiper-wrapper" id="galeria-container">
+                  </div>
+                  <div class="swiper-pagination"></div>
+                  <div class="swiper-button-next text-arany"></div>
+                  <div class="swiper-button-prev text-arany"></div>
+            </div>
+      </div>
+
+      <div class="max-w-6xl mx-auto px-4 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="lg:col-span-2 space-y-8">
+
+                  <div class="bg-black/20 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                              <div>
+                                    <h1 id="adat-cim" class="text-3xl md:text-4xl font-bold leading-tight">Betöltés...
+                                    </h1>
+                                    <p id="adat-cimke" class="text-white/60 mt-1 flex items-center gap-2">
+                                          <i class="fa-solid fa-location-dot"></i> <span id="adat-lokacio">...</span>
+                                    </p>
+                              </div>
+                              <div class="text-right">
+                                    <div id="adat-ar" class="text-3xl md:text-4xl font-bold text-arany font-mono">... Ft
+                                    </div>
+                                    <div id="adat-nm-ar" class="text-xs text-white/40">... Ft/m²</div>
+                              </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
+                              <div class="text-center p-3 bg-white/5 rounded-2xl">
+                                    <i class="fa-solid fa-ruler-combined text-arany mb-2 text-xl"></i>
+                                    <div class="text-xs text-white/50">Méret</div>
+                                    <div id="inf-meret" class="font-bold text-lg">...</div>
+                              </div>
+                              <div class="text-center p-3 bg-white/5 rounded-2xl">
+                                    <i class="fa-solid fa-door-open text-arany mb-2 text-xl"></i>
+                                    <div class="text-xs text-white/50">Szobák</div>
+                                    <div id="inf-szoba" class="font-bold text-lg">...</div>
+                              </div>
+                              <div class="text-center p-3 bg-white/5 rounded-2xl">
+                                    <i class="fa-regular fa-building text-arany mb-2 text-xl"></i>
+                                    <div class="text-xs text-white/50">Emelet</div>
+                                    <div id="inf-emelet" class="font-bold text-lg">...</div>
+                              </div>
+                              <div class="text-center p-3 bg-white/5 rounded-2xl">
+                                    <i class="fa-solid fa-layer-group text-arany mb-2 text-xl"></i>
+                                    <div class="text-xs text-white/50">Típus</div>
+                                    <div id="inf-tipus" class="font-bold text-lg">...</div>
+                              </div>
+                        </div>
+                  </div>
+
+                  <div class="bg-black/20 p-6 rounded-3xl border border-white/5">
+                        <h3 class="text-xl font-bold mb-4 text-arany">Az ingatlan leírása</h3>
+                        <div id="adat-leiras" class="text-gray-300 leading-relaxed space-y-4 text-justify">
+                        </div>
+                  </div>
+
+                  <div class="bg-black/20 p-6 rounded-3xl border border-white/5">
+                        <h3 class="text-xl font-bold mb-4 text-arany flex items-center gap-2">
+                              <i class="fa-solid fa-map-location-dot"></i> Környék és Közlekedés
+                        </h3>
+                        <div id="poi-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <p class="text-white/40 italic">Helyszíni adatok betöltése...</p>
+                        </div>
+                  </div>
+
+            </div>
+
+            <div class="space-y-6">
+
+                  <div class="bg-white/5 p-6 rounded-3xl border border-white/10 sticky top-4">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-white/50 mb-4">Interakciók</h3>
+
+                        <div class="space-y-3" id="vezerlo-gombok">
+                              <button id="btn-shorts"
+                                    class="w-full bg-red-600/20 hover:bg-red-600 border border-red-500/50 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group hidden">
+                                    <i class="fa-brands fa-youtube text-2xl group-hover:scale-110 transition"></i>
+                                    Shorts Videó lejátszása
+                              </button>
+
+                              <button
+                                    class="w-full bg-white/5 hover:bg-arany hover:text-black border border-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-3 transition-all">
+                                    <i class="fa-solid fa-person-walking"></i> Virtuális séta / Alaprajz
+                              </button>
+
+                              <button
+                                    class="w-full bg-white/5 hover:bg-green-500/20 hover:text-green-400 border border-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-3 transition-all">
+                                    <i class="fa-solid fa-sack-dollar"></i> Hitelkalkulátor
+                              </button>
+
+                              <div class="flex gap-2 pt-2">
+                                    <button
+                                          class="flex-1 bg-white/5 py-2 rounded-lg text-sm hover:bg-white/20 transition">
+                                          <i class="fa-regular fa-heart"></i> Mentés
+                                    </button>
+                                    <button
+                                          class="flex-1 bg-white/5 py-2 rounded-lg text-sm hover:text-yellow-400 transition">
+                                          <i class="fa-solid fa-star"></i> 5.0
+                                    </button>
+                              </div>
+                        </div>
+                  </div>
+
+                  <div class="bg-[#E2F1B0] text-[#3D4A16] p-6 rounded-3xl shadow-xl shadow-lime-900/20">
+                        <div class="flex items-center gap-4 mb-4">
+                              <div class="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center text-2xl">
+                                    👨‍💼
+                              </div>
+                              <div>
+                                    <div class="font-bold text-lg">Értékesítő neve</div>
+                                    <div class="text-sm opacity-80" id="hirdeto-email">...</div>
+                              </div>
+                        </div>
+                        <button
+                              class="w-full bg-[#3D4A16] text-[#E2F1B0] py-3 rounded-xl font-bold hover:bg-black transition shadow-lg mb-2">
+                              <i class="fa-solid fa-phone"></i> Hívás indítása
+                        </button>
+                        <button
+                              class="w-full bg-transparent border-2 border-[#3D4A16] text-[#3D4A16] py-3 rounded-xl font-bold hover:bg-[#3D4A16]/10 transition">
+                              <i class="fa-regular fa-envelope"></i> Üzenet küldése
+                        </button>
+                  </div>
+
+            </div>
+
+      </div>
+
+      <div class="border-t border-white/10 bg-black/20 py-16">
+            <div class="max-w-7xl mx-auto px-4">
+                  <h3 class="text-2xl font-bold mb-8 flex items-center gap-3">
+                        <i class="fa-solid fa-layer-group text-arany"></i> Hasonló ingatlanok
+                  </h3>
+                  <div id="ajanlo-kontener" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  </div>
+            </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+      <script type="module" src="../../js/vevo/adatlap.js"></script>
+
+</body>
+
+</html>
