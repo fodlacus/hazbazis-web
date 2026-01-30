@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Virtuális Séta - Hazbazis.hu</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css" />
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+      <style>
+            /* Egyedi stílus a térképpontokhoz */
+            .pin-active {
+                  background-color: #ef4444 !important;
+                  /* Piros */
+                  border-color: #fee2e2 !important;
+                  transform: scale(1.2);
+                  animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                  0% {
+                        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                  }
+
+                  70% {
+                        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+                  }
+
+                  100% {
+                        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                  }
+            }
+      </style>
+</head>
+
+<body class="bg-[#1a1a1a] h-screen w-screen overflow-hidden flex flex-col lg:flex-row font-sans text-white">
+
+      <div
+            class="absolute top-0 left-0 w-full z-50 p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none flex justify-between items-start">
+            <button onclick="window.history.back()"
+                  class="pointer-events-auto bg-black/50 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/20 transition text-sm font-bold flex items-center gap-2 border border-white/10">
+                  <i class="fa-solid fa-arrow-left"></i> Vissza az adatlapra
+            </button>
+
+            <div
+                  class="text-right pointer-events-auto bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                  <h1 id="ingatlan-nev" class="font-bold text-[#E2F1B0]">Betöltés...</h1>
+                  <p id="aktualis-szoba" class="text-xs text-white/60">Helyiség: ...</p>
+            </div>
+      </div>
+
+      <div id="panorama" class="w-full lg:w-3/4 h-[60%] lg:h-full relative bg-black z-0">
+      </div>
+
+      <div
+            class="w-full lg:w-1/4 h-[40%] lg:h-full bg-[#3D4A16] border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col shadow-2xl relative z-40">
+
+            <div class="p-4 bg-black/10 border-b border-white/5 flex justify-between items-center">
+                  <h3 class="font-bold text-[#E2F1B0] flex items-center gap-2">
+                        <i class="fa-regular fa-map"></i> Alaprajz
+                  </h3>
+                  <span class="text-[10px] uppercase tracking-widest opacity-50">Navigátor</span>
+            </div>
+
+            <div class="flex-1 p-4 overflow-auto flex items-center justify-center bg-[#333d12]">
+                  <div class="relative w-full max-w-md shadow-2xl rounded-xl overflow-hidden bg-white group">
+                        <img id="alaprajz-img" src="" class="w-full h-auto block select-none" alt="Alaprajz">
+
+                        <div id="alaprajz-pins" class="absolute inset-0 w-full h-full">
+                        </div>
+                  </div>
+            </div>
+
+            <div class="p-4 bg-black/20 text-center text-xs text-white/40">
+                  Kattints a pontokra a szobák váltásához!
+            </div>
+      </div>
+
+      <script type="module" src="../../js/vevo/virtual-tour-page.js"></script>
+
+</body>
+
+</html>

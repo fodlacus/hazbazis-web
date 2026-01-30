@@ -185,6 +185,27 @@ export function renderVezerloGombok(data) {
     btnShorts.classList.remove("hidden");
     btnShorts.onclick = () => window.open(data.video_url, "_blank");
   }
+
+  const btnVirtual = document.querySelector(
+    "button i.fa-person-walking"
+  ).parentElement;
+
+  if (btnVirtual) {
+    // Ha van feltöltve túra, aktiváljuk a gombot
+    if (data.virtual_tour) {
+      btnVirtual.onclick = () => {
+        // ÁTIRÁNYÍTÁS AZ ÚJ OLDALRA AZ ID-VAL
+        window.location.href = `virtual-tour.html?id=${data.id}`;
+      };
+      // Opcionális: Színezzük át, hogy látszódjon, aktív
+      btnVirtual.classList.add("bg-[#3D4A16]", "text-white", "border-lime-400");
+      btnVirtual.innerHTML = `<i class="fa-solid fa-street-view"></i> Virtuális séta indítása`;
+    } else {
+      // Ha nincs túra, letiltjuk vagy elrejtjük
+      btnVirtual.classList.add("opacity-50", "cursor-not-allowed");
+      btnVirtual.title = "Nincs elérhető virtuális séta";
+    }
+  }
 }
 
 // -------------------------------------------------------------
