@@ -123,6 +123,42 @@ export function renderAdatok(data) {
   setText("inf-emelet", data.emelet || "Fsz.");
   setText("inf-tipus", data.tipus || "Lakás");
 
+  // --- ÚJ RÉSZ: MŰSZAKI ADATOK LISTÁZÁSA ---
+  const muszakiContainer = document.getElementById("muszaki-adatok-kontener");
+  muszakiContainer.innerHTML = "";
+
+  // Ezeket a mezőket keressük az adatbázisban
+  const mezok = [
+    { cimke: "Fűtés", kulcs: "fűtés" }, // vagy "futes" ékezet nélkül
+    { cimke: "Parkolás", kulcs: "parkolas" },
+    { cimke: "Kilátás", kulcs: "kilatas" },
+    { cimke: "Rezsi (átlag)", kulcs: "rezsi" },
+    { cimke: "Energetika", kulcs: "energetika" },
+    { cimke: "Tájolás", kulcs: "tajolas" },
+    { cimke: "Építés éve", kulcs: "epites_eve" },
+    { cimke: "Erkély mérete", kulcs: "erkely_terasz", utotag: " m²" },
+  ];
+
+  mezok.forEach((mezo) => {
+    // Kezeljük az ékezetes és ékezet nélküli kulcsokat is
+    let ertek =
+      data[mezo.kulcs] ||
+      data[mezo.kulcs.replace("ő", "o").replace("ű", "u")] ||
+      "-";
+
+    // Ha van utótag (pl. m2) és van érték, tegyük hozzá
+    if (ertek !== "-" && mezo.utotag) ertek += mezo.utotag;
+
+    const sor = document.createElement("div");
+    sor.className = "flex justify-between border-b border-white/5 py-2";
+    sor.innerHTML = `
+        <span class="text-white/50 text-sm">${mezo.cimke}</span>
+        <span class="font-medium text-arany text-sm text-right">${ertek}</span>
+    `;
+    muszakiContainer.appendChild(sor);
+  });
+  // ----------------------------------------
+
   // Leírás (sortörések cseréje <br>-re)
   const leiras = data.leiras || "Ehhez az ingatlanhoz nem adtak meg leírást.";
   document.getElementById("adat-leiras").innerHTML = leiras.replace(
@@ -235,23 +271,29 @@ export async function renderAjanlo(aktualisData) {
       if (d.kepek && d.kepek.length > 0)
         img = typeof d.kepek[0] === "object" ? d.kepek[0].url : d.kepek[0];
 
+      const azon = d.azon || `#${doc.id.substring(0, 5)}`;
       const card = document.createElement("div");
       card.className =
         "bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-arany transition group cursor-pointer";
       card.onclick = () => (window.location.href = `adatlap.html?id=${doc.id}`); // Újratöltés az új ID-val
 
       card.innerHTML = `
-                <div class="h-40 overflow-hidden relative">
-                    <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                    <div class="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded text-xs text-arany font-bold">
-                        ${Number(d.vételár).toLocaleString()} Ft
-                    </div>
-                </div>
-                <div class="p-4">
-                    <h4 class="font-bold truncate">${d.nev}</h4>
-                    <p class="text-xs text-white/50">${d.telepules}</p>
-                </div>
-            `;
+      <div class="h-40 overflow-hidden relative">
+          <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+          
+          <div class="absolute top-2 left-2 bg-black/80 px-2 py-1 rounded text-[10px] text-white font-mono border border-white/20">
+              ${azon}
+          </div>
+
+          <div class="absolute bottom-2 right-2 bg-[#E2F1B0] px-2 py-1 rounded text-xs text-[#3D4A16] font-bold shadow-lg">
+              ${Number(d.vételár).toLocaleString()} Ft
+          </div>
+      </div>
+      <div class="p-4">
+          <h4 class="font-bold truncate text-sm">${d.nev}</h4>
+          <p class="text-xs text-white/50 mt-1">${d.telepules}</p>
+      </div>
+      `;
       container.appendChild(card);
     });
   } catch (e) {

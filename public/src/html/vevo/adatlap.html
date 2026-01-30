@@ -52,7 +52,7 @@
 
       <nav
             class="fixed w-full z-50 px-4 py-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
-            <button onclick="history.back()"
+            <button onclick="goBack()"
                   class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/20 transition text-sm font-bold flex items-center gap-2">
                   <i class="fa-solid fa-arrow-left"></i> Vissza
             </button>
@@ -72,9 +72,9 @@
             </div>
       </div>
 
-      <div class="max-w-6xl mx-auto px-4 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="max-w-6xl mx-auto px-4 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
-            <div class="lg:col-span-2 space-y-8">
+            <div class="lg:col-span-2 space-y-6">
 
                   <div class="bg-black/20 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -117,53 +117,51 @@
                   </div>
 
                   <div class="bg-black/20 p-6 rounded-3xl border border-white/5">
-                        <h3 class="text-xl font-bold mb-4 text-arany">Az ingatlan leírása</h3>
-                        <div id="adat-leiras" class="text-gray-300 leading-relaxed space-y-4 text-justify">
+                        <h3 class="text-xl font-bold mb-6 text-arany flex items-center gap-2">
+                              <i class="fa-solid fa-screwdriver-wrench"></i> Részletes adatok
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4" id="muszaki-adatok-kontener">
                         </div>
+                  </div>
+
+                  <div class="bg-black/20 p-6 rounded-3xl border border-white/5">
+                        <h3 class="text-xl font-bold mb-4 text-arany">Az ingatlan leírása</h3>
+                        <div id="adat-leiras" class="text-gray-300 leading-relaxed space-y-4 text-justify"></div>
                   </div>
 
                   <div class="bg-black/20 p-6 rounded-3xl border border-white/5">
                         <h3 class="text-xl font-bold mb-4 text-arany flex items-center gap-2">
                               <i class="fa-solid fa-map-location-dot"></i> Környék és Közlekedés
                         </h3>
-                        <div id="poi-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <p class="text-white/40 italic">Helyszíni adatok betöltése...</p>
-                        </div>
+                        <div id="poi-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                   </div>
 
             </div>
 
             <div class="space-y-6">
-
                   <div class="bg-white/5 p-6 rounded-3xl border border-white/10 sticky top-4">
                         <h3 class="text-sm font-bold uppercase tracking-widest text-white/50 mb-4">Interakciók</h3>
-
                         <div class="space-y-3" id="vezerlo-gombok">
                               <button id="btn-shorts"
                                     class="w-full bg-red-600/20 hover:bg-red-600 border border-red-500/50 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group hidden">
                                     <i class="fa-brands fa-youtube text-2xl group-hover:scale-110 transition"></i>
-                                    Shorts Videó lejátszása
+                                    Shorts Videó
                               </button>
-
                               <button
                                     class="w-full bg-white/5 hover:bg-arany hover:text-black border border-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-3 transition-all">
-                                    <i class="fa-solid fa-person-walking"></i> Virtuális séta / Alaprajz
+                                    <i class="fa-solid fa-person-walking"></i> Virtuális séta
                               </button>
-
                               <button
                                     class="w-full bg-white/5 hover:bg-green-500/20 hover:text-green-400 border border-white/10 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-3 transition-all">
                                     <i class="fa-solid fa-sack-dollar"></i> Hitelkalkulátor
                               </button>
-
                               <div class="flex gap-2 pt-2">
                                     <button
-                                          class="flex-1 bg-white/5 py-2 rounded-lg text-sm hover:bg-white/20 transition">
-                                          <i class="fa-regular fa-heart"></i> Mentés
-                                    </button>
+                                          class="flex-1 bg-white/5 py-2 rounded-lg text-sm hover:bg-white/20 transition"><i
+                                                class="fa-regular fa-heart"></i> Mentés</button>
                                     <button
-                                          class="flex-1 bg-white/5 py-2 rounded-lg text-sm hover:text-yellow-400 transition">
-                                          <i class="fa-solid fa-star"></i> 5.0
-                                    </button>
+                                          class="flex-1 bg-white/5 py-2 rounded-lg text-sm hover:text-yellow-400 transition"><i
+                                                class="fa-solid fa-star"></i> 5.0</button>
                               </div>
                         </div>
                   </div>
@@ -171,26 +169,22 @@
                   <div class="bg-[#E2F1B0] text-[#3D4A16] p-6 rounded-3xl shadow-xl shadow-lime-900/20">
                         <div class="flex items-center gap-4 mb-4">
                               <div class="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center text-2xl">
-                                    👨‍💼
-                              </div>
+                                    👨‍💼</div>
                               <div>
-                                    <div class="font-bold text-lg">Értékesítő neve</div>
+                                    <div class="font-bold text-lg">Értékesítő</div>
                                     <div class="text-sm opacity-80" id="hirdeto-email">...</div>
                               </div>
                         </div>
                         <button
-                              class="w-full bg-[#3D4A16] text-[#E2F1B0] py-3 rounded-xl font-bold hover:bg-black transition shadow-lg mb-2">
-                              <i class="fa-solid fa-phone"></i> Hívás indítása
-                        </button>
+                              class="w-full bg-[#3D4A16] text-[#E2F1B0] py-3 rounded-xl font-bold hover:bg-black transition shadow-lg mb-2"><i
+                                    class="fa-solid fa-phone"></i> Hívás</button>
                         <button
-                              class="w-full bg-transparent border-2 border-[#3D4A16] text-[#3D4A16] py-3 rounded-xl font-bold hover:bg-[#3D4A16]/10 transition">
-                              <i class="fa-regular fa-envelope"></i> Üzenet küldése
-                        </button>
+                              class="w-full bg-transparent border-2 border-[#3D4A16] text-[#3D4A16] py-3 rounded-xl font-bold hover:bg-[#3D4A16]/10 transition"><i
+                                    class="fa-regular fa-envelope"></i> Üzenet</button>
                   </div>
-
             </div>
-
       </div>
+
 
       <div class="border-t border-white/10 bg-black/20 py-16">
             <div class="max-w-7xl mx-auto px-4">
@@ -201,7 +195,15 @@
                   </div>
             </div>
       </div>
-
+      <script>
+            function goBack() {
+                  if (document.referrer.includes('hazbazis.hu')) {
+                        history.back();
+                  } else {
+                        window.location.href = '../../../index.html';
+                  }
+            }
+      </script>
       <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
       <script type="module" src="../../js/vevo/adatlap.js"></script>
 
