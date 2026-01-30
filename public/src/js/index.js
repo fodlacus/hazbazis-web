@@ -1,4 +1,5 @@
 // src/js/index.js
+
 import { adatbazis } from "./util/firebase-config.js";
 import {
   collection,
@@ -6,23 +7,25 @@ import {
   orderBy,
   limit,
   getDocs,
-  where,
+  where, // Ez kellett, és most már itt van!
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. KERESÉS INDÍTÁSA (Globális függvény)
+// ==============================================
+// 1. ÁLTALÁNOS AI KERESÉS (Nagy mező)
+// ==============================================
 window.inditsKeresest = function () {
   const mezo = document.getElementById("fooldali-ai-kereso");
   if (!mezo) return;
 
   const kulcsszo = mezo.value.trim();
 
-  // JAVÍTVA: Most már az ai-filter.html-re visz!
+  // Átirányítás az AI szűrő oldalra
   window.location.href = `src/html/vevo/ai-filter.html?kereses=${encodeURIComponent(
     kulcsszo
   )}`;
 };
 
-// Enter gomb figyelése
+// Enter figyelése a nagy mezőn
 document.addEventListener("DOMContentLoaded", () => {
   const mezo = document.getElementById("fooldali-ai-kereso");
   if (mezo) {
@@ -33,46 +36,57 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Kiemelt ajánlatok betöltése
+  // Kiemelt ajánlatok betöltése indításkor
   kiemeltAjanlatokBetoltese();
 });
 
-// HB KÓD ALAPJÚ KERESÉS
+// ==============================================
+// 2. HB KÓD KERESÉS (Kis mező a menüben/hero-ban)
+// ==============================================
 window.inditsHBKeresest = async function () {
   const input = document.getElementById("hb-kereso-input");
+  if (!input) return;
+
   let kod = input.value.trim();
-  if (!kod) return;
+  if (!kod) {
+    alert("Kérlek adj meg egy azonosítót!");
+    return;
+  }
 
-  // Ha a user nem írta be, hogy "HB-", de csak számot írt, akkor kezeljük rugalmasan
-  // De mivel az adatbázisban "HB-123456" formátumban lehet, vagy csak simán "123456"?
-  // Feltételezem, hogy a teljes kódot tároljuk az 'azon' mezőben (pl. "HB-407050").
-
-  // Ha a user csak számot írt, tegyük elé a HB-t
-  if (!kod.toLowerCase().startsWith("hb-")) {
+  // Ha a felhasználó csak a számot írta be (pl. "407050"), tegyük elé a "HB-"-t
+  // A toUpperCase() segít, ha valaki kisbetűvel írja (pl. "hb-123")
+  if (!kod.toUpperCase().startsWith("HB-")) {
     kod = "HB-" + kod;
   }
 
-  // Átirányítás az adatlapra (de előbb lekérhetnénk az ID-t, vagy az adatlap keresse meg?)
-  // A legegyszerűbb, ha az adatlapot felokosítjuk, hogy kezelje a ?azon=HB-123 paramétert is!
-  // DE, mivel az adatlap most ID-t vár, csináljunk itt egy gyors lekérdezést:
+  console.log("🔍 HB Keresés indítása erre:", kod);
 
   try {
-    const q = query(collection(adatbazis, "lakasok"), where("azon", "==", kod));
+    const lakasokRef = collection(adatbazis, "lakasok");
+    // Itt használjuk a 'where'-t, amit importáltunk
+    const q = query(lakasokRef, where("azon", "==", kod));
+
     const snap = await getDocs(q);
 
     if (!snap.empty) {
-      // Megvan! Irány az adatlap a dokumentum ID-val
+      // Megvan az ingatlan! Lekérjük az ID-ját (pl. LAKAS-1234...)
       const docId = snap.docs[0].id;
+      console.log("✅ Találat! Átirányítás az adatlapra:", docId);
+
+      // Átirányítás az adatlapra
       window.location.href = `src/html/vevo/adatlap.html?id=${docId}`;
     } else {
-      alert("Nem található ingatlan ezzel az azonosítóval: " + kod);
+      alert(`Nem található ingatlan ezzel az azonosítóval: ${kod}`);
     }
-  } catch (e) {
-    console.error("Hiba a keresésben:", e);
+  } catch (error) {
+    console.error("Hiba a HB keresésben:", error);
+    alert("Hiba történt a keresés során. Lásd a konzolt.");
   }
 };
 
-// 2. KIEMELT AJÁNLATOK
+// ==============================================
+// 3. KIEMELT AJÁNLATOK BETÖLTÉSE
+// ==============================================
 async function kiemeltAjanlatokBetoltese() {
   const kontener = document.getElementById("kiemelt-lista");
   if (!kontener) return;
@@ -97,15 +111,26 @@ async function kiemeltAjanlatokBetoltese() {
     snapshot.forEach((doc) => {
       const adat = doc.data();
 
-      // Ha nincs kép, placeholder-t használunk
-      const boritokep =
-        adat.kepek && adat.kepek.length > 0
-          ? adat.kepek[0]
-          : "https://placehold.co/600x400/3D4A16/E2F1B0?text=Nincs+kép";
+      // Kép kezelés (okos keresés)
+      let boritokep =
+        "https://placehold.co/600x400/3D4A16/E2F1B0?text=Nincs+kép";
+
+      const getUrl = (item) => (typeof item === "object" ? item.url : item);
+
+      if (adat.kepek_horiz && adat.kepek_horiz.length > 0) {
+        boritokep = getUrl(adat.kepek_horiz[0]);
+      } else if (adat.kepek && adat.kepek.length > 0) {
+        boritokep = getUrl(adat.kepek[0]);
+      }
 
       const kartya = document.createElement("div");
       kartya.className =
-        "bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-lime-400/50 transition-all group";
+        "bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-lime-400/50 transition-all group cursor-pointer";
+
+      // Kattintásra vigyen az adatlapra
+      kartya.onclick = () => {
+        window.location.href = `src/html/vevo/adatlap.html?id=${doc.id}`;
+      };
 
       kartya.innerHTML = `
                 <div class="h-48 overflow-hidden relative">
@@ -114,8 +139,8 @@ async function kiemeltAjanlatokBetoltese() {
       }" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     <div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-xs font-bold text-lime-400">
                         ${
-                          adat.ar
-                            ? Number(adat.ar).toLocaleString() + " Ft"
+                          adat.vételár
+                            ? Number(adat.vételár).toLocaleString() + " Ft"
                             : "Ár nélkül"
                         }
                     </div>
@@ -127,11 +152,9 @@ async function kiemeltAjanlatokBetoltese() {
                     <p class="text-xs text-gray-400 mb-3">${
                       adat.telepules || ""
                     } ${adat.varosresz ? "- " + adat.varosresz : ""}</p>
-                    <a href="src/html/vevo/adatlap.html?id=${
-                      doc.id
-                    }" class="block w-full text-center bg-white/10 hover:bg-lime-400 hover:text-black py-2 rounded-xl text-sm font-bold transition-all">
+                    <div class="block w-full text-center bg-white/10 hover:bg-lime-400 hover:text-black py-2 rounded-xl text-sm font-bold transition-all">
                         Megtekintés
-                    </a>
+                    </div>
                 </div>
             `;
       kontener.appendChild(kartya);
