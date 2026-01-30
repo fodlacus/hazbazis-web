@@ -186,24 +186,49 @@ export function renderVezerloGombok(data) {
     btnShorts.onclick = () => window.open(data.video_url, "_blank");
   }
 
-  const btnVirtual = document.querySelector(
-    "button i.fa-person-walking"
-  ).parentElement;
+  const btnVirtual = document.getElementById("btn-virtual-tour");
 
   if (btnVirtual) {
-    // Ha van feltöltve túra, aktiváljuk a gombot
-    if (data.virtual_tour) {
+    // Ellenőrizzük, hogy létezik-e az adat
+    if (data.virtual_tour && data.virtual_tour.alaprajz_url) {
+      // Ha VAN adat -> Aktiválás
       btnVirtual.onclick = () => {
-        // ÁTIRÁNYÍTÁS AZ ÚJ OLDALRA AZ ID-VAL
         window.location.href = `virtual-tour.html?id=${data.id}`;
       };
-      // Opcionális: Színezzük át, hogy látszódjon, aktív
-      btnVirtual.classList.add("bg-[#3D4A16]", "text-white", "border-lime-400");
+
+      // Stílus: Aktív (zöld)
+      btnVirtual.classList.remove(
+        "opacity-50",
+        "cursor-not-allowed",
+        "bg-white/5"
+      );
+      btnVirtual.classList.add(
+        "bg-[#3D4A16]",
+        "text-white",
+        "border-lime-400",
+        "hover:bg-[#4d5e1c]",
+        "cursor-pointer"
+      );
       btnVirtual.innerHTML = `<i class="fa-solid fa-street-view"></i> Virtuális séta indítása`;
+      btnVirtual.title = ""; // Tooltip törlése
     } else {
-      // Ha nincs túra, letiltjuk vagy elrejtjük
-      btnVirtual.classList.add("opacity-50", "cursor-not-allowed");
-      btnVirtual.title = "Nincs elérhető virtuális séta";
+      // Ha NINCS adat -> Letiltás
+      btnVirtual.onclick = null; // Ne csináljon semmit
+
+      // Stílus: Inaktív (szürke/áttetsző)
+      btnVirtual.classList.remove(
+        "bg-[#3D4A16]",
+        "text-white",
+        "border-lime-400",
+        "hover:bg-[#4d5e1c]",
+        "cursor-pointer"
+      );
+      btnVirtual.classList.add(
+        "bg-white/5",
+        "opacity-50",
+        "cursor-not-allowed"
+      );
+      btnVirtual.title = "Nincs elérhető virtuális séta"; // Tooltip
     }
   }
 }
