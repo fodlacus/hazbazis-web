@@ -189,8 +189,11 @@ export function renderVezerloGombok(data) {
   const btnVirtual = document.getElementById("btn-virtual-tour");
 
   if (btnVirtual) {
-    // Ellenőrizzük, hogy létezik-e az adat
-    if (data.virtual_tour && data.virtual_tour.alaprajz_url) {
+    // JAVÍTOTT SOR: Támogatjuk a régi és az új (többszintes) struktúrát is
+    if (
+      data.virtual_tour &&
+      (data.virtual_tour.alaprajz_url || data.virtual_tour.tobb_szintes)
+    ) {
       // Ha VAN adat -> Aktiválás
       btnVirtual.onclick = () => {
         window.location.href = `virtual-tour.html?id=${data.id}`;
@@ -210,10 +213,10 @@ export function renderVezerloGombok(data) {
         "cursor-pointer"
       );
       btnVirtual.innerHTML = `<i class="fa-solid fa-street-view"></i> Virtuális séta indítása`;
-      btnVirtual.title = ""; // Tooltip törlése
+      btnVirtual.title = "";
     } else {
       // Ha NINCS adat -> Letiltás
-      btnVirtual.onclick = null; // Ne csináljon semmit
+      btnVirtual.onclick = null;
 
       // Stílus: Inaktív (szürke/áttetsző)
       btnVirtual.classList.remove(
@@ -228,7 +231,7 @@ export function renderVezerloGombok(data) {
         "opacity-50",
         "cursor-not-allowed"
       );
-      btnVirtual.title = "Nincs elérhető virtuális séta"; // Tooltip
+      btnVirtual.title = "Nincs elérhető virtuális séta";
     }
   }
 }

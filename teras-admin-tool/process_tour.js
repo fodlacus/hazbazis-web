@@ -8,8 +8,8 @@ const path = require("path");
 const INGATLAN_ID = "HB-316129";
 
 // Útvonalak
-const SOURCE_ROOT = path.join(__dirname, "../letoltott_drive_anyag");
-const DEST_ROOT = path.join(__dirname, "../feltoltesre");
+const SOURCE_ROOT = path.join(__dirname, "letoltott_drive_anyag");
+const DEST_ROOT = path.join(__dirname, "feltoltesre");
 const MEDIA_BASE_URL = `https://media.hazbazis.hu/${INGATLAN_ID}/virtual_tour`;
 
 // --- FIREBASE INIT ---
