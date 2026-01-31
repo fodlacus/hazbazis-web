@@ -60,23 +60,36 @@
       <div
             class="w-full lg:w-1/4 h-[40%] lg:h-full bg-[#3D4A16] border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col shadow-2xl relative z-40">
 
-            <div class="p-4 bg-black/10 border-b border-white/5 flex justify-between items-center">
-                  <h3 class="font-bold text-[#E2F1B0] flex items-center gap-2">
-                        <i class="fa-regular fa-map"></i> Alaprajz
-                  </h3>
-                  <span class="text-[10px] uppercase tracking-widest opacity-50">Navigátor</span>
+
+
+            <div class="p-3 bg-black/10 border-b border-white/5 flex flex-col gap-2">
+                  <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-[#E2F1B0] flex items-center gap-2 text-sm">
+                              <i class="fa-regular fa-map"></i> Alaprajz
+                        </h3>
+                  </div>
+
+                  <div id="szint-valaszto" class="flex gap-2 overflow-x-auto pb-1">
+                  </div>
             </div>
 
-            <div class="flex-1 p-4 overflow-auto flex items-center justify-center bg-[#333d12]">
-                  <div class="relative w-full max-w-md shadow-2xl rounded-xl overflow-hidden bg-white group">
-                        <img id="alaprajz-img" src="" class="w-full h-auto block select-none" alt="Alaprajz">
+
+            <div class="flex-1 p-4 overflow-hidden flex items-center justify-center bg-[#333d12] relative">
+
+                  <div class="relative inline-block shadow-2xl rounded-xl overflow-hidden bg-white max-w-full max-h-full"
+                        style="line-height: 0;">
+
+                        <img id="alaprajz-img" src=""
+                              class="max-w-full max-h-[30vh] lg:max-h-[40vh] w-auto h-auto block select-none object-contain"
+                              alt="Alaprajz">
 
                         <div id="alaprajz-pins" class="absolute inset-0 w-full h-full">
                         </div>
                   </div>
+
             </div>
 
-            <div class="p-4 bg-black/20 text-center text-xs text-white/40">
+            <div class="p-2 bg-black/20 text-center text-[10px] text-white/40">
                   Kattints a pontokra a szobák váltásához!
             </div>
       </div>

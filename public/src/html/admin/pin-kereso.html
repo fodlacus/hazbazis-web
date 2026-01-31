@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <title>Házbázis - Pin Koordináta Kereső</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <style>
+            body {
+                  background-color: #1a1a1a;
+                  color: white;
+                  font-family: sans-serif;
+            }
+
+            #image-container {
+                  position: relative;
+                  display: inline-block;
+                  cursor: crosshair;
+                  /* Célkereszt kurzor */
+                  border: 2px dashed #444;
+            }
+
+            #preview {
+                  max-width: 100%;
+                  height: auto;
+                  display: block;
+            }
+
+            .marker {
+                  position: absolute;
+                  width: 20px;
+                  height: 20px;
+                  background: rgba(239, 68, 68, 0.8);
+                  border: 2px solid white;
+                  border-radius: 50%;
+                  transform: translate(-50%, -50%);
+                  pointer-events: none;
+            }
+      </style>
+</head>
+
+<body class="p-10 flex flex-col items-center">
+
+      <h1 class="text-3xl font-bold text-[#E2F1B0] mb-6">📍 Pin Koordináta Kereső</h1>
+
+      <div class="bg-white/10 p-6 rounded-xl border border-white/10 mb-8 text-center w-full max-w-2xl">
+            <label class="block mb-2 text-sm text-gray-400">1. Lépés: Húzd ide a MagicPlan alaprajzot (PNG/JPG)</label>
+            <input type="file" id="fileInput" accept="image/*" class="block w-full text-sm text-slate-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-full file:border-0
+          file:text-sm file:font-semibold
+          file:bg-[#3D4A16] file:text-[#E2F1B0]
+          hover:file:bg-[#4d5e1c] cursor-pointer" />
+      </div>
+
+      <div class="flex flex-col lg:flex-row gap-8 w-full max-w-7xl items-start">
+
+            <div class="flex-1 bg-black/20 p-4 rounded-xl border border-white/10 text-center">
+                  <h3 class="text-sm text-gray-400 mb-2">2. Lépés: Kattints a szobákra!</h3>
+                  <div id="image-container">
+                        <p class="p-10 text-gray-600 italic" id="placeholder-text">Nincs kép betöltve...</p>
+                        <img id="preview" src="" class="hidden">
+                        <div id="marker-layer"></div>
+                  </div>
+            </div>
+
+            <div class="w-full lg:w-96 bg-[#3D4A16] p-6 rounded-xl border border-white/10 sticky top-10">
+                  <h3 class="font-bold text-[#E2F1B0] mb-4">Eredmény (Másold a JSON-be!)</h3>
+
+                  <div class="space-y-4">
+                        <div>
+                              <label class="text-xs text-white/50">X koordináta (%)</label>
+                              <input type="text" id="out-x"
+                                    class="w-full bg-black/20 border border-white/10 rounded p-2 text-white font-mono text-xl"
+                                    readonly value="-">
+                        </div>
+                        <div>
+                              <label class="text-xs text-white/50">Y koordináta (%)</label>
+                              <input type="text" id="out-y"
+                                    class="w-full bg-black/20 border border-white/10 rounded p-2 text-white font-mono text-xl"
+                                    readonly value="-">
+                        </div>
+                  </div>
+
+                  <div
+                        class="mt-6 p-4 bg-black/20 rounded border border-white/5 font-mono text-xs text-green-400 break-all">
+                        <span class="text-gray-500">// config sor:</span><br>
+                        "x": <span id="json-x">0</span>,<br>
+                        "y": <span id="json-y">0</span>
+                  </div>
+
+                  <button onclick="copyToClipboard()"
+                        class="w-full mt-4 bg-[#E2F1B0] text-[#3D4A16] font-bold py-2 rounded hover:bg-white transition">
+                        <i class="fa-regular fa-copy"></i> Másolás
+                  </button>
+            </div>
+      </div>
+
+      <script>
+            const fileInput = document.getElementById('fileInput');
+            const preview = document.getElementById('preview');
+            const container = document.getElementById('image-container');
+            const placeholder = document.getElementById('placeholder-text');
+            const markerLayer = document.getElementById('marker-layer');
+
+            // Kép betöltése
+            fileInput.addEventListener('change', function (e) {
+                  const file = e.target.files[0];
+                  if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                              preview.src = event.target.result;
+                              preview.classList.remove('hidden');
+                              placeholder.classList.add('hidden');
+                              markerLayer.innerHTML = ''; // Előző pöttyök törlése
+                        }
+                        reader.readAsDataURL(file);
+                  }
+            });
+
+            // Kattintás figyelése
+            container.addEventListener('click', function (e) {
+                  if (preview.classList.contains('hidden')) return;
+
+                  // Koordináták számítása
+                  const rect = preview.getBoundingClientRect();
+
+                  // Fontos: Az e.clientX a képernyőhöz viszonyít, nekünk a képhez kell
+                  const x = ((e.clientX - rect.left) / rect.width) * 100;
+                  const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+                  const xFixed = x.toFixed(1);
+                  const yFixed = y.toFixed(1);
+
+                  // Kiírás
+                  document.getElementById('out-x').value = xFixed;
+                  document.getElementById('out-y').value = yFixed;
+                  document.getElementById('json-x').innerText = xFixed;
+                  document.getElementById('json-y').innerText = yFixed;
+
+                  // Pötty kirajzolása (hogy lásd hova kattintottál)
+                  markerLayer.innerHTML = `<div class="marker" style="left:${x}%; top:${y}%;"></div>`;
+            });
+
+            function copyToClipboard() {
+                  const x = document.getElementById('out-x').value;
+                  const y = document.getElementById('out-y').value;
+                  if (x === '-') return;
+
+                  const text = `"x": ${x}, "y": ${y}`;
+                  navigator.clipboard.writeText(text).then(() => {
+                        alert('Vágólapra másolva: ' + text);
+                  });
+            }
+      </script>
+</body>
+
+</html>
