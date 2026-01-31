@@ -102,6 +102,8 @@ function initTour(tourData) {
 }
 
 // FŐ LOGIKA: Hol vagyunk most?
+
+// FŐ LOGIKA: Hol vagyunk most?
 function frissitsdAHelyszint(szobaId) {
   // Megkeressük, melyik szinten van ez a szoba
   let talaltSzint = null;
@@ -122,10 +124,22 @@ function frissitsdAHelyszint(szobaId) {
       valtsSzintet(talaltSzint.id);
     }
 
-    // Frissítjük a kiírást és a piros pöttyöt
-    document.getElementById(
-      "aktualis-szoba"
-    ).innerText = `${talaltSzint.nev} - ${talaltSzoba.nev}`;
+    // --- ITT A VÁLTOZÁS ---
+
+    // 1. Frissítjük a FENTI lebegő sáv kiírását (ha létezik)
+    const topLabel = document.getElementById("aktualis-szoba");
+    if (topLabel) {
+      topLabel.innerText = `Helyiség: ${talaltSzint.nev} - ${talaltSzoba.nev}`;
+    }
+
+    // 2. Frissítjük az OLDALSÁV kiírását (az új ID alapján)
+    const sideLabel = document.getElementById("aktualis-szoba-sidebar");
+    if (sideLabel) {
+      // Ide elég csak a szoba neve, mert a szintet a gombok mutatják
+      sideLabel.innerText = talaltSzoba.nev;
+    }
+
+    // Piros pötty animálása
     highlightPin(szobaId);
   }
 }
