@@ -4,9 +4,17 @@ const admin = require("firebase-admin");
 const fs = require("fs");
 const path = require("path");
 
-// --- BEÁLLÍTÁSOK (Ezt mindig írd át!) ---
-const INGATLAN_ID = "HB-316129";
+// --- ARGUMENTUM KEZELÉS (ÚJ RÉSZ) ---
+const args = process.argv.slice(2); // Levágjuk a "node" és "scriptnev" részeket
 
+if (args.length === 0) {
+  console.error("❌ HIBA: Nem adtál meg Ingatlan ID-t!");
+  console.error("👉 Használat: node process_tour.js HB-XXXXXX");
+  process.exit(1);
+}
+
+const INGATLAN_ID = args[0]; // Az első paraméter lesz az ID
+console.log(`⚙️  Kiválasztott ingatlan: ${INGATLAN_ID}`);
 // Útvonalak
 const SOURCE_ROOT = path.join(__dirname, "letoltott_drive_anyag");
 const DEST_ROOT = path.join(__dirname, "feltoltesre");

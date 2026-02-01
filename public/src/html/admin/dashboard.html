@@ -5,6 +5,7 @@
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>teras.hu - Admin Dashboard</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
       <script src="https://cdn.tailwindcss.com"></script>
       <style>
             .hatter-zold {
@@ -32,9 +33,17 @@
                         <p class="text-sm opacity-60 uppercase tracking-widest">Ingatlan feldolgozási folyamat</p>
                   </div>
                   <div class="flex gap-4">
+
                         <button onclick="kijelentkezes()"
                               class="text-xs border border-white/20 px-4 py-2 rounded-full hover:bg-white/10">Kijelentkezés</button>
+                        <a href="admin-hub.html"
+                              class=" z-50 bg-black/50 hover:bg-black/80 text-white px-3 py-2 rounded-lg text-xs font-bold backdrop-blur flex items-center gap-2 transition-colors border border-white/10">
+                              <i class="fa-solid fa-border-all"></i> Admin Menü
+                        </a>
+
+
                   </div>
+
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">

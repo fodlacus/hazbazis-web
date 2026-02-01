@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Admin Hub - Hazbazis.hu</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-[#1a1a1a] text-white h-screen flex flex-col items-center justify-center font-sans">
+
+      <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-[#E2F1B0] mb-2">Adminisztrációs Központ</h1>
+            <p class="text-white/60">Válassz az elérhető eszközök közül</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full px-4">
+
+            <a href="dashboard.html"
+                  class="group relative bg-[#3D4A16] border border-white/10 rounded-2xl p-8 hover:bg-[#4d5e1c] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-lime-900/20 cursor-pointer flex flex-col items-center text-center">
+                  <div
+                        class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-house-chimney text-2xl text-[#E2F1B0]"></i>
+                  </div>
+                  <h2 class="text-xl font-bold text-white mb-2">Ingatlan Dashboard</h2>
+                  <p class="text-sm text-white/60">
+                        Meglévő ingatlanok listázása, szerkesztése és státuszok kezelése.
+                  </p>
+                  <div
+                        class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-[#E2F1B0]">
+                        <i class="fa-solid fa-arrow-right"></i>
+                  </div>
+            </a>
+
+            <a href="pin-kereso.html"
+                  class="group relative bg-[#3D4A16] border border-white/10 rounded-2xl p-8 hover:bg-[#4d5e1c] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-lime-900/20 cursor-pointer flex flex-col items-center text-center">
+                  <div
+                        class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-map-location-dot text-2xl text-[#E2F1B0]"></i>
+                  </div>
+                  <h2 class="text-xl font-bold text-white mb-2">Pin Koordináta Kereső</h2>
+                  <p class="text-sm text-white/60">
+                        Virtuális séták hotspot pontjainak (X, Y) vizuális beállítása alaprajzokon.
+                  </p>
+                  <div
+                        class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-[#E2F1B0]">
+                        <i class="fa-solid fa-arrow-right"></i>
+                  </div>
+            </a>
+
+            <div
+                  class="border border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center text-white/20">
+                  <i class="fa-solid fa-plus text-3xl mb-2"></i>
+                  <span class="text-sm">Hamarosan új eszköz...</span>
+            </div>
+
+      </div>
+
+      <div class="mt-12">
+            <button id="logout-btn"
+                  class="px-6 py-2 rounded-full border border-white/20 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm flex items-center gap-2">
+                  <i class="fa-solid fa-right-from-bracket"></i> Kijelentkezés
+            </button>
+      </div>
+
+      <script type="module">
+            import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+            // (Ide majd be kell kötni a firebase configodat, mint a többi oldalon)
+            // Most csak a gomb eseménykezelője:
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                  // Ide jön a logout logika
+                  window.location.href = '../../index.html'; // Vagy a login oldalra
+            });
+      </script>
+</body>
+
+</html>
