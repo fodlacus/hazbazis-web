@@ -242,6 +242,28 @@
                         }
                   });
             }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                  const searchInput = document.getElementById('landing-search-input');
+                  const searchBtn = document.getElementById('landing-search-btn');
+
+                  function startSearch() {
+                        const queryText = searchInput.value.trim();
+                        if (queryText) {
+                              // JAVÍTÁS: "q" helyett "query"-t használunk, mert a chat-engine azt várja!
+                              window.location.href = `src/html/vevo/ai-filter.html?query=${encodeURIComponent(queryText)}`;
+                        }
+                  }
+
+                  if (searchBtn) searchBtn.addEventListener('click', startSearch);
+
+                  if (searchInput) {
+                        searchInput.addEventListener('keypress', (e) => {
+                              if (e.key === 'Enter') startSearch();
+                        });
+                  }
+            });
+
       </script>
 
 </body>

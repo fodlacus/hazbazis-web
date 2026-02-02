@@ -66,15 +66,39 @@
       </div>
 
       <script type="module">
-            import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+            // 1. IMPORTÁLJUK A KÉSZ AUTH-OT A MEGLÉVŐ FÁJLODBÓL
+            // Figyelj a pontokra! (../../) = visszalépünk a gyökér felé, aztán be a js/util-ba
+            import { auth } from "../../js/util/firebase-config.js";
 
-            // (Ide majd be kell kötni a firebase configodat, mint a többi oldalon)
-            // Most csak a gomb eseménykezelője:
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                  // Ide jön a logout logika
-                  window.location.href = '../../index.html'; // Vagy a login oldalra
+            // 2. A MŰVELETEKET (signOut, onAuthStateChanged) PEDIG A CDN-RŐL (Verzió: 10.7.1)
+            import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+            // --- INNENTŐL A KÓD UGYANAZ, MINT EDDIG ---
+
+            // Biztonsági ellenőrzés (Be van-e lépve?)
+            onAuthStateChanged(auth, (user) => {
+                  if (user) {
+                        console.log("Admin Hub: Aktív felhasználó:", user.email);
+                  } else {
+                        // Ha nincs belépve, kidobjuk
+                        window.location.href = '/index.html';
+                  }
             });
+
+            // Kijelentkezés gomb
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                  logoutBtn.addEventListener('click', () => {
+                        signOut(auth).then(() => {
+                              console.log("Sikeres kijelentkezés.");
+                              window.location.href = '/index.html';
+                        }).catch((error) => {
+                              console.error("Hiba kilépéskor:", error);
+                        });
+                  });
+            }
       </script>
+
 </body>
 
 </html>

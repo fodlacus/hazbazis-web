@@ -20,7 +20,7 @@ window.inditsKeresest = function () {
   const kulcsszo = mezo.value.trim();
 
   // Átirányítás az AI szűrő oldalra
-  window.location.href = `src/html/vevo/ai-filter.html?kereses=${encodeURIComponent(
+  window.location.href = `src/html/vevo/ai-filter.html?query=${encodeURIComponent(
     kulcsszo
   )}`;
 };
