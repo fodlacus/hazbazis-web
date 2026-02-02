@@ -122,12 +122,15 @@ export function initAuthMonitor() {
         }
 
         // 2. "Hirdetés" menüpont kezelése (Csak Eladó láthatja)
-        if (hirdetesBtn) {
-          if (roles && roles.elado === true) {
-            hirdetesBtn.classList.remove("hidden");
-          }
-          // Nem kell 'else', mert alapból rejtve marad!
+        const desktopBtn = document.getElementById("nav-hirdetes");
+        const mobilBtn = document.getElementById("mobil-nav-hirdetes");
+
+        if (roles && roles.elado === true) {
+          // Ha eladó, MEGJELENÍTJÜK mindkettőt (ha léteznek)
+          if (desktopBtn) desktopBtn.classList.remove("hidden");
+          if (mobilBtn) mobilBtn.classList.remove("hidden");
         }
+        // Nem kell 'else', mert a HTML-ben alapból 'hidden'-en vannak!
       }
     } else {
       // --- KI VAN JELENTKEZVE ---
