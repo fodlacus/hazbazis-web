@@ -85,11 +85,9 @@ export async function loginUser(email, password) {
   }
 }
 
-
 // ==========================================
 // 3. MENÜ ÉS JOGOSULTSÁG KEZELŐ (Ezt hívjuk minden oldalon)
 // ==========================================
-
 
 export function initAuthMonitor() {
   onAuthStateChanged(auth, async (user) => {
@@ -127,9 +125,8 @@ export function initAuthMonitor() {
         if (hirdetesBtn) {
           if (roles && roles.elado === true) {
             hirdetesBtn.classList.remove("hidden");
-          } else {
-            hirdetesBtn.classList.add("hidden");
           }
+          // Nem kell 'else', mert alapból rejtve marad!
         }
       }
     } else {
