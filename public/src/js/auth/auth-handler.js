@@ -92,51 +92,53 @@ export async function loginUser(email, password) {
 export function initAuthMonitor() {
   onAuthStateChanged(auth, async (user) => {
     const loginBtn = document.getElementById("nav-login-btn");
-    const userMenu = document.getElementById("nav-user-menu"); // Új konténer a menüben
-    const hirdetesBtn = document.getElementById("nav-hirdetes");
+
+    // MENÜ KONTÉNEREK
+    const desktopMenu = document.getElementById("desktop-user-menu");
+    const mobilMenu = document.getElementById("mobil-user-menu");
+
+    // EMAIL MEZŐK
+    const desktopEmail = document.getElementById("desktop-user-email");
+    const mobilEmail = document.getElementById("mobil-user-email");
+
+    // GOMBOK
+    const desktopHirdetesBtn = document.getElementById("nav-hirdetes");
+    const mobilHirdetesBtn = document.getElementById("mobil-nav-hirdetes");
 
     if (user) {
       // --- BE VAN JELENTKEZVE ---
-      if (loginBtn) loginBtn.classList.add("hidden"); // Belépés gomb eltűnik
+      if (loginBtn) loginBtn.classList.add("hidden");
 
-      // Adatok lekérése a szerepkörhöz
+      // Menük megjelenítése
+      if (desktopMenu) desktopMenu.classList.remove("hidden");
+      if (mobilMenu) mobilMenu.classList.remove("hidden");
+
+      // Email beírása
+      if (desktopEmail) desktopEmail.innerText = user.email;
+      if (mobilEmail) mobilEmail.innerText = user.email;
+
+      // Szerepkör ellenőrzés
       const userDoc = await getDoc(doc(adatbazis, "felhasznalok", user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         const roles = userData.szerepkor;
 
-        // 1. Felhasználó email kiírása + Kilépés gomb
-        if (userMenu) {
-          userMenu.innerHTML = `
-                          <div class="flex items-center gap-4">
-                              <span class="text-xs text-white/60">${userData.email}</span>
-                              <button id="btn-logout" class="text-xs border border-white/20 px-3 py-1 rounded-full hover:bg-red-500/20 hover:text-red-200 transition">Kilépés</button>
-                          </div>
-                      `;
-          // Kilépés esemény
-          document
-            .getElementById("btn-logout")
-            .addEventListener("click", () => {
-              signOut(auth).then(() => window.location.reload());
-            });
-        }
-
-        // 2. "Hirdetés" menüpont kezelése (Csak Eladó láthatja)
-        const desktopBtn = document.getElementById("nav-hirdetes");
-        const mobilBtn = document.getElementById("mobil-nav-hirdetes");
-
+        // Ha Eladó, akkor megjelenítjük a gombokat
         if (roles && roles.elado === true) {
-          // Ha eladó, MEGJELENÍTJÜK mindkettőt (ha léteznek)
-          if (desktopBtn) desktopBtn.classList.remove("hidden");
-          if (mobilBtn) mobilBtn.classList.remove("hidden");
+          if (desktopHirdetesBtn) desktopHirdetesBtn.classList.remove("hidden");
+          if (mobilHirdetesBtn) mobilHirdetesBtn.classList.remove("hidden");
         }
-        // Nem kell 'else', mert a HTML-ben alapból 'hidden'-en vannak!
       }
     } else {
       // --- KI VAN JELENTKEZVE ---
       if (loginBtn) loginBtn.classList.remove("hidden");
-      if (userMenu) userMenu.innerHTML = "";
-      if (hirdetesBtn) hirdetesBtn.classList.add("hidden"); // Vendég ne hirdessen
+
+      if (desktopMenu) desktopMenu.classList.add("hidden");
+      if (mobilMenu) mobilMenu.classList.add("hidden");
+
+      // Biztonság kedvéért visszarejtjük a gombokat
+      if (desktopHirdetesBtn) desktopHirdetesBtn.classList.add("hidden");
+      if (mobilHirdetesBtn) mobilHirdetesBtn.classList.add("hidden");
     }
   });
 }
