@@ -90,55 +90,67 @@ export async function loginUser(email, password) {
 // ==========================================
 
 export function initAuthMonitor() {
+  console.log("🕵️‍♂️ Auth Monitor elindult..."); // 1. Életjel
+
   onAuthStateChanged(auth, async (user) => {
-    const loginBtn = document.getElementById("nav-login-btn");
-
-    // MENÜ KONTÉNEREK
+    // Elemek keresése és ellenőrzése
+    const desktopBtn = document.getElementById("nav-hirdetes");
+    const mobilBtn = document.getElementById("mobil-nav-hirdetes");
     const desktopMenu = document.getElementById("desktop-user-menu");
-    const mobilMenu = document.getElementById("mobil-user-menu");
 
-    // EMAIL MEZŐK
-    const desktopEmail = document.getElementById("desktop-user-email");
-    const mobilEmail = document.getElementById("mobil-user-email");
-
-    // GOMBOK
-    const desktopHirdetesBtn = document.getElementById("nav-hirdetes");
-    const mobilHirdetesBtn = document.getElementById("mobil-nav-hirdetes");
+    // Debug infók kiírása
+    console.log("🔍 Gomb keresés eredménye:");
+    console.log(
+      "   - Desktop Gomb:",
+      desktopBtn ? "✅ MEGVAN" : "❌ NINCS (HIBA: Rossz ID vagy HTML)"
+    );
+    console.log("   - Mobil Gomb:", mobilBtn ? "✅ MEGVAN" : "❌ NINCS");
 
     if (user) {
-      // --- BE VAN JELENTKEZVE ---
-      if (loginBtn) loginBtn.classList.add("hidden");
+      console.log(`👤 Bejelentkezve: ${user.email} (UID: ${user.uid})`);
 
-      // Menük megjelenítése
+      // Menü megjelenítése
       if (desktopMenu) desktopMenu.classList.remove("hidden");
-      if (mobilMenu) mobilMenu.classList.remove("hidden");
 
-      // Email beírása
-      if (desktopEmail) desktopEmail.innerText = user.email;
-      if (mobilEmail) mobilEmail.innerText = user.email;
+      // Adatbázis lekérése
+      try {
+        const userDoc = await getDoc(doc(adatbazis, "felhasznalok", user.uid));
 
-      // Szerepkör ellenőrzés
-      const userDoc = await getDoc(doc(adatbazis, "felhasznalok", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const roles = userData.szerepkor;
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const roles = userData.szerepkor;
 
-        // Ha Eladó, akkor megjelenítjük a gombokat
-        if (roles && roles.elado === true) {
-          if (desktopHirdetesBtn) desktopHirdetesBtn.classList.remove("hidden");
-          if (mobilHirdetesBtn) mobilHirdetesBtn.classList.remove("hidden");
+          console.log("📂 Adatbázis adatok:", userData);
+          console.log("🔑 Szerepkörök:", roles);
+          console.log(
+            `⚖️ Jogosultság vizsgálat: roles.elado === ${roles?.elado}`
+          );
+
+          if (roles && roles.elado === true) {
+            console.log("✅ JOGOSULT! Gombok megjelenítése...");
+            if (desktopBtn) {
+              desktopBtn.classList.remove("hidden");
+              console.log("   -> Desktop gomb: hidden levéve.");
+            }
+            if (mobilBtn) mobilBtn.classList.remove("hidden");
+          } else {
+            console.warn("⛔ NEM JOGOSULT (Nem eladó)");
+          }
+        } else {
+          console.error(
+            "❌ HIBA: A felhasználónak nincs profilja az adatbázisban!"
+          );
         }
+      } catch (err) {
+        console.error("❌ Súlyos hiba az adatbázis olvasásakor:", err);
       }
+
+      // Email kiírása...
+      const emailElem = document.getElementById("desktop-user-email");
+      if (emailElem) emailElem.innerText = user.email;
     } else {
-      // --- KI VAN JELENTKEZVE ---
-      if (loginBtn) loginBtn.classList.remove("hidden");
-
-      if (desktopMenu) desktopMenu.classList.add("hidden");
-      if (mobilMenu) mobilMenu.classList.add("hidden");
-
-      // Biztonság kedvéért visszarejtjük a gombokat
-      if (desktopHirdetesBtn) desktopHirdetesBtn.classList.add("hidden");
-      if (mobilHirdetesBtn) mobilHirdetesBtn.classList.add("hidden");
+      console.log("👋 Kijelentkezve.");
+      if (desktopBtn) desktopBtn.classList.add("hidden");
     }
   });
 }
