@@ -192,9 +192,16 @@
       <script type="module" src="src/js/index.js"></script>
 
       <script type="module">
+            // 1. IMPORTÁLÁSOK
+            import { initAuthMonitor } from "./src/js/auth/auth-handler.js";
             import { auth } from "./src/js/util/firebase-config.js";
-            import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+            import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+            // 2. ELINDÍTJUK AZ ÚJ JOGOSULTSÁG FIGYELŐT
+            // Ez fogja kezelni Bázis Bálint gombját helyesen!
+            initAuthMonitor();
+
+            // 3. KILÉPÉS FUNKCIÓ (Hogy a HTML gomb megtalálja)
             window.kilepes = async function () {
                   try {
                         await signOut(auth);
@@ -204,31 +211,7 @@
                   }
             }
 
-            onAuthStateChanged(auth, (user) => {
-                  const desktopVendeg = document.getElementById('desktop-vendeg-menu');
-                  const desktopUser = document.getElementById('desktop-user-menu');
-                  const mobilVendeg = document.getElementById('mobil-vendeg-menu');
-                  const mobilUser = document.getElementById('mobil-user-menu');
-
-                  const desktopEmail = document.getElementById('desktop-user-email');
-                  const mobilEmail = document.getElementById('mobil-user-email');
-
-                  if (user) {
-                        if (desktopEmail) desktopEmail.innerText = user.email;
-                        if (mobilEmail) mobilEmail.innerText = user.email;
-
-                        if (desktopVendeg) desktopVendeg.classList.add('hidden');
-                        if (mobilVendeg) mobilVendeg.classList.add('hidden');
-                        if (desktopUser) desktopUser.classList.remove('hidden');
-                        if (mobilUser) mobilUser.classList.remove('hidden');
-                  } else {
-                        if (desktopUser) desktopUser.classList.add('hidden');
-                        if (mobilUser) mobilUser.classList.add('hidden');
-                        if (desktopVendeg) desktopVendeg.classList.remove('hidden');
-                        if (mobilVendeg) mobilVendeg.classList.remove('hidden');
-                  }
-            });
-
+            // 4. MOBIL MENÜ LOGIKA (Ezt megtartjuk!)
             const gomb = document.getElementById('mobil-menu-gomb');
             const menu = document.getElementById('mobil-menu');
             if (gomb && menu) {
@@ -243,29 +226,28 @@
                   });
             }
 
+            // 5. KERESŐ LOGIKA (Ezt is megtartjuk!)
             document.addEventListener('DOMContentLoaded', () => {
-                  const searchInput = document.getElementById('landing-search-input');
-                  const searchBtn = document.getElementById('landing-search-btn');
+                  const searchInput = document.getElementById('landing-search-input'); // Ha van ilyen ID
+                  const searchBtn = document.getElementById('landing-search-btn');     // Ha van ilyen ID
+                  // Megjegyzés: A te HTML-edben fentebb 'fooldali-ai-kereso' az ID, 
+                  // de ha van 'landing' ID-s elem is, ez a kód kezeli.
 
                   function startSearch() {
                         const queryText = searchInput.value.trim();
                         if (queryText) {
-                              // JAVÍTÁS: "q" helyett "query"-t használunk, mert a chat-engine azt várja!
                               window.location.href = `src/html/vevo/ai-filter.html?query=${encodeURIComponent(queryText)}`;
                         }
                   }
 
-                  if (searchBtn) searchBtn.addEventListener('click', startSearch);
-
-                  if (searchInput) {
+                  if (searchBtn && searchInput) {
+                        searchBtn.addEventListener('click', startSearch);
                         searchInput.addEventListener('keypress', (e) => {
                               if (e.key === 'Enter') startSearch();
                         });
                   }
             });
-
       </script>
-
 </body>
 
 </html>
