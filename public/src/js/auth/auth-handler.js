@@ -85,9 +85,12 @@ export async function loginUser(email, password) {
   }
 }
 
+
 // ==========================================
 // 3. MENÜ ÉS JOGOSULTSÁG KEZELŐ (Ezt hívjuk minden oldalon)
 // ==========================================
+
+
 export function initAuthMonitor() {
   onAuthStateChanged(auth, async (user) => {
     const loginBtn = document.getElementById("nav-login-btn");
@@ -120,9 +123,9 @@ export function initAuthMonitor() {
             });
         }
 
-        // 2. "Hirdetés" menüpont kezelése (Csak Eladó vagy Admin láthatja)
+        // 2. "Hirdetés" menüpont kezelése (Csak Eladó láthatja)
         if (hirdetesBtn) {
-          if (roles.elado || roles.admin) {
+          if (roles && roles.elado === true) {
             hirdetesBtn.classList.remove("hidden");
           } else {
             hirdetesBtn.classList.add("hidden");
