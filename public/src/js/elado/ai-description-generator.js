@@ -141,18 +141,25 @@ function getValue(id) {
 
 function keszitsUserPromptot(adatok) {
   return `
-    Kérlek írj egy ingatlanhirdetést az alábbi adatokból:
-    
-    Helyszín: ${adatok.iranyitoszam} ${adatok.varos}, ${adatok.utca || ""}
-    Típus: ${adatok.tipus}
-    Méret: ${adatok.meret} m²
-    Szobák: ${adatok.szobak}
-    Ár: ${adatok.ar} Ft
-    Állapot: ${adatok.allapot}
-    Fűtés: ${adatok.futes}
+  Kérlek írj egy profi, vonzó ingatlanhirdetést az alábbi TÉNYLEGESS adatokból.
+  
+  FONTOS SZABÁLYOK:
+  1. Csak a megadott adatokból dolgozz! 
+  2. Ne találj ki konkrét boltokat (pl. Spar, Tesco) vagy konkrét buszjáratokat (pl. 7-es busz), ha nem szerepelnek a leírásban!
+  3. Ha nem tudsz konkrétumot a környékről, használj általános, de pozitív fordulatokat (pl. "kiváló tömegközlekedés", "bevásárlási lehetőségek a közelben").
+  4. Legyél lelkes, használj emojikat!
 
-    Kérlek emeld ki a környék előnyeit (közlekedés, parkok) a ${
-      adatok.varos
-    }-i tudásod alapján.
-    `;
+  ADATOK:
+  Helyszín: ${adatok.iranyitoszam} ${adatok.varos}, ${adatok.utca || ""}
+  Típus: ${adatok.tipus}
+  Méret: ${adatok.meret} m²
+  Szobák: ${adatok.szobak}
+  Ár: ${adatok.ar} Ft
+  Állapot: ${adatok.allapot}
+  Fűtés: ${adatok.futes}
+
+  Ha a város (${
+    adatok.varos
+  }) ismert helyszín számodra, említsd meg a város (nem az utca!) általános előnyeit, de maradj a valóságnál.
+  `;
 }
