@@ -125,8 +125,9 @@ async function kiemeltAjanlatokBetoltese() {
 
       // --- KÁRTYA ÉPÍTÉS ---
       const kartya = document.createElement("div");
+
       kartya.className =
-        "bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-lime-400/50 transition-all group cursor-pointer relative";
+        "bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-lime-400/50 transition-all group cursor-pointer relative min-w-[300px] md:min-w-[350px] snap-center";
 
       // Kattintás esemény
       kartya.onclick = () => {
@@ -173,3 +174,22 @@ async function kiemeltAjanlatokBetoltese() {
     console.error("Hiba a kiemelt ajánlatoknál:", error);
   }
 }
+
+// --- VÍZSZINTES LAPOZÓ GOMBOK KEZELÉSE ---
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("kiemelt-lista");
+  const btnBal = document.getElementById("scroll-bal");
+  const btnJobb = document.getElementById("scroll-jobb");
+
+  if (container && btnBal && btnJobb) {
+    // Jobbra nyíl: 350 pixelt görget jobbra
+    btnJobb.addEventListener("click", () => {
+      container.scrollBy({ left: 360, behavior: "smooth" });
+    });
+
+    // Balra nyíl: 350 pixelt görget balra
+    btnBal.addEventListener("click", () => {
+      container.scrollBy({ left: -360, behavior: "smooth" });
+    });
+  }
+});

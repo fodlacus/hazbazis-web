@@ -176,19 +176,26 @@
             <div class="flex justify-between items-end mb-10">
                   <h3 class="text-3xl font-bold">Kiemelt <span class="szoveg-vilagos">ajánlatok</span></h3>
                   <div class="flex gap-3">
-                        <button class="p-3 border szegely-zold rounded-full hover:bg-white/5">❮</button>
-                        <button class="p-3 border szegely-zold rounded-full hover:bg-white/5">❯</button>
+                        <button id="scroll-bal"
+                              class="p-3 border szegely-zold rounded-full hover:bg-white/5 transition-colors active:scale-95">
+                              ❮
+                        </button>
+
+                        <button id="scroll-jobb"
+                              class="p-3 border szegely-zold rounded-full hover:bg-white/5 transition-colors active:scale-95">
+                              ❯
+                        </button>
                   </div>
             </div>
 
-            <div id="kiemelt-lista" class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
-                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
-                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
-                  <div class="bg-white/5 rounded-3xl h-64 animate-pulse"></div>
+            <div id="kiemelt-lista" class="flex gap-6 overflow-x-auto pb-8 snap-x scroll-smooth"
+                  style="scrollbar-width: thin; scrollbar-color: #E2F1B0 transparent;">
+                  <div class="bg-white/5 rounded-3xl h-80 min-w-[300px] animate-pulse"></div>
+                  <div class="bg-white/5 rounded-3xl h-80 min-w-[300px] animate-pulse"></div>
+                  <div class="bg-white/5 rounded-3xl h-80 min-w-[300px] animate-pulse"></div>
             </div>
       </section>
-
+      
       <script type="module" src="src/js/index.js"></script>
 
       <script type="module">
