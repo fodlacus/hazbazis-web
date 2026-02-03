@@ -24,17 +24,38 @@ export async function generaljLeirast() {
   }
 
   // 2. ADATGYŰJTÉS
+
   const adatok = {
-    varos: getValue("telepules") || getValue("varos"),
+    // Város: többféleképpen is hívhatják
+    varos: getValue("telepules") || getValue("varos") || getValue("város"),
+
     utca: getValue("utca"),
-    iranyitoszam: getValue("iranyitoszam"),
-    meret: getValue("alapterulet"),
-    szobak: getValue("szobaszam"),
-    ar: getValue("ar") || getValue("vetelar"),
-    tipus: getValue("tipus") || getValue("ingatlan_tipus"),
-    allapot: getValue("allapot"),
-    futes: getValue("futes"),
+    iranyitoszam: getValue("iranyitoszam") || getValue("irányítószám"),
+
+    // MÉRET (Itt volt a hiba: alapterulet vs alapterület)
+    meret:
+      getValue("alapterulet") ||
+      getValue("alapterület") ||
+      getValue("meret") ||
+      getValue("méret"),
+
+    // SZOBÁK (szobaszam vs szobaszám)
+    szobak: getValue("szobaszam") || getValue("szobaszám") || getValue("szoba"),
+
+    // ÁR (ar vs ár vs vetelar vs vételár)
+    ar:
+      getValue("ar") ||
+      getValue("ár") ||
+      getValue("vetelar") ||
+      getValue("vételár"),
+
+    tipus: getValue("tipus") || getValue("ingatlan_tipus") || getValue("típus"),
+    allapot: getValue("allapot") || getValue("állapot"),
+    futes: getValue("futes") || getValue("fűtés"),
   };
+
+  // DEBUG: Kiírjuk a konzolra, hogy mit találtunk (így látni fogod, ha valami még mindig üres)
+  console.log("🔍 Összeszedett adatok:", adatok);
 
   if (!adatok.varos) {
     alert("Kérlek, legalább a Települést add meg a generáláshoz!");
