@@ -96,7 +96,7 @@ async function kiemeltAjanlatokBetoltese() {
     const q = query(
       collection(adatbazis, "lakasok"),
       where("kiemelt", "==", true),
-      limit(4)
+      limit(24)
     );
 
     const snapshot = await getDocs(q);
@@ -173,4 +173,3 @@ async function kiemeltAjanlatokBetoltese() {
     console.error("Hiba a kiemelt ajánlatoknál:", error);
   }
 }
-
