@@ -85,16 +85,17 @@ window.inditsHBKeresest = async function () {
 };
 
 // ==============================================
-// 3. KIEMELT AJÁNLATOK BETÖLTÉSE
+// 3. KIEMELT AJÁNLATOK BETÖLTÉSE (JAVÍTOTT)
 // ==============================================
 async function kiemeltAjanlatokBetoltese() {
   const kontener = document.getElementById("kiemelt-lista");
   if (!kontener) return;
 
   try {
+    // 1. Lekérdezés: Csak a 'kiemelt' == true ingatlanok
     const q = query(
       collection(adatbazis, "lakasok"),
-      orderBy("letrehozva", "desc"),
+      where("kiemelt", "==", true),
       limit(4)
     );
 
@@ -111,10 +112,9 @@ async function kiemeltAjanlatokBetoltese() {
     snapshot.forEach((doc) => {
       const adat = doc.data();
 
-      // Kép kezelés (okos keresés)
+      // --- KÉP KEZELÉS ---
       let boritokep =
         "https://placehold.co/600x400/3D4A16/E2F1B0?text=Nincs+kép";
-
       const getUrl = (item) => (typeof item === "object" ? item.url : item);
 
       if (adat.kepek_horiz && adat.kepek_horiz.length > 0) {
@@ -123,43 +123,54 @@ async function kiemeltAjanlatokBetoltese() {
         boritokep = getUrl(adat.kepek[0]);
       }
 
+      // --- KÁRTYA ÉPÍTÉS ---
       const kartya = document.createElement("div");
       kartya.className =
-        "bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-lime-400/50 transition-all group cursor-pointer";
+        "bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-lime-400/50 transition-all group cursor-pointer relative";
 
-      // Kattintásra vigyen az adatlapra
+      // Kattintás esemény
       kartya.onclick = () => {
         window.location.href = `src/html/vevo/adatlap.html?id=${doc.id}`;
       };
 
+      // HTML FELÉPÍTÉSE (Itt került be az ID címke!)
       kartya.innerHTML = `
-                <div class="h-48 overflow-hidden relative">
-                    <img src="${boritokep}" alt="${
+            <div class="h-48 overflow-hidden relative">
+                <img src="${boritokep}" alt="${
         adat.nev
       }" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-xs font-bold text-lime-400">
-                        ${
-                          adat.vételár
-                            ? Number(adat.vételár).toLocaleString() + " Ft"
-                            : "Ár nélkül"
-                        }
-                    </div>
+                
+                <div class="absolute top-2 left-2 bg-[#E2F1B0] text-[#3D4A16] px-2 py-1 rounded text-xs font-bold shadow-md z-10">
+                    #${doc.id}
                 </div>
-                <div class="p-5">
-                    <h4 class="font-bold text-white text-lg mb-1 truncate">${
-                      adat.nev || "Ingatlan"
-                    }</h4>
-                    <p class="text-xs text-gray-400 mb-3">${
-                      adat.telepules || ""
-                    } ${adat.varosresz ? "- " + adat.varosresz : ""}</p>
-                    <div class="block w-full text-center bg-white/10 hover:bg-lime-400 hover:text-black py-2 rounded-xl text-sm font-bold transition-all">
-                        Megtekintés
-                    </div>
+
+                <div class="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-xs font-bold text-lime-400 z-10">
+                    ${
+                      adat.vételár
+                        ? Number(adat.vételár).toLocaleString() + " Ft"
+                        : "Ár nélkül"
+                    }
                 </div>
-            `;
+            </div>
+
+            <div class="p-5">
+                <h4 class="font-bold text-white text-lg mb-1 truncate">
+                    ${adat.nev || "Ingatlan"}
+                </h4>
+                <p class="text-xs text-gray-400 mb-3">
+                    ${adat.telepules || ""} ${
+        adat.varosresz ? "- " + adat.varosresz : ""
+      }
+                </p>
+                <div class="block w-full text-center bg-white/10 hover:bg-lime-400 hover:text-black py-2 rounded-xl text-sm font-bold transition-all">
+                    Megtekintés
+                </div>
+            </div>
+        `;
       kontener.appendChild(kartya);
     });
   } catch (error) {
     console.error("Hiba a kiemelt ajánlatoknál:", error);
   }
 }
+
