@@ -148,6 +148,7 @@
             import { helyszinFigyelo } from "../../js/elado/feladas.js";
             import { hirdeteseimListazasa } from "../../js/elado/lista.js";
             import { adatokBetolteseSzerkeszteshez } from "../../js/elado/szerkesztes.js";
+            import { generaljLeirast } from "/src/js/elado/ai-description-generator.js";
 
             // Auth importok az e-mail cím kiíráshoz és kilépéshez
             import { auth } from "../../js/util/firebase-config.js";
@@ -162,6 +163,8 @@
                         console.error("Hiba kilépéskor:", error);
                   }
             }
+
+            window.generaljLeirast = generaljLeirast;
 
             // 2. AUTH FIGYELŐ (E-mail cím kiírása felülre)
             onAuthStateChanged(auth, (user) => {

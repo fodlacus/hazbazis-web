@@ -1,1 +1,15 @@
 TELJES_KOD_ALLOMANY.txt
+# --- BIZTONSÁG ---
+serviceAccountKey.json
+.DS_Store
+node_modules/
+
+# --- MEDIA MAPPÁK (Csak a mappa neve kell!) ---
+feltoltesre/
+letoltott_drive_anyag/
+alaprajzok/
+
+# --- EGYÉB ---
+*.mp4
+*.mov
+*.zip
