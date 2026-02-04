@@ -73,6 +73,16 @@ const PRESET_FILTERS = [
   },
 ];
 
+const FILTER_LOGIC = {
+  osszes: (v) => true,
+  olcso: (v) => v.ar > 0 && v.ar <= 50000000,
+  kozep: (v) => v.ar > 50000000 && v.ar <= 80000000,
+  draga: (v) => v.ar > 80000000 && v.ar <= 120000000,
+  luxus: (v) => v.ar > 120000000,
+  erkelyes: (v) => v.erkely === true,
+  budapest: (v) => v.varos === "Budapest",
+};
+
 // --- 2. INDÍTÁS ---
 document.addEventListener("DOMContentLoaded", () => {
   setupGlobalClicks();
@@ -386,6 +396,38 @@ window.updatePriceTab = function (min, max) {
   event.target.classList.remove("border-white/20", "text-white");
 
   renderDiscoveryGrid(); // Újrarajzoljuk a rácsot a választott ár szerint
+};
+window.filterByPreset = function (type) {
+  console.log("Szűrés indítása:", type);
+
+  // Vizualitás: Gombok stílusának frissítése (Chip-ek)
+  document.querySelectorAll(".chip").forEach((btn) => {
+    btn.classList.remove("bg-[#E2F1B0]", "text-black");
+    btn.classList.add("bg-black/40", "text-white", "border-white/20");
+  });
+
+  // Az éppen kattintott gomb kiemelése
+  const activeBtn = event?.target;
+  if (activeBtn && activeBtn.classList.contains("chip")) {
+    activeBtn.classList.add("bg-[#E2F1B0]", "text-black");
+    activeBtn.classList.remove("bg-black/40", "text-white", "border-white/20");
+  }
+
+  // Szűrés végrehajtása
+  const filtered = allVideos.filter(FILTER_LOGIC[type] || FILTER_LOGIC.osszes);
+
+  if (filtered.length === 0) {
+    videoFeed.innerHTML =
+      '<div class="text-white text-center pt-40">Ebben a kategóriában jelenleg nincs videó.</div>';
+  } else {
+    renderVideos(filtered);
+  }
+
+  // Ha a Modalból hívtuk meg, zárjuk be
+  const modal = document.getElementById("filter-modal");
+  if (modal && !modal.classList.contains("hidden")) {
+    closeFilterModal();
+  }
 };
 
 function setupVideoObserver() {

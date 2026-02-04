@@ -159,6 +159,21 @@
 
 <body>
 
+      <div class="fixed top-4 left-0 right-0 z-[100] flex justify-center pointer-events-none">
+            <div class="flex gap-2 overflow-x-auto px-4 py-2 no-scrollbar pointer-events-auto max-w-full">
+                  <button onclick="filterByPreset('osszes')"
+                        class="chip active bg-[#E2F1B0] text-black px-4 py-1.5 rounded-full text-xs font-bold shadow-lg transition-all">Összes</button>
+                  <button onclick="filterByPreset('olcso')"
+                        class="chip bg-black/40 text-white border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all">50M
+                        alatt</button>
+                  <button onclick="filterByPreset('kozep')"
+                        class="chip bg-black/40 text-white border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all">51M-80M</button>
+                  <button onclick="filterByPreset('draga')"
+                        class="chip bg-black/40 text-white border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all">81M-120M</button>
+                  <button onclick="filterByPreset('luxus')"
+                        class="chip bg-black/40 text-white border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all">Luxus</button>
+            </div>
+      </div>
       <div class="video-feed"></div>
 
       <div id="filter-modal"
