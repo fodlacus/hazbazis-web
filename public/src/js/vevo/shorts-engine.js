@@ -162,16 +162,48 @@ function toggleGlobalMute() {
 // --- 5. KERESÉS ---
 if (searchInput) {
   searchInput.addEventListener("input", (e) => {
-    const term = e.target.value.toLowerCase();
+    // Kisbetűsítjük és levágjuk a felesleges szóközöket
+    const rawTerm = e.target.value.toLowerCase().trim();
+
+    // Ha törölte a mezőt, töltsük vissza az összeset
+    if (!rawTerm) {
+      renderVideos(allVideos);
+      return;
+    }
+
+    // TRÜKK: Szavakra bontjuk a keresést (pl. "Debrecen lakás" -> ["debrecen", "lakás"])
+    const searchWords = rawTerm.split(/\s+/);
 
     const filtered = allVideos.filter((v) => {
-      const text = `${v.varos} ${v.utca} ${v.leiras || ""} ${
-        v.ar
-      }`.toLowerCase();
-      return text.includes(term);
+      // Összefűzzük az adatokat egy nagy "kereshető szöveggé"
+      // + Hozzáadjuk a "lakás ingatlan eladó" szavakat is, hogy ezekre is lehessen keresni!
+      const content = `
+                  ${v.varos} 
+                  ${v.utca || ""} 
+                  ${v.leiras || ""} 
+                  ${v.ar} 
+                  lakás ház ingatlan eladó
+              `.toLowerCase();
+
+      // LOGIKA: Csak azt adjuk vissza, ahol a beírt szavak MINDEGYIKE szerepel
+      // Így a "Debrecen 50 millió" működni fog (város + ár)
+      return searchWords.every((word) => content.includes(word));
     });
 
-    renderVideos(filtered);
+    // Ha nincs találat, írjunk ki egy szép üzenetet
+    if (filtered.length === 0) {
+      videoFeed.innerHTML = `
+                  <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.5);">
+                      <p style="font-size: 1.2rem;">Nincs találat erre: "${rawTerm}"</p>
+                      <p style="font-size: 0.9rem; margin-top: 10px;">Tipp: Próbáld ragozás nélkül (pl. "Debrecen" a "Debreceni" helyett)</p>
+                      <button onclick="document.getElementById('search-input').value=''; loadVideos();" 
+                          style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; border: none; color: white; cursor: pointer;">
+                          Szűrő törlése ✕
+                      </button>
+                  </div>`;
+    } else {
+      renderVideos(filtered);
+    }
   });
 }
 
