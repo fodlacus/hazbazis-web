@@ -16,7 +16,7 @@
                   height: 100dvh;
             }
 
-            /* A GÖRGETŐ KONTÉNER */
+            /* A GÖRGETŐ KONTÉNER - Scroll Snap aktív */
             .video-feed {
                   height: 100dvh;
                   width: 100%;
@@ -50,7 +50,6 @@
                   width: 100%;
                   object-fit: cover;
                   max-width: 500px;
-                  /* Modern mobil szélesség */
             }
 
             /* OVERLAY - Adatok a videón */
@@ -67,7 +66,7 @@
                   flex-direction: column;
                   justify-content: flex-end;
                   padding: 20px;
-                  padding-bottom: 40px;
+                  padding-bottom: 60px;
                   background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 50%);
                   z-index: 10;
             }
@@ -75,7 +74,6 @@
             .video-info {
                   pointer-events: auto;
                   color: white;
-                  margin-bottom: 20px;
             }
 
             .brand-badge {
@@ -122,7 +120,7 @@
                   color: #000;
             }
 
-            /* MODAL JAVÍTÁS */
+            /* MODAL ANIMÁCIÓ */
             #filter-modal.active {
                   display: flex;
             }
@@ -135,100 +133,52 @@
 
 <body>
 
-      <div class="video-feed" id="main-feed">
-      </div>
+      <div class="video-feed" id="main-feed"></div>
 
       <div class="side-controls">
-            <button class="control-btn" onclick="toggleFilter(true)">🔍</button>
+            <button class="control-btn" id="btn-discovery">🔍</button>
             <button class="control-btn" onclick="window.location.reload()">🔄</button>
-            <button class="control-btn" onclick="window.location.href='/'">🏠</button>
+            <button class="control-btn" onclick="window.location.href='/index.html'">🏠</button>
       </div>
 
       <div id="filter-modal"
             class="fixed inset-0 bg-black/90 z-[200] hidden flex-col justify-end items-center backdrop-blur-md">
             <div id="filter-content"
-                  class="bg-[#121212] w-full max-w-lg rounded-t-3xl p-6 border-t border-white/10 transition-transform duration-300 translate-y-full">
+                  class="bg-[#121212] w-full max-w-lg rounded-t-3xl p-6 border-t border-white/10 transition-transform duration-300 translate-y-full flex flex-col max-h-[90vh]">
                   <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-bold text-white">Felfedezés 🌍</h3>
-                        <button onclick="toggleFilter(false)" class="text-white text-2xl">✕</button>
+                        <button id="close-modal" class="text-white text-2xl p-2">✕</button>
                   </div>
-                  <div id="discovery-grid" class="grid grid-cols-2 gap-3 h-[50vh] overflow-y-auto mb-4">
+
+                  <div id="discovery-grid" class="grid grid-cols-2 gap-3 overflow-y-auto mb-4 pr-2">
                   </div>
+
+                  <button id="btn-trash"
+                        class="w-full py-3 rounded-xl border border-white/20 text-white font-bold bg-white/5 hover:bg-white/10 transition">
+                        🔄 Szűrők törlése
+                  </button>
             </div>
       </div>
 
-      <script type="module">
-            import { collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-            import { adatbazis } from "../js/util/firebase-config.js";
+      <script type="module" src="/src/js/vevo/shorts-engine.js"></script>
 
-            const feed = document.getElementById('main-feed');
+      <script>
+            const modal = document.getElementById('filter-modal');
+            const openBtn = document.getElementById('btn-discovery');
+            const closeBtn = document.getElementById('close-modal');
 
-            // FUNKCIÓ: Videók betöltése az adatbázisból
-            async function loadShorts() {
-                  feed.innerHTML = '<div class="text-white p-10 text-center">Ingatlanok betöltése...</div>';
-
-                  try {
-                        const q = query(collection(adatbazis, "lakasok"), limit(10));
-                        const snap = await getDocs(q);
-                        feed.innerHTML = '';
-
-                        snap.forEach(doc => {
-                              const data = doc.data();
-                              const videoUrl = data.video_url || ""; // Ha van videó meződ
-                              const imgUrl = data.kepek_vert ? data.kepek_vert[0] : "https://placehold.co/600x1000?text=Nincs+videó";
-
-                              const container = document.createElement('div');
-                              container.className = 'video-container';
-                              container.innerHTML = `
-                        ${videoUrl ?
-                                          `<video src="${videoUrl}" loop playsinline muted></video>` :
-                                          `<img src="${imgUrl}" class="video-placeholder">`
-                                    }
-                        <div class="video-overlay">
-                            <div class="video-info">
-                                <span class="brand-badge">${data.kerulet || 'Budapest'}</span>
-                                <h2 class="text-xl font-bold">${data.nev || 'Prémium lakás'}</h2>
-                                <p class="text-lime-400 font-bold text-lg">${Number(data.vételár).toLocaleString()} Ft</p>
-                                <p class="text-sm opacity-80">${data.alapterület} m² • ${data.szobák} szoba</p>
-                                <button onclick="window.location.href='adatlap.html?id=${doc.id}'" class="mt-4 pointer-events-auto bg-white/20 backdrop-blur px-4 py-2 rounded-lg text-sm font-bold border border-white/20">
-                                    Adatlap megnyitása →
-                                </button>
-                            </div>
-                        </div>
-                    `;
-
-                              // Kattintásra Play/Pause (ha videó)
-                              container.addEventListener('click', () => {
-                                    const v = container.querySelector('video');
-                                    if (v) v.paused ? v.play() : v.paused();
-                              });
-
-                              feed.appendChild(container);
-                        });
-
-                        // Automatikus lejátszás az elsőhöz (láthatóság alapján érdemes finomítani)
-                        const firstVideo = feed.querySelector('video');
-                        if (firstVideo) firstVideo.play();
-
-                  } catch (err) {
-                        console.error(err);
-                        feed.innerHTML = '<div class="text-white p-10 text-center">Hiba történt a betöltéskor.</div>';
-                  }
-            }
-
-            // Modal kezelő
-            window.toggleFilter = (show) => {
-                  const modal = document.getElementById('filter-modal');
+            const toggleFilter = (show) => {
                   if (show) {
-                        modal.classList.add('active');
                         modal.classList.remove('hidden');
+                        setTimeout(() => modal.classList.add('active'), 10);
                   } else {
                         modal.classList.remove('active');
                         setTimeout(() => modal.classList.add('hidden'), 300);
                   }
             };
 
-            loadShorts();
+            openBtn.addEventListener('click', () => toggleFilter(true));
+            closeBtn.addEventListener('click', () => toggleFilter(false));
       </script>
 </body>
 
