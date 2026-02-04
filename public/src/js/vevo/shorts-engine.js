@@ -208,6 +208,24 @@ function renderVideos(list) {
   });
 }
 
+// Add ezt a loadVideos végéhez vagy a renderVideos után:
+function setupAutoPlay() {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.play().catch(() => {}); // Automatikus lejátszás ha látható
+        } else {
+          entry.target.pause();
+        }
+      });
+    },
+    { threshold: 0.7 }
+  );
+
+  document.querySelectorAll("video").forEach((v) => observer.observe(v));
+}
+
 function createVideoCard(data) {
   const container = document.createElement("div");
   container.className = "video-container";
@@ -256,7 +274,7 @@ function createVideoCard(data) {
     }
   });
   const muteBtn = container.querySelector(".mute-btn");
-  video.muted = window.isGloballyMuted || true;
+  video.muted = window.isGloballyMuted;
   muteBtn.onclick = (e) => {
     e.stopPropagation();
     toggleGlobalMute();
