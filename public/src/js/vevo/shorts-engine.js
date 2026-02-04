@@ -178,12 +178,14 @@ if (searchInput) {
       // Összefűzzük az adatokat egy nagy "kereshető szöveggé"
       // + Hozzáadjuk a "lakás ingatlan eladó" szavakat is, hogy ezekre is lehessen keresni!
       const content = `
-                  ${v.varos} 
-                  ${v.utca || ""} 
-                  ${v.leiras || ""} 
-                  ${v.ar} 
-                  lakás ház ingatlan eladó
-              `.toLowerCase();
+            ${v.id || ""}                 
+            ${v.varos || ""} 
+            ${v.telepules || ""}          
+            ${v.utca || ""} 
+            ${v.leiras || ""} 
+            ${v.ar || ""} 
+            lakás ház ingatlan eladó
+          `.toLowerCase();
 
       // LOGIKA: Csak azt adjuk vissza, ahol a beírt szavak MINDEGYIKE szerepel
       // Így a "Debrecen 50 millió" működni fog (város + ár)
