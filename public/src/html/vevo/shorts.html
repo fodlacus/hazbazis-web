@@ -5,7 +5,7 @@
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
       <title>Házbázis Shorts</title>
-
+      <script src="https://cdn.tailwindcss.com"></script>
       <style>
             body {
                   margin: 0;
@@ -13,64 +13,29 @@
                   background-color: #000;
                   font-family: Arial, sans-serif;
                   overflow: hidden;
-                  /* FONTOS: Csak a feed görgessen */
                   height: 100dvh;
-                  /* Dynamic Viewport Height - mobilra jobb */
             }
 
-            /* Kereső sáv */
-            .search-bar {
-                  position: absolute;
-                  top: 20px;
-                  left: 50%;
-                  transform: translateX(-50%);
-                  z-index: 100;
-                  width: 90%;
-                  max-width: 400px;
-                  display: flex;
-                  gap: 10px;
-            }
-
-            .search-bar input {
-                  flex: 1;
-                  padding: 12px 20px;
-                  border-radius: 30px;
-                  border: 1px solid rgba(255, 255, 255, 0.3);
-                  background: rgba(0, 0, 0, 0.5);
-                  color: white;
-                  backdrop-filter: blur(10px);
-                  outline: none;
-            }
-
-            /* A Fő Konténer - Itt javítottuk a mobilos ugrálást */
+            /* Videó görgetés */
             .video-feed {
                   height: 100dvh;
-                  /* 100% helyett dvh mobilra */
                   width: 100%;
                   overflow-y: scroll;
                   scroll-snap-type: y mandatory;
                   scroll-behavior: smooth;
             }
 
-            /* Hide scrollbar */
             .video-feed::-webkit-scrollbar {
                   display: none;
             }
 
-            .video-feed {
-                  -ms-overflow-style: none;
-                  scrollbar-width: none;
-            }
-
-            /* Videó Kártya */
+            /* Videó kártya */
             .video-container {
                   position: relative;
                   height: 100dvh;
-                  /* FIX magasság */
                   width: 100%;
                   scroll-snap-align: start;
                   scroll-snap-stop: always;
-                  /* Kényszeríti a megállást */
                   display: flex;
                   justify-content: center;
                   align-items: center;
@@ -83,10 +48,9 @@
                   width: 100%;
                   object-fit: cover;
                   max-width: 600px;
-                  /* Desktopon ne legyen túl széles */
             }
 
-            /* Overlay */
+            /* Overlay elemek */
             .video-overlay {
                   position: absolute;
                   bottom: 0;
@@ -96,46 +60,10 @@
                   max-width: 600px;
                   padding: 20px;
                   padding-bottom: 40px;
-                  /* Mobilon az alja ne lógjon le */
-                  box-sizing: border-box;
                   background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
                   pointer-events: none;
             }
 
-            /* Szövegek */
-            .video-info h3 {
-                  margin: 0 0 5px 0;
-                  font-size: 1.4rem;
-                  text-shadow: 1px 1px 3px black;
-                  color: white;
-            }
-
-            .video-info p {
-                  margin: 0;
-                  font-size: 1rem;
-                  color: #e2e2e2;
-            }
-
-            .specs {
-                  font-size: 0.85rem !important;
-                  color: #E2F1B0 !important;
-                  margin-top: 5px !important;
-                  font-weight: bold;
-            }
-
-            /* Címke */
-            .brand-badge {
-                  background: #E2F1B0;
-                  color: #3D4A16;
-                  padding: 4px 8px;
-                  border-radius: 4px;
-                  font-size: 0.8rem;
-                  font-weight: 800;
-                  margin-bottom: 5px;
-                  display: inline-block;
-            }
-
-            /* Gombok (Jobb oldalt) */
             .controls {
                   position: absolute;
                   right: 15px;
@@ -147,6 +75,7 @@
                   z-index: 10;
             }
 
+            /* Gombok */
             .controls button,
             .menu-btn {
                   width: 50px;
@@ -172,13 +101,33 @@
                   color: black;
             }
 
-            .menu-btn {
-                  margin-bottom: 20px;
-                  border-color: #E2F1B0;
-                  color: #E2F1B0;
+            /* Szövegek */
+            .video-info h3 {
+                  margin: 0 0 5px 0;
+                  font-size: 1.4rem;
+                  text-shadow: 1px 1px 3px black;
+                  color: white;
             }
 
-            /* Play ikon animáció */
+            .specs {
+                  font-size: 0.85rem !important;
+                  color: #E2F1B0 !important;
+                  margin-top: 5px !important;
+                  font-weight: bold;
+            }
+
+            .brand-badge {
+                  background: #E2F1B0;
+                  color: #3D4A16;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  font-size: 0.8rem;
+                  font-weight: 800;
+                  margin-bottom: 5px;
+                  display: inline-block;
+            }
+
+            /* Play Ikon */
             .play-icon {
                   position: absolute;
                   top: 50%;
@@ -201,25 +150,25 @@
       <div id="filter-modal"
             class="fixed inset-0 bg-black/95 z-[200] hidden flex flex-col justify-end md:justify-center items-center backdrop-blur-md">
 
-            <div class="bg-[#121212] w-full md:w-[500px] h-[80vh] md:h-auto md:max-h-[80vh] rounded-t-3xl md:rounded-3xl p-6 border-t md:border border-white/10 shadow-2xl transform transition-transform duration-300 translate-y-full md:translate-y-0 flex flex-col"
+            <div class="bg-[#121212] w-full md:w-[500px] h-[85vh] md:h-auto md:max-h-[85vh] rounded-t-3xl md:rounded-3xl p-6 border-t md:border border-white/10 shadow-2xl transform transition-transform duration-300 translate-y-full md:translate-y-0 flex flex-col"
                   id="filter-content">
 
                   <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-white">Mit keresel ma? 🤔</h3>
+                        <h3 class="text-xl font-bold text-white">Felfedezés 🌍</h3>
                         <button
                               class="close-filter-btn p-2 bg-white/10 rounded-full text-white hover:bg-white/20">✕</button>
                   </div>
 
-                  <div id="discovery-grid" class="grid grid-cols-2 gap-4 overflow-y-auto flex-1 pb-4">
+                  <div id="discovery-grid" class="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1">
                   </div>
 
                   <button onclick="window.szuroTorlese();"
-                        class="close-filter-btn w-full mt-4 py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/10 transition bg-black/40">
-                        🔄 Összes Videó Mutatása
+                        class="close-filter-btn w-full mt-4 py-3 rounded-xl border border-white/20 text-white font-bold hover:bg-white/10 transition bg-white/5">
+                        🔄 Minden videó mutatása
                   </button>
             </div>
       </div>
-      
+
       <script type="module" src="../../js/vevo/shorts-engine.js"></script>
 
 </body>
