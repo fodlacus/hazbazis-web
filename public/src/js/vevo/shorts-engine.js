@@ -193,14 +193,15 @@ if (searchInput) {
     // Ha nincs találat, írjunk ki egy szép üzenetet
     if (filtered.length === 0) {
       videoFeed.innerHTML = `
-                  <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.5);">
-                      <p style="font-size: 1.2rem;">Nincs találat erre: "${rawTerm}"</p>
-                      <p style="font-size: 0.9rem; margin-top: 10px;">Tipp: Próbáld ragozás nélkül (pl. "Debrecen" a "Debreceni" helyett)</p>
-                      <button onclick="document.getElementById('search-input').value=''; loadVideos();" 
-                          style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; border: none; color: white; cursor: pointer;">
-                          Szűrő törlése ✕
-                      </button>
-                  </div>`;
+          <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.5);">
+              <p style="font-size: 1.2rem;">Nincs találat erre: "${rawTerm}"</p>
+              <p style="font-size: 0.9rem; margin-top: 10px;">Tipp: Próbáld ragozás nélkül (pl. "Debrecen")</p>
+              
+              <button onclick="window.szuroTorlese()" 
+                  style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; border: none; color: white; cursor: pointer;">
+                  Szűrő törlése ✕
+              </button>
+          </div>`;
     } else {
       renderVideos(filtered);
     }
@@ -228,3 +229,13 @@ const observer = new IntersectionObserver(
   },
   { threshold: 0.6 }
 ); // Akkor vált, ha 60%-ban látszik
+
+// EXPORTÁLJUK A TÖRLÉS FUNKCIÓT A GLOBÁLIS TÉRBE (HÍD)
+window.szuroTorlese = function () {
+  // 1. Töröljük a mezőt
+  const searchInput = document.getElementById("search-input");
+  if (searchInput) searchInput.value = "";
+
+  // 2. Visszatöltjük az eredeti listát a memóriából (nem kell újra adatbázis hívás!)
+  renderVideos(allVideos);
+};
