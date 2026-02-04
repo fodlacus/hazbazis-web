@@ -1,4 +1,4 @@
-import { db } from "../util/firebase-config.js";
+import { adatbazis as db } from "../util/firebase-config.js";
 import {
   collection,
   query,
@@ -8,7 +8,7 @@ import {
   updateDoc,
   doc,
   increment,
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- GLOBÁLIS VÁLTOZÓK ---
 const videoFeed = document.querySelector(".video-feed");
