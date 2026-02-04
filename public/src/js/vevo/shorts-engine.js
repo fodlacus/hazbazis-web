@@ -1,98 +1,198 @@
-// --- BEÁLLÍTÁSOK ---
-// IDE ÍRD BE A TE R2.DEV LINKEDET (Ne felejtsd a /shorts/ részt a végéről, ha kell, de itt most kódból fűzzük hozzá)
-const R2_BASE_URL = "https://pub-cbf740778c2a46d3bcfb429ff54ec05d.r2.dev";
-// A teszt videók listája (A képernyőfotód alapján)
-const videoIds = [
-  "HB-184032",
-  "HB-372205",
-  "HB-407050",
-  "HB-589023",
-  "HB-696655",
-  "HB-719185", // Ellenőrizd, a képen mintha elírás lenne a fájlnévben (i betű 1-es helyett?), de másold pontosan!
-];
+import { db } from "../util/firebase-config.js";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  updateDoc,
+  doc,
+  increment,
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-const container = document.getElementById("shorts-container");
+// --- GLOBÁLIS VÁLTOZÓK ---
+const videoFeed = document.querySelector(".video-feed");
+const searchInput = document.getElementById("search-input");
+let isGloballyMuted = true; // Alapból némítva (böngészők szeretik)
+let allVideos = [];
 
-// --- INDÍTÁS ---
-renderVideos();
+// --- 1. INDÍTÁS ---
+document.addEventListener("DOMContentLoaded", () => {
+  loadVideos();
+});
 
-function renderVideos() {
-  videoIds.forEach((id) => {
-    // Videó URL összerakása
-    const videoUrl = `${R2_BASE_URL}/shorts/${id}.mp4`;
+// --- 2. ADATOK BETÖLTÉSE (Lakasok + VideoURL + Order) ---
+async function loadVideos() {
+  try {
+    // Csak azokat kérjük le, ahol van 'videoUrl'
+    // És sorrendbe állítjuk az 'order' mező szerint
+    const q = query(collection(db, "lakasok"), orderBy("order", "asc"));
 
-    const card = document.createElement("div");
-    card.className = "video-card flex justify-center items-center";
+    const snapshot = await getDocs(q);
 
-    card.innerHTML = `
-            <video 
-                src="${videoUrl}" 
-                class="h-full w-full object-cover md:max-w-md" 
-                playsinline 
-                loop 
-                onclick="togglePlay(this)">
-            </video>
+    allVideos = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      // Csak akkor adjuk hozzá, ha tényleg van videója
+      if (data.videoUrl) {
+        allVideos.push({ id: doc.id, ...data });
+      }
+    });
 
-            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-6 pt-20 pointer-events-none md:max-w-md md:left-1/2 md:-translate-x-1/2">
-                <div class="flex items-end justify-between">
-                    <div>
-                        <div class="bg-[#E2F1B0] text-[#3D4A16] px-2 py-1 rounded inline-block text-xs font-bold mb-2">
-                            #${id}
-                        </div>
-                        <h3 class="text-xl font-bold mb-1">Eladó Álomotthon 🏡</h3>
-                        <p class="text-white/80 text-sm">Nézd meg ezt a csodás ingatlant!</p>
-                    </div>
-                    
-                    <div class="flex flex-col gap-4 pointer-events-auto">
-                        <button class="p-3 bg-white/10 rounded-full backdrop-blur-md hover:bg-[#E2F1B0] hover:text-black transition">
-                            ❤️
-                        </button>
-                        <button onclick="window.location.href='adatlap.html?id=${id}'" class="p-3 bg-white/10 rounded-full backdrop-blur-md hover:bg-[#E2F1B0] hover:text-black transition">
-                            👁️
-                        </button>
-                    </div>
-                </div>
-            </div>
+    if (allVideos.length === 0) {
+      videoFeed.innerHTML =
+        '<div style="color:white; text-align:center; padding-top:40vh;">Nincs feltöltött videó.</div>';
+      return;
+    }
 
-            <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 play-icon">
-                <div class="bg-black/40 p-4 rounded-full backdrop-blur-sm">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-            </div>
-        `;
-
-    container.appendChild(card);
-  });
-
-  // Intersection Observer: Csak az a videó induljon el, ami épp látszik!
-  setupScrollObserver();
-}
-
-function togglePlay(video) {
-  if (video.paused) {
-    video.play();
-  } else {
-    video.pause();
+    renderVideos(allVideos);
+  } catch (error) {
+    console.error("Hiba a videók betöltésekor:", error);
+    // Ha hiányzik az index, a konzol dobni fog egy linket, arra kattints rá!
+    if (error.message.includes("index")) {
+      alert("Hiányzó Firebase Index! Nézd meg a konzolt a linkért.");
+    }
   }
 }
 
-function setupScrollObserver() {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        const video = entry.target.querySelector("video");
-        if (entry.isIntersecting) {
-          video.play(); // Ha beúszik, indul
-        } else {
-          video.pause(); // Ha kiúszik, megáll
-          video.currentTime = 0; // Visszatekerjük az elejére
-        }
-      });
-    },
-    { threshold: 0.6 }
-  ); // Akkor vált, ha 60%-ban látszik
+// --- 3. MEGJELENÍTÉS ÉS RENDERELÉS ---
+function renderVideos(list) {
+  videoFeed.innerHTML = "";
 
-  document.querySelectorAll(".video-card").forEach((card) => {
-    observer.observe(card);
+  list.forEach((videoData) => {
+    const el = createVideoCard(videoData);
+    videoFeed.appendChild(el);
+    observer.observe(el);
   });
 }
+
+function createVideoCard(data) {
+  const container = document.createElement("div");
+  container.className = "video-container";
+
+  // Extrák ikonjai (Ingatlan specifikus)
+  let extrasInfo = `${data.alapterulet} m² • ${data.szobaszam} szoba`;
+  if (data.erkely > 0) extrasInfo += " • Erkély";
+
+  // Azononosító
+  const azonosito = data.id.startsWith("HB") ? data.id : `#${data.id}`;
+
+  container.innerHTML = `
+        <video 
+            src="${data.videoUrl}" 
+            loop 
+            playsinline 
+            muted 
+            poster="${data.kepek ? data.kepek[0] : ""}" 
+        ></video>
+        
+        <div class="play-icon">▶</div>
+
+        <div class="video-overlay">
+            <div class="controls">
+                <a href="../../../index.html" class="menu-btn" title="Főoldal">🏠</a>
+                
+                <button class="mute-btn">${
+                  isGloballyMuted ? "🔇" : "🔊"
+                }</button>
+                
+                <button onclick="window.location.href='adatlap.html?id=${
+                  data.id
+                }'" title="Adatlap">
+                    📄
+                </button>
+            </div>
+
+            <div class="video-info">
+                <span class="brand-badge">${azonosito}</span>
+                <h3>${data.varos}, ${data.utca || "Központ"}</h3>
+                <p>${Number(data.ar).toLocaleString()} Ft</p>
+                <p class="specs">${extrasInfo}</p>
+            </div>
+        </div>
+    `;
+
+  // --- ESEMÉNYKEZELŐK (Javítva) ---
+
+  const video = container.querySelector("video");
+  const muteBtn = container.querySelector(".mute-btn");
+  const playIcon = container.querySelector(".play-icon");
+
+  // 1. Play/Pause (Kattintás a videóra)
+  container.addEventListener("click", (e) => {
+    // Ha gombra kattintottunk, ne álljon meg
+    if (e.target.closest("button") || e.target.closest("a")) return;
+
+    if (video.paused) {
+      video.play();
+      playIcon.style.opacity = "0";
+    } else {
+      video.pause();
+      playIcon.style.opacity = "1";
+    }
+  });
+
+  // 2. Némítás kezelés
+  video.muted = isGloballyMuted; // Beállítás indításkor
+
+  muteBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // Ne indítsa el a videót a háttérben
+    toggleGlobalMute();
+  });
+
+  return container;
+}
+
+// --- 4. VEZÉRLÉS LOGIKA ---
+
+function toggleGlobalMute() {
+  isGloballyMuted = !isGloballyMuted;
+
+  // Minden videót frissítünk
+  document
+    .querySelectorAll("video")
+    .forEach((v) => (v.muted = isGloballyMuted));
+
+  // Minden gombot frissítünk
+  document.querySelectorAll(".mute-btn").forEach((btn) => {
+    btn.textContent = isGloballyMuted ? "🔇" : "🔊";
+  });
+}
+
+// --- 5. KERESÉS ---
+if (searchInput) {
+  searchInput.addEventListener("input", (e) => {
+    const term = e.target.value.toLowerCase();
+
+    const filtered = allVideos.filter((v) => {
+      const text = `${v.varos} ${v.utca} ${v.leiras || ""} ${
+        v.ar
+      }`.toLowerCase();
+      return text.includes(term);
+    });
+
+    renderVideos(filtered);
+  });
+}
+
+// --- 6. OBSERVER (TikTok effekt) ---
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      const video = entry.target.querySelector("video");
+      if (!video) return;
+
+      if (entry.isIntersecting) {
+        // Ha beúszott a képbe
+        video.currentTime = 0; // Mindig elölről kezdje
+        video
+          .play()
+          .catch(() => console.log("Autoplay tiltva (interakció kell)"));
+      } else {
+        // Ha kiúszott
+        video.pause();
+      }
+    });
+  },
+  { threshold: 0.6 }
+); // Akkor vált, ha 60%-ban látszik
