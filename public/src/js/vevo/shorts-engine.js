@@ -231,28 +231,32 @@ function setupAutoPlay() {
 function createVideoCard(data) {
   const container = document.createElement("div");
   container.className = "video-container";
-  const azonosito = data.id.startsWith("HB") ? data.id : `#${data.id}`;
 
+  const azonosito = data.id.startsWith("HB") ? data.id : `#${data.id}`;
   const arText =
-    data.ar > 0 ? Number(data.ar).toLocaleString() + " Ft" : "Ár nincs megadva";
+    data.ar > 0
+      ? Number(data.ar).toLocaleString() + " Ft"
+      : "Ár: Érdeklődjön telefonon";
   const meretText = data.alapterulet > 0 ? `${data.alapterulet} m²` : "";
   const szobaText = data.szobaszam > 0 ? `• ${data.szobaszam} szoba` : "";
+
+  // Vizuális állapotok előkészítése
+  const muteIcon = window.isGloballyMuted ? "🔇" : "🔊";
+  const muteBorder = window.isGloballyMuted
+    ? "rgba(255, 255, 255, 0.2)"
+    : "#E2F1B0";
 
   container.innerHTML = `
         <video src="${data.videoUrl}" loop playsinline muted poster="${
     data.kepek ? data.kepek[0] : ""
   }"></video>
-        <div class="play-icon">▶</div>
+        <div class="play-icon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; opacity: 0; pointer-events: none; z-index: 10;">▶</div>
         <div class="video-overlay">
             <div class="controls">
                 <a href="../../../index.html" class="menu-btn" title="Főoldal">🏠</a>
                 <button class="details-btn filter-trigger-btn" style="border-color: #E2F1B0; color: #E2F1B0;" title="Kategóriák">🔍</button>
-                <button class="mute-btn">${
-                  window.isGloballyMuted ? "🔇" : "🔊"
-                }</button>
-                <button onclick="window.location.href='adatlap.html?id=${
-                  data.id
-                }'" title="Adatlap">📄</button>
+                <button class="mute-btn" style="border-color: ${muteBorder}; color: white;">${muteIcon}</button>
+                <button class="info-btn" title="Adatlap">📄</button>
             </div>
             <div class="video-info">
                 <span class="brand-badge">${azonosito}</span>
@@ -265,8 +269,13 @@ function createVideoCard(data) {
 
   const video = container.querySelector("video");
   const playIcon = container.querySelector(".play-icon");
+  const muteBtn = container.querySelector(".mute-btn");
+  const infoBtn = container.querySelector(".info-btn");
+
+  // Play/Pause kezelése (kivéve ha gombra kattintunk)
   container.addEventListener("click", (e) => {
     if (e.target.closest("button") || e.target.closest("a")) return;
+
     if (video.paused) {
       video.play();
       playIcon.style.opacity = "0";
@@ -275,25 +284,63 @@ function createVideoCard(data) {
       playIcon.style.opacity = "1";
     }
   });
-  const muteBtn = container.querySelector(".mute-btn");
-  video.muted = window.isGloballyMuted;
+
+  // Némítás gomb eseménykezelő
   muteBtn.onclick = (e) => {
     e.stopPropagation();
-    toggleGlobalMute();
+    if (typeof window.toggleGlobalMute === "function") {
+      window.toggleGlobalMute();
+    } else {
+      // Fallback ha nincs kész a globális függvény
+      window.isGloballyMuted = !window.isGloballyMuted;
+      document
+        .querySelectorAll("video")
+        .forEach((v) => (v.muted = window.isGloballyMuted));
+      document
+        .querySelectorAll(".mute-btn")
+        .forEach(
+          (btn) => (btn.innerText = window.isGloballyMuted ? "🔇" : "🔊")
+        );
+    }
   };
+
+  // Adatlap gomb eseménykezelő
+  infoBtn.onclick = (e) => {
+    e.stopPropagation();
+    window.location.href = `adatlap.html?id=${data.id}`;
+  };
+
+  // Kezdő némítás állapot beállítása
+  video.muted = window.isGloballyMuted;
+
   return container;
 }
 
-window.isGloballyMuted = true;
-function toggleGlobalMute() {
+// window.isGloballyMuted = true;
+
+window.toggleGlobalMute = function () {
+  // Állapot váltása
   window.isGloballyMuted = !window.isGloballyMuted;
-  document
-    .querySelectorAll("video")
-    .forEach((v) => (v.muted = window.isGloballyMuted));
-  document
-    .querySelectorAll(".mute-btn")
-    .forEach((btn) => (btn.textContent = window.isGloballyMuted ? "🔇" : "🔊"));
-}
+
+  // 1. Minden videó némítása/visszahangosítása
+  const allVideos = document.querySelectorAll("video");
+  allVideos.forEach((v) => {
+    v.muted = window.isGloballyMuted;
+  });
+
+  // 2. AZ ÖSSZES némító gomb ikonjának frissítése a képernyőn
+  const allMuteBtns = document.querySelectorAll(".mute-btn");
+  allMuteBtns.forEach((btn) => {
+    btn.innerHTML = window.isGloballyMuted ? "🔇" : "🔊";
+
+    // Opcionális: adjunk neki egy kis vizuális visszajelzést (piros keret ha némítva van)
+    if (window.isGloballyMuted) {
+      btn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+    } else {
+      btn.style.borderColor = "#E2F1B0"; // A hazbazis zöldes színe
+    }
+  });
+};
 
 window.szuroTorlese = function () {
   renderVideos(allVideos);
