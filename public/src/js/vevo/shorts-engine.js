@@ -1,41 +1,48 @@
-import { adatbazis as db } from "../util/firebase-config.js";
+// src/js/vevo/shorts-engine.js
+
+// Importáljuk az Auth-ot is!
+import { adatbazis as db, auth } from "../util/firebase-config.js";
 import {
   collection,
   query,
-  where,
   orderBy,
   getDocs,
-  updateDoc,
   doc,
-  increment,
+  getDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- GLOBÁLIS VÁLTOZÓK ---
 const videoFeed = document.querySelector(".video-feed");
-const searchInput = document.getElementById("search-input");
-let isGloballyMuted = true; // Alapból némítva (böngészők szeretik)
 let allVideos = [];
+let currentUser = null;
 
 // --- 1. INDÍTÁS ---
 document.addEventListener("DOMContentLoaded", () => {
-  loadVideos();
+  // Figyeljük, hogy be van-e lépve a felhasználó
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    loadVideos(); // Videók betöltése
+  });
 });
 
-// --- 2. ADATOK BETÖLTÉSE (Lakasok + VideoURL + Order) ---
+// --- 2. VIDEÓK BETÖLTÉSE ---
 async function loadVideos() {
   try {
-    // Csak azokat kérjük le, ahol van 'videoUrl'
-    // És sorrendbe állítjuk az 'order' mező szerint
     const q = query(collection(db, "lakasok"), orderBy("order", "asc"));
-
     const snapshot = await getDocs(q);
 
     allVideos = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-      // Csak akkor adjuk hozzá, ha tényleg van videója
       if (data.videoUrl) {
-        allVideos.push({ id: doc.id, ...data });
+        // Biztosítjuk, hogy a számok tényleg számok legyenek
+        allVideos.push({
+          id: doc.id,
+          ...data,
+          ar: Number(data.ar),
+          alapterulet: Number(data.alapterulet || data.meret),
+          szobaszam: Number(data.szobaszam),
+        });
       }
     });
 
@@ -47,18 +54,177 @@ async function loadVideos() {
 
     renderVideos(allVideos);
   } catch (error) {
-    console.error("Hiba a videók betöltésekor:", error);
-    // Ha hiányzik az index, a konzol dobni fog egy linket, arra kattints rá!
-    if (error.message.includes("index")) {
-      alert("Hiányzó Firebase Index! Nézd meg a konzolt a linkért.");
-    }
+    console.error("Hiba:", error);
   }
 }
 
-// --- 3. MEGJELENÍTÉS ÉS RENDERELÉS ---
+// --- 3. SZŰRŐ GOMB ÉS LOGIKA ---
+
+// Ezt hívja a HTML, amikor megnyílik a modal
+window.loadUserFilters = async function () {
+  const listContainer = document.getElementById("saved-filters-list");
+
+  if (!currentUser) {
+    listContainer.innerHTML =
+      '<p class="text-white text-center">Jelentkezz be a mentett keresésekhez!</p>';
+    return;
+  }
+
+  try {
+    const subColRef = collection(
+      db,
+      "felhasznalok",
+      currentUser.uid,
+      "mentett_keresesek"
+    );
+    const snapshot = await getDocs(subColRef);
+
+    if (snapshot.empty) {
+      listContainer.innerHTML =
+        '<p class="text-gray-400 text-center">Nincs mentett keresésed.</p>';
+      return;
+    }
+
+    listContainer.innerHTML = "";
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const btn = document.createElement("button");
+      btn.className =
+        "w-full text-left p-4 bg-white/5 hover:bg-[#E2F1B0] hover:text-black rounded-xl transition group border border-white/10 mb-2";
+
+      const nev = data.nev || data.elnevezes || "Mentett keresés";
+      // Kijelezzük a főbb feltételeket, hogy tudja mit választ
+      const reszletek = [
+        data.telepules,
+        data.minTerulet ? `Min ${data.minTerulet}m²` : null,
+        data.maxAr ? `Max ${data.maxAr / 1000000}M` : null,
+      ]
+        .filter(Boolean)
+        .join(" • ");
+
+      btn.innerHTML = `
+                  <div class="font-bold text-lg">${nev}</div>
+                  <div class="text-sm text-gray-400 group-hover:text-black/70">${
+                    reszletek || "Minden feltétel"
+                  }</div>
+              `;
+
+      // KATTINTÁS: Itt indul a folyamat
+      btn.onclick = () => runSavedFilterProcess(data);
+
+      listContainer.appendChild(btn);
+    });
+  } catch (error) {
+    console.error("Hiba:", error);
+    listContainer.innerHTML =
+      '<p class="text-red-400 text-center">Hiba történt.</p>';
+  }
+};
+
+// --- A FOLYAMAT VEZÉRLÉSE ---
+function runSavedFilterProcess(criteria) {
+  // 1. LÉPÉS: Belső tábla generálása (Csak HB számok!)
+  const allowedHbNumbers = generateInternalIdTable(criteria);
+
+  console.log("✅ Generált HB lista:", allowedHbNumbers);
+
+  // 2. LÉPÉS: Szűrés kizárólag a HB számok alapján
+  applyIdFilter(allowedHbNumbers);
+
+  // UI Feedback
+  const modalList = document.getElementById("saved-filters-list");
+  if (allowedHbNumbers.length > 0) {
+    modalList.innerHTML = `<div class="text-center py-4">
+              <div class="text-[#E2F1B0] text-3xl font-bold mb-2">✓</div>
+              <p class="text-white">Szűrés aktiválva!</p>
+              <p class="text-gray-400 text-sm">${allowedHbNumbers.length} videó felelt meg.</p>
+          </div>`;
+    setTimeout(() => closeFilterModal(), 1000);
+  } else {
+    alert("Ennek a keresésnek sajnos egyetlen videó sem felel meg.");
+  }
+}
+
+// --- 1. ALRENDSZER: ID LISTA GYÁRTÁS ---
+function generateInternalIdTable(criteria) {
+  // Ez a függvény végigmegy az összes ismert videón, és kiválogatja
+  // azokat a HB számokat, amik megfelelnek a feltételeknek.
+
+  const matchingIds = [];
+
+  allVideos.forEach((video) => {
+    let match = true;
+
+    // Vizsgálatok (Adatbázis mezők alapján)
+    if (criteria.telepules && video.varos !== criteria.telepules) match = false;
+    if (criteria.maxAr && video.ar > criteria.maxAr) match = false;
+    if (criteria.minAr && video.ar < criteria.minAr) match = false;
+    if (criteria.minTerulet && video.alapterulet < criteria.minTerulet)
+      match = false;
+    if (criteria.minSzoba && video.szobaszam < criteria.minSzoba) match = false;
+    if (criteria.kellErkely === true && !video.erkely) match = false;
+
+    // Ha minden feltételnek megfelelt, felírjuk a HB számát a listára
+    if (match) {
+      matchingIds.push(video.id);
+    }
+  });
+
+  return matchingIds; // Ez adja vissza pl: ['HB-12345', 'HB-67890']
+}
+
+// --- 2. ALRENDSZER: MEGJELENÍTÉS ID ALAPJÁN ---
+function applyIdFilter(idList) {
+  // Ez a függvény már nem tud semmit az árról vagy városról.
+  // Csak azt nézi: "A videó ID-ja benne van a kapott listában?"
+
+  const filteredVideos = allVideos.filter((video) => idList.includes(video.id));
+  renderVideos(filteredVideos);
+}
+
+// --- A MATEMATIKA: Itt hasonlítjuk össze a videót a feltétellel ---
+function applySavedFilter(criteria) {
+  console.log("Szűrés erre:", criteria);
+
+  const filtered = allVideos.filter((video) => {
+    // 1. Település (Ha van megadva a szűrőben)
+    if (criteria.telepules && video.varos !== criteria.telepules) return false;
+
+    // 2. Ár (maxAr) - A képen 'null' volt, de ha van, figyeljük
+    if (criteria.maxAr && video.ar > criteria.maxAr) return false;
+
+    // 3. Méret (minTerulet) - A képen '40' volt
+    if (criteria.minTerulet && video.alapterulet < criteria.minTerulet)
+      return false;
+
+    // 4. Szobák (minSzoba)
+    if (criteria.minSzoba && video.szobaszam < criteria.minSzoba) return false;
+
+    // 5. Egyéb bool feltételek (Csak ha TRUE a keresésben!)
+    if (criteria.kellErkely === true && !video.erkely) return false;
+    // if (criteria.kellLift === true && !video.lift) return false; // Ha van lift adatod
+
+    return true; // Ha minden teszten átment
+  });
+
+  // Modal bezárása és videók frissítése
+  document.getElementById(
+    "saved-filters-list"
+  ).innerHTML = `<p class="text-center text-green-400">Szűrés kész! ${filtered.length} találat.</p>`;
+  setTimeout(() => closeFilterModal(), 800);
+
+  if (filtered.length === 0) {
+    alert("Sajnos egyik videó sem felel meg ennek a keresésnek.");
+    // Nem töröljük a listát, hogy lássa az üzenetet
+  } else {
+    renderVideos(filtered);
+  }
+}
+
+// --- 4. RENDERELÉS (A Gomb beillesztésével) ---
 function renderVideos(list) {
   videoFeed.innerHTML = "";
-
   list.forEach((videoData) => {
     const el = createVideoCard(videoData);
     videoFeed.appendChild(el);
@@ -69,60 +235,49 @@ function renderVideos(list) {
 function createVideoCard(data) {
   const container = document.createElement("div");
   container.className = "video-container";
-
-  // Extrák ikonjai (Ingatlan specifikus)
-  let extrasInfo = `${data.alapterulet} m² • ${data.szobaszam} szoba`;
-  if (data.erkely > 0) extrasInfo += " • Erkély";
-
-  // Azononosító
   const azonosito = data.id.startsWith("HB") ? data.id : `#${data.id}`;
 
+  // A HTML ugyanaz, csak hozzáadtuk a SZŰRŐ GOMBOT (🔍 ikon)
   container.innerHTML = `
-        <video 
-            src="${data.videoUrl}" 
-            loop 
-            playsinline 
-            muted 
-            poster="${data.kepek ? data.kepek[0] : ""}" 
-        ></video>
-        
+        <video src="${data.videoUrl}" loop playsinline muted poster="${
+    data.kepek ? data.kepek[0] : ""
+  }"></video>
         <div class="play-icon">▶</div>
 
         <div class="video-overlay">
             <div class="controls">
                 <a href="../../../index.html" class="menu-btn" title="Főoldal">🏠</a>
                 
+                <button onclick="openFilterModal()" class="details-btn" style="border-color: #E2F1B0; color: #E2F1B0;" title="Mentett Szűrések">
+                    🔍
+                </button>
+
                 <button class="mute-btn">${
-                  isGloballyMuted ? "🔇" : "🔊"
+                  window.isGloballyMuted ? "🔇" : "🔊"
                 }</button>
                 
                 <button onclick="window.location.href='adatlap.html?id=${
                   data.id
-                }'" title="Adatlap">
-                    📄
-                </button>
+                }'" title="Adatlap">📄</button>
             </div>
 
             <div class="video-info">
                 <span class="brand-badge">${azonosito}</span>
                 <h3>${data.varos}, ${data.utca || "Központ"}</h3>
                 <p>${Number(data.ar).toLocaleString()} Ft</p>
-                <p class="specs">${extrasInfo}</p>
+                <p class="specs">${data.alapterulet} m² • ${
+    data.szobaszam
+  } szoba</p>
             </div>
         </div>
     `;
 
-  // --- ESEMÉNYKEZELŐK (Javítva) ---
-
+  // Eseménykezelők bekötése (Ugyanaz mint eddig)
   const video = container.querySelector("video");
-  const muteBtn = container.querySelector(".mute-btn");
   const playIcon = container.querySelector(".play-icon");
 
-  // 1. Play/Pause (Kattintás a videóra)
   container.addEventListener("click", (e) => {
-    // Ha gombra kattintottunk, ne álljon meg
     if (e.target.closest("button") || e.target.closest("a")) return;
-
     if (video.paused) {
       video.play();
       playIcon.style.opacity = "0";
@@ -132,112 +287,46 @@ function createVideoCard(data) {
     }
   });
 
-  // 2. Némítás kezelés
-  video.muted = isGloballyMuted; // Beállítás indításkor
-
-  muteBtn.addEventListener("click", (e) => {
-    e.stopPropagation(); // Ne indítsa el a videót a háttérben
+  // Mute gomb logika
+  const muteBtn = container.querySelector(".mute-btn");
+  video.muted = window.isGloballyMuted || true;
+  muteBtn.onclick = (e) => {
+    e.stopPropagation();
     toggleGlobalMute();
-  });
+  };
 
   return container;
 }
 
-// --- 4. VEZÉRLÉS LOGIKA ---
-
+// --- GLOBÁLIS SEGÉDEK ---
+window.isGloballyMuted = true;
 function toggleGlobalMute() {
-  isGloballyMuted = !isGloballyMuted;
-
-  // Minden videót frissítünk
+  window.isGloballyMuted = !window.isGloballyMuted;
   document
     .querySelectorAll("video")
-    .forEach((v) => (v.muted = isGloballyMuted));
-
-  // Minden gombot frissítünk
-  document.querySelectorAll(".mute-btn").forEach((btn) => {
-    btn.textContent = isGloballyMuted ? "🔇" : "🔊";
-  });
+    .forEach((v) => (v.muted = window.isGloballyMuted));
+  document
+    .querySelectorAll(".mute-btn")
+    .forEach((btn) => (btn.textContent = window.isGloballyMuted ? "🔇" : "🔊"));
 }
 
-// --- 5. KERESÉS ---
-if (searchInput) {
-  searchInput.addEventListener("input", (e) => {
-    // Kisbetűsítjük és levágjuk a felesleges szóközöket
-    const rawTerm = e.target.value.toLowerCase().trim();
+window.szuroTorlese = function () {
+  renderVideos(allVideos);
+};
 
-    // Ha törölte a mezőt, töltsük vissza az összeset
-    if (!rawTerm) {
-      renderVideos(allVideos);
-      return;
-    }
-
-    // TRÜKK: Szavakra bontjuk a keresést (pl. "Debrecen lakás" -> ["debrecen", "lakás"])
-    const searchWords = rawTerm.split(/\s+/);
-
-    const filtered = allVideos.filter((v) => {
-      // Összefűzzük az adatokat egy nagy "kereshető szöveggé"
-      // + Hozzáadjuk a "lakás ingatlan eladó" szavakat is, hogy ezekre is lehessen keresni!
-      const content = `
-            ${v.id || ""}                 
-            ${v.varos || ""} 
-            ${v.telepules || ""}          
-            ${v.utca || ""} 
-            ${v.leiras || ""} 
-            ${v.ar || ""} 
-            lakás ház ingatlan eladó
-          `.toLowerCase();
-
-      // LOGIKA: Csak azt adjuk vissza, ahol a beírt szavak MINDEGYIKE szerepel
-      // Így a "Debrecen 50 millió" működni fog (város + ár)
-      return searchWords.every((word) => content.includes(word));
-    });
-
-    // Ha nincs találat, írjunk ki egy szép üzenetet
-    if (filtered.length === 0) {
-      videoFeed.innerHTML = `
-          <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.5);">
-              <p style="font-size: 1.2rem;">Nincs találat erre: "${rawTerm}"</p>
-              <p style="font-size: 0.9rem; margin-top: 10px;">Tipp: Próbáld ragozás nélkül (pl. "Debrecen")</p>
-              
-              <button onclick="window.szuroTorlese()" 
-                  style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; border: none; color: white; cursor: pointer;">
-                  Szűrő törlése ✕
-              </button>
-          </div>`;
-    } else {
-      renderVideos(filtered);
-    }
-  });
-}
-
-// --- 6. OBSERVER (TikTok effekt) ---
+// Observer (TikTok effekt)
 const observer = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
       const video = entry.target.querySelector("video");
       if (!video) return;
-
       if (entry.isIntersecting) {
-        // Ha beúszott a képbe
-        video.currentTime = 0; // Mindig elölről kezdje
-        video
-          .play()
-          .catch(() => console.log("Autoplay tiltva (interakció kell)"));
+        video.currentTime = 0;
+        video.play().catch(() => {});
       } else {
-        // Ha kiúszott
         video.pause();
       }
     });
   },
   { threshold: 0.6 }
-); // Akkor vált, ha 60%-ban látszik
-
-// EXPORTÁLJUK A TÖRLÉS FUNKCIÓT A GLOBÁLIS TÉRBE (HÍD)
-window.szuroTorlese = function () {
-  // 1. Töröljük a mezőt
-  const searchInput = document.getElementById("search-input");
-  if (searchInput) searchInput.value = "";
-
-  // 2. Visszatöltjük az eredeti listát a memóriából (nem kell újra adatbázis hívás!)
-  renderVideos(allVideos);
-};
+);
