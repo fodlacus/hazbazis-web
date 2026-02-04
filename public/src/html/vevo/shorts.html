@@ -149,6 +149,11 @@
                   opacity: 0;
                   transition: opacity 0.2s;
             }
+
+            .no-scrollbar {
+                  -ms-overflow-style: none;
+                  scrollbar-width: none;
+            }
       </style>
 </head>
 
@@ -166,6 +171,20 @@
                         <h3 class="text-xl font-bold text-white">Felfedezés 🌍</h3>
                         <button
                               class="close-filter-btn p-2 bg-white/10 rounded-full text-white hover:bg-white/20">✕</button>
+                  </div>
+                  <div class="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar" id="price-tabs">
+                        <button onclick="updatePriceTab(0, 50000000)"
+                              class="price-tab active px-4 py-2 rounded-full border border-[#E2F1B0] text-[#E2F1B0] whitespace-nowrap text-sm font-bold">50M
+                              alatt</button>
+                        <button onclick="updatePriceTab(50000001, 80000000)"
+                              class="price-tab px-4 py-2 rounded-full border border-white/20 text-white whitespace-nowrap text-sm">51M
+                              - 80M</button>
+                        <button onclick="updatePriceTab(80000001, 120000000)"
+                              class="price-tab px-4 py-2 rounded-full border border-white/20 text-white whitespace-nowrap text-sm">81M
+                              - 120M</button>
+                        <button onclick="updatePriceTab(120000001, 999999999)"
+                              class="price-tab px-4 py-2 rounded-full border border-white/20 text-white whitespace-nowrap text-sm">120M
+                              felett</button>
                   </div>
 
                   <div id="discovery-grid" class="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1">

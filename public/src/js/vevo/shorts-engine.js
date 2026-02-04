@@ -150,38 +150,64 @@ function closeFilterModal() {
   setTimeout(() => modal.classList.add("hidden"), 300);
 }
 
+let currentMinPrice = 0;
+let currentMaxPrice = 50000000;
+
 // ITT ÉPÍTJÜK FEL A CSEMPÉKET
+
 function renderDiscoveryGrid() {
   const grid = document.getElementById("discovery-grid");
-  grid.innerHTML = ""; // Törlés
+  if (!grid) return;
+  grid.innerHTML = "";
 
-  PRESET_FILTERS.forEach((category) => {
-    // Megszámoljuk előre, hány videó van ebben a kategóriában
-    const count = allVideos.filter(category.filter).length;
+  // 1. Leszűrjük a videókat az aktuális árkategória szerint
+  const filteredVideos = allVideos.filter(
+    (v) => v.ar >= currentMinPrice && v.ar <= currentMaxPrice
+  );
 
+  if (filteredVideos.length === 0) {
+    grid.innerHTML = `<div class="col-span-2 text-gray-500 text-center py-10">Ebben az árkategóriában nincs videó.</div>`;
+    return;
+  }
+
+  // 2. Megjelenítjük a szűrt videókat csempeként
+  filteredVideos.forEach((video) => {
     const card = document.createElement("button");
-    // Modern, TikTok-szerű csempe design
-    card.className = `relative h-32 rounded-2xl overflow-hidden shadow-lg transform transition active:scale-95 hover:scale-105 group border border-white/10`;
+    card.className = `relative h-48 rounded-xl overflow-hidden shadow-lg border border-white/10`;
+
+    // A csempe háttere a videó poster-je (képe) lesz
+    const thumb =
+      video.kepek && video.kepek[0]
+        ? video.kepek[0]
+        : "https://via.placeholder.com/300x500?text=Ingatlan";
 
     card.innerHTML = `
-            <div class="absolute inset-0 bg-gradient-to-br ${category.color} opacity-80 group-hover:opacity-100 transition"></div>
-            
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-white p-2">
-                <div class="text-4xl mb-2 drop-shadow-md">${category.icon}</div>
-                <div class="font-bold text-lg text-center leading-tight drop-shadow-md">${category.title}</div>
-                <div class="text-xs mt-1 bg-black/30 px-2 py-1 rounded-full border border-white/20">
-                    ${count} videó
-                </div>
-            </div>
-        `;
+          <img src="${thumb}" class="absolute inset-0 w-full h-full object-cover opacity-60">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+          <div class="absolute bottom-2 left-2 right-2 text-left">
+              <div class="text-[10px] font-bold text-[#E2F1B0] uppercase">${
+                video.varos
+              }</div>
+              <div class="text-xs font-bold text-white truncate">${
+                video.utca || "Részletek..."
+              }</div>
+              <div class="text-sm font-black text-white">${Number(
+                video.ar
+              ).toLocaleString()} Ft</div>
+          </div>
+      `;
 
-    // KATTINTÁSRA SZŰRÜNK
     card.onclick = () => {
-      if (count === 0) {
-        alert("Jelenleg nincs ilyen videó a rendszerben.");
-        return;
-      }
-      applyCategoryFilter(category);
+      // Ha rákattint egy csempére, oda görgetünk a feedben
+      const index = allVideos.findIndex((v) => v.id === video.id);
+      renderVideos(allVideos); // Biztosítjuk, hogy minden videó bent van a listában
+      closeFilterModal();
+
+      // Kis késleltetés, hogy a renderelés befejeződjön, majd oda görgetünk
+      setTimeout(() => {
+        const target = document.querySelectorAll(".video-container")[index];
+        if (target) target.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     };
 
     grid.appendChild(card);
@@ -345,6 +371,21 @@ window.toggleGlobalMute = function () {
 window.szuroTorlese = function () {
   renderVideos(allVideos);
   closeFilterModal();
+};
+
+window.updatePriceTab = function (min, max) {
+  currentMinPrice = min;
+  currentMaxPrice = max;
+
+  // Gombok stílusának frissítése
+  document.querySelectorAll(".price-tab").forEach((btn) => {
+    btn.classList.remove("active", "border-[#E2F1B0]", "text-[#E2F1B0]");
+    btn.classList.add("border-white/20", "text-white");
+  });
+  event.target.classList.add("active", "border-[#E2F1B0]", "text-[#E2F1B0]");
+  event.target.classList.remove("border-white/20", "text-white");
+
+  renderDiscoveryGrid(); // Újrarajzoljuk a rácsot a választott ár szerint
 };
 
 function setupVideoObserver() {
