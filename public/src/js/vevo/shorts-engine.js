@@ -206,6 +206,8 @@ function renderVideos(list) {
     const el = createVideoCard(videoData);
     videoFeed.appendChild(el);
   });
+  // Frissítés után újraindítjuk a figyelőt
+  setupVideoObserver();
 }
 
 // Add ezt a loadVideos végéhez vagy a renderVideos után:
@@ -297,3 +299,31 @@ window.szuroTorlese = function () {
   renderVideos(allVideos);
   closeFilterModal();
 };
+
+function setupVideoObserver() {
+  const observerOptions = {
+    root: null, // A teljes képernyőt figyeli
+    threshold: 0.6, // Akkor vált, ha a videó 60%-a látszik
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const video = entry.target;
+
+      if (entry.isIntersecting) {
+        // Ez a videó van a fókuszban
+        video.play().catch((e) => console.log("Autoplay blokkolva"));
+        video.muted = window.isGloballyMuted;
+      } else {
+        // Ez a videó kiment a látótérből -> STOP és NÉMÍT
+        video.pause();
+        video.currentTime = 0; // Opcionális: visszaugrik az elejére
+      }
+    });
+  }, observerOptions);
+
+  // Minden videót figyelünk, ami a DOM-ban van
+  document.querySelectorAll(".video-container video").forEach((v) => {
+    observer.observe(v);
+  });
+}
