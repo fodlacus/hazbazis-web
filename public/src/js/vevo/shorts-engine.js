@@ -15,15 +15,22 @@ const videoFeed = document.querySelector(".video-feed");
 let allVideos = [];
 let currentUser = null;
 
-// --- 1. INDÍTÁS ---
+// --- 1. INDÍTÁS & AUTH NYOMOZÁS ---
 document.addEventListener("DOMContentLoaded", () => {
   onAuthStateChanged(auth, (user) => {
-    currentUser = user;
+    if (user) {
+      console.log("✅ BEJELENTKEZVE. UID:", user.uid);
+      // Ezt az ID-t keresd a Firebase-ben a 'felhasznalok' alatt!
+      currentUser = user;
+    } else {
+      console.warn("⚠️ NINCS BEJELENTKEZVE FELHASZNÁLÓ!");
+      currentUser = null;
+    }
     loadVideos();
   });
 });
 
-// --- 2. VIDEÓK BETÖLTÉSE (ADAT JAVÍTÁSSAL) ---
+// --- 2. VIDEÓK BETÖLTÉSE (DEBUG MÓDBAN) ---
 async function loadVideos() {
   try {
     const q = query(collection(db, "lakasok"), orderBy("order", "asc"));
@@ -33,29 +40,28 @@ async function loadVideos() {
     snapshot.forEach((doc) => {
       const data = doc.data();
 
+      // DEBUG: Nézzük meg, mi jön valójában!
+      console.log(`Videó (${doc.id}) adatai:`, data);
+
       if (data.videoUrl) {
-        // ITT A JAVÍTÁS: "VAGY" (||) jelekkel minden variációt figyelünk!
+        // Biztonságos adatkinyerés
+        // Ha valamelyik adat hiányzik, 0-t vagy üres stringet adunk
         allVideos.push({
           id: doc.id,
-
-          // Videó és Kép
           videoUrl: data.videoUrl,
           kepek: data.kepek || [],
 
-          // Város (varos VAGY telepules)
-          varos: data.varos || data.telepules || "Ismeretlen hely",
+          // HELYSZÍN JAVÍTÁS
+          varos: data.varos || data.telepules || "Helyszín nincs megadva",
           utca: data.utca || "",
 
-          // Ár (ar VAGY vetelar VAGY iranyar) -> Számmá alakítva
-          ar: Number(data.ar || data.vetelar || data.iranyar || 0),
+          // ÁR JAVÍTÁS (String tisztítás, ha van benne 'Ft' vagy szóköz)
+          ar: parseNumber(data.ar || data.vetelar || data.iranyar),
 
-          // Méret (alapterulet VAGY meret)
-          alapterulet: Number(data.alapterulet || data.meret || 0),
+          // MÉRET JAVÍTÁS
+          alapterulet: parseNumber(data.alapterulet || data.meret),
+          szobaszam: parseNumber(data.szobaszam || data.szoba),
 
-          // Szobák
-          szobaszam: Number(data.szobaszam || data.szoba || 0),
-
-          // Egyéb
           erkely: data.erkely ? true : false,
         });
       }
@@ -70,21 +76,40 @@ async function loadVideos() {
     renderVideos(allVideos);
   } catch (error) {
     console.error("Hiba:", error);
+    alert("Adatbázis hiba: " + error.message);
   }
 }
 
-// --- 3. MODAL KEZELÉS (GLOBALIZÁLVA) ---
+// Segédfüggvény a számok tisztításához
+function parseNumber(value) {
+  if (!value) return 0;
+  // Ha szám, visszaadjuk
+  if (typeof value === "number") return value;
+  // Ha string (pl. "50 000 000 Ft"), kiszedjük a nem szám karaktereket
+  if (typeof value === "string") {
+    const cleaned = value.replace(/\D/g, ""); // Csak számjegyek maradnak
+    return parseInt(cleaned) || 0;
+  }
+  return 0;
+}
 
-// Kitetettük a window-ra, hogy a HTML gomb megtalálja!
+// --- 3. MODAL KEZELÉS ---
+
 window.openFilterModal = function () {
   const modal = document.getElementById("filter-modal");
   const content = document.getElementById("filter-content");
-  if (!modal) return;
+
+  // DEBUG: Működik a gomb?
+  console.log("🔍 Szűrő gomb megnyomva!");
+
+  if (!modal) {
+    alert("Hiba: Nem találom a modal ablakot a HTML-ben (id='filter-modal')");
+    return;
+  }
 
   modal.classList.remove("hidden");
   setTimeout(() => content.classList.remove("translate-y-full"), 10);
 
-  // Betöltjük a listát
   loadUserFilters();
 };
 
@@ -92,21 +117,28 @@ window.closeFilterModal = function () {
   const modal = document.getElementById("filter-modal");
   const content = document.getElementById("filter-content");
   if (!modal) return;
-
   content.classList.add("translate-y-full");
   setTimeout(() => modal.classList.add("hidden"), 300);
 };
 
-// --- 4. SZŰRŐ LOGIKA ---
-
+// --- 4. SZŰRŐK BETÖLTÉSE (AZ IGAZSÁG PILLANATA) ---
 async function loadUserFilters() {
   const listContainer = document.getElementById("saved-filters-list");
 
+  // 1. ELLENŐRZÉS: Van user?
   if (!currentUser) {
-    listContainer.innerHTML =
-      '<p class="text-white text-center py-4">Jelentkezz be a mentett keresésekhez!</p>';
+    listContainer.innerHTML = `
+            <div class="text-center py-4">
+                <p class="text-white mb-2">Nem vagy bejelentkezve!</p>
+                <a href="../../../index.html" class="text-[#E2F1B0] underline">Jelentkezz be a főoldalon</a>
+            </div>`;
     return;
   }
+
+  // 2. ELLENŐRZÉS: Jó helyen keresünk?
+  // Kiírjuk az útvonalat alert-ben, hogy lásd!
+  const path = `felhasznalok/${currentUser.uid}/mentett_keresesek`;
+  console.log("📂 Keresés itt:", path);
 
   try {
     const subColRef = collection(
@@ -118,8 +150,11 @@ async function loadUserFilters() {
     const snapshot = await getDocs(subColRef);
 
     if (snapshot.empty) {
-      listContainer.innerHTML =
-        '<p class="text-gray-400 text-center py-4">Nincs mentett keresésed.</p>';
+      listContainer.innerHTML = `
+                <div class="text-center py-4 text-gray-400">
+                    <p>Nincs mentett keresésed ezen a fiókon.</p>
+                    <p class="text-xs mt-2">Te ID-d: ${currentUser.uid}</p>
+                </div>`;
       return;
     }
 
@@ -132,7 +167,6 @@ async function loadUserFilters() {
         "w-full text-left p-4 bg-white/5 hover:bg-[#E2F1B0] hover:text-black rounded-xl transition group border border-white/10 mb-2";
 
       const nev = data.nev || data.elnevezes || "Mentett keresés";
-      // Kijelezzük a főbb feltételeket
       const reszletek = [
         data.telepules,
         data.minTerulet ? `Min ${data.minTerulet}m²` : null,
@@ -153,42 +187,42 @@ async function loadUserFilters() {
     });
   } catch (error) {
     console.error("Hiba:", error);
-    listContainer.innerHTML =
-      '<p class="text-red-400 text-center">Hiba történt.</p>';
+    listContainer.innerHTML = `<p class="text-red-400 text-center">Hiba: ${error.message}</p>`;
   }
 }
 
 function runSavedFilterProcess(criteria) {
-  // 1. LÉPÉS: Belső tábla generálása (Csak HB számok!)
   const matchingIds = [];
 
   allVideos.forEach((video) => {
     let match = true;
-
     if (criteria.telepules && video.varos !== criteria.telepules) match = false;
-
-    // Figyeljük, hogy string vagy number jön-e, ezért a Number() biztonságosabb
     if (criteria.maxAr && video.ar > Number(criteria.maxAr)) match = false;
     if (criteria.minTerulet && video.alapterulet < Number(criteria.minTerulet))
       match = false;
-    if (criteria.minSzoba && video.szobaszam < Number(criteria.minSzoba))
-      match = false;
+
+    // LOGOLÁS: Hogy lásd miért dobja el a videót
+    if (!match)
+      console.log(
+        `Videó ${video.id} kiesett. Feltétel:`,
+        criteria,
+        "Videó adat:",
+        video
+      );
 
     if (match) matchingIds.push(video.id);
   });
 
-  // 2. LÉPÉS: Szűrés
   const filteredVideos = allVideos.filter((video) =>
     matchingIds.includes(video.id)
   );
   renderVideos(filteredVideos);
 
-  // UI Feedback & Close
   const modalList = document.getElementById("saved-filters-list");
   if (matchingIds.length > 0) {
     window.closeFilterModal();
   } else {
-    alert("Sajnos ennek a keresésnek egyetlen videó sem felel meg.");
+    alert("Ennek a keresésnek sajnos egyetlen videó sem felel meg.");
   }
 }
 
@@ -198,7 +232,6 @@ function renderVideos(list) {
   list.forEach((videoData) => {
     const el = createVideoCard(videoData);
     videoFeed.appendChild(el);
-    observer.observe(el);
   });
 }
 
@@ -207,12 +240,14 @@ function createVideoCard(data) {
   container.className = "video-container";
   const azonosito = data.id.startsWith("HB") ? data.id : `#${data.id}`;
 
-  // FORMATÁLÁS: Ha nincs ár, ne írja ki, hogy NaN
+  // FORMATÁLÁS JAVÍTVA
   const arKijelzes =
     data.ar > 0
       ? Number(data.ar).toLocaleString() + " Ft"
       : "Ár megegyezés szerint";
   const meretKijelzes = data.alapterulet > 0 ? `${data.alapterulet} m²` : "";
+
+  // "undefined szoba" elkerülése
   const szobaKijelzes = data.szobaszam > 0 ? `• ${data.szobaszam} szoba` : "";
 
   container.innerHTML = `
@@ -240,7 +275,7 @@ function createVideoCard(data) {
 
             <div class="video-info">
                 <span class="brand-badge">${azonosito}</span>
-                <h3>${data.varos}, ${data.utca || ""}</h3>
+                <h3>${data.varos}, ${data.utca}</h3>
                 <p class="text-xl font-bold text-white mb-1">${arKijelzes}</p>
                 <p class="specs">${meretKijelzes} ${szobaKijelzes}</p>
             </div>
@@ -287,19 +322,3 @@ function toggleGlobalMute() {
 window.szuroTorlese = function () {
   renderVideos(allVideos);
 };
-
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      const video = entry.target.querySelector("video");
-      if (!video) return;
-      if (entry.isIntersecting) {
-        video.currentTime = 0;
-        video.play().catch(() => {});
-      } else {
-        video.pause();
-      }
-    });
-  },
-  { threshold: 0.6 }
-);
