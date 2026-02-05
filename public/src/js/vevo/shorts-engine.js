@@ -288,7 +288,7 @@ function createTile(title, icon, color, onClick, count = null, bgImg = null) {
             <div class="font-bold text-base leading-tight text-center drop-shadow-md">${title}</div>
             ${
               count !== null
-                ? `<div class="text-[10px] mt-1 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/10">${count} videó</div>`
+                ? `<div class="text-[10px] mt-1 bg-[#3D4A16]/90 px-2 py-0.5 rounded-full backdrop-blur-sm border border-[#E2F1B0]/30">${count} videó</div>`
                 : ""
             }
         </div>
