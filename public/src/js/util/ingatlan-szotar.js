@@ -10,6 +10,18 @@ export const ingatlanStruktura = {
         type: "select",
         options: ["Lakás", "Családi ház", "Ikerház", "Sorház", "Telek"],
       },
+      {
+        id: "lakopark_e", // Boolean szűréshez a Shorts-ban
+        label: "Lakóparki ingatlan?",
+        type: "select",
+        options: ["Nem", "Igen"],
+      },
+      {
+        id: "lakopark_nev", // Ide kerül a "Metrodom"
+        label: "Lakópark neve",
+        type: "text",
+        placeholder: "pl. Metrodom, Corvin Sétány",
+      },
       { id: "iranyitoszam", label: "Irányítószám", type: "number" },
       { id: "telepules", label: "Város", type: "text" },
       { id: "utca", label: "Utca", type: "text" },

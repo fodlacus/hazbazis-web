@@ -65,6 +65,15 @@ const ingatlanTools = [
             description:
               "Melyik év után épült? Pl. 'új építésű' = 2020, '2010 utáni' = 2010.",
           },
+          lakopark_e: {
+            type: "string",
+            enum: ["Nem", "Igen"],
+            description: "Igen, ha a szövegben lakópark szerepel.",
+          },
+          lakopark_nev: {
+            type: "string",
+            description: "A lakópark neve (pl. Metrodom).",
+          },
         },
         required: ["max_ar"],
       },

@@ -95,6 +95,16 @@ export async function hirdeteseimListazasa() {
                 <p class="text-lime-400 font-mono text-lg font-bold">
                   ${Number(hirdetes.vételár || 0).toLocaleString()} Ft
                 </p>
+                <p class="text-xs text-gray-400">
+                  ${hirdetes.telepules || ""} ${
+            hirdetes.varosresz ? "- " + hirdetes.varosresz : ""
+          }
+                  ${
+                    hirdetes.lakopark_e === "Igen"
+                      ? ` | <span class="text-blue-400">🏢 ${hirdetes.lakopark_nev}</span>`
+                      : ""
+                  }
+                </p>
             </div>
             
             <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto justify-center">
