@@ -212,7 +212,7 @@ function renderDiscoveryGrid(view = "main") {
         (v) => v.telepules === "Budapest" && v.kerulet === ker
       ).length;
       // Dinamikus BG-image: kerület alapú fotó
-      const bgImg = `https://media.hazbazis.hu/static/districts/${ker.replace(
+      const bgImg = `https://media.hazbazis.hu/shorts/filter-img/${ker.replace(
         ".",
         ""
       )}.jpg`;
