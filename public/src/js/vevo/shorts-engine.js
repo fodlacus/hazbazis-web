@@ -11,7 +11,7 @@ import {
 // --- GLOBÁLIS VÁLTOZÓK ---
 const videoFeed = document.querySelector(".video-feed");
 let allVideos = [];
-let currentView = "main"; // "main", "kerulet", "telepules"
+let currentView = "main";
 window.isGloballyMuted = true;
 
 const BP_DISTRICTS = [
@@ -40,6 +40,7 @@ const BP_DISTRICTS = [
   "XXIII.",
 ];
 
+// Visszatettem az összes csempét a terved alapján
 const MAIN_CATEGORIES = [
   {
     id: "budapest",
@@ -73,9 +74,41 @@ const MAIN_CATEGORIES = [
     type: "direct",
     filter: (v) => v.vételár >= 120000000,
   },
+  {
+    id: "csaladi",
+    title: "Családi (3+ szoba)",
+    icon: "👨‍👩‍👧‍👦",
+    color: "from-red-600 to-red-900",
+    type: "direct",
+    filter: (v) => v.szobák >= 3,
+  },
+  {
+    id: "kezdo",
+    title: "Kezdő lakás",
+    icon: "🔑",
+    color: "from-teal-600 to-teal-900",
+    type: "direct",
+    filter: (v) => v.szobák > 0 && v.szobák <= 2,
+  },
+  {
+    id: "erkelyes",
+    title: "Erkélyes",
+    icon: "☀️",
+    color: "from-orange-600 to-orange-900",
+    type: "direct",
+    filter: (v) => v.erkely === true,
+  }, // Itt ellenőrizd a Firestore mezőt (erkely / erkelyes?)
+  {
+    id: "nagy",
+    title: "Nagy terek (80m²+)",
+    icon: "📐",
+    color: "from-gray-600 to-gray-900",
+    type: "direct",
+    filter: (v) => v.alapterület >= 80,
+  },
 ];
 
-// --- 1. INDÍTÁS ---
+// --- INDÍTÁS ---
 document.addEventListener("DOMContentLoaded", () => {
   loadVideos();
   setupGlobalClicks();
@@ -88,7 +121,7 @@ function setupGlobalClicks() {
   });
 }
 
-// --- 2. ADATOK BETÖLTÉSE ---
+// --- ADATOK BETÖLTÉSE ---
 async function loadVideos() {
   try {
     const q = query(collection(db, "lakasok"), orderBy("order", "asc"));
@@ -98,11 +131,9 @@ async function loadVideos() {
     snapshot.forEach((doc) => {
       const data = doc.data();
       if (data.videoUrl) {
-        // Csak ha van R2 videó
         allVideos.push({
           id: doc.id,
           ...data,
-          // Mezők szinkronizálása (ékezetes marad, ahogy kérted)
           vételár: Number(data.vételár) || 0,
           telepules: data.telepules || "Budapest",
           kerulet: data.kerulet || "",
@@ -110,18 +141,13 @@ async function loadVideos() {
       }
     });
 
-    if (allVideos.length === 0) {
-      videoFeed.innerHTML =
-        '<div style="color:white; text-align:center; padding-top:40vh;">Nincs feltöltött videó.</div>';
-    } else {
-      renderVideos(allVideos);
-    }
+    if (allVideos.length > 0) renderVideos(allVideos);
   } catch (error) {
     console.error("Firebase hiba:", error);
   }
 }
 
-// --- 3. MODAL ÉS RÁCS KEZELÉS ---
+// --- MODAL ÉS RÁCS KEZELÉS ---
 window.openFilterModal = () => {
   const modal = document.getElementById("filter-modal");
   const content = document.getElementById("filter-content");
@@ -146,6 +172,19 @@ function renderDiscoveryGrid(view = "main") {
   grid.innerHTML = "";
   currentView = view;
 
+  // Fixált Vissza gomb a cím mellett (hogy ne kelljen görgetni)
+  const titleContainer = modalTitle.parentElement;
+  if (view !== "main" && !titleContainer.querySelector(".back-nav-btn")) {
+    const backBtn = document.createElement("button");
+    backBtn.className =
+      "back-nav-btn mr-3 p-2 bg-white/10 rounded-full text-white";
+    backBtn.innerHTML = "⬅️";
+    backBtn.onclick = () => renderDiscoveryGrid("main");
+    titleContainer.prepend(backBtn);
+  } else if (view === "main") {
+    titleContainer.querySelector(".back-nav-btn")?.remove();
+  }
+
   if (view === "main") {
     modalTitle.innerText = "Felfedezés 🌍";
     MAIN_CATEGORIES.forEach((cat) => {
@@ -156,6 +195,10 @@ function renderDiscoveryGrid(view = "main") {
           cat.icon,
           cat.color,
           () => {
+            if (count === 0 && cat.type === "direct") {
+              alert("Sajnos ebben a kategóriában nincs lejátszható videó!");
+              return;
+            }
             if (cat.type === "selector") renderDiscoveryGrid(cat.selectorType);
             else applyFilterAndStart(cat.filter);
           },
@@ -164,42 +207,38 @@ function renderDiscoveryGrid(view = "main") {
       );
     });
   } else if (view === "kerulet") {
-    modalTitle.innerText = "Válassz kerületet";
-    grid.appendChild(
-      createTile("Vissza", "⬅️", "from-gray-700 to-gray-800", () =>
-        renderDiscoveryGrid("main")
-      )
-    );
-
+    modalTitle.innerText = "Budapesti kerületek";
     BP_DISTRICTS.forEach((ker) => {
       const count = allVideos.filter(
         (v) => v.telepules === "Budapest" && v.kerulet === ker
       ).length;
+      // Dinamikus BG-image: kerület alapú fotó
+      const bgImg = `https://media.hazbazis.hu/static/districts/${ker.replace(
+        ".",
+        ""
+      )}.jpg`;
+
       grid.appendChild(
         createTile(
           ker,
           "",
           count > 0
-            ? "from-blue-500 to-blue-700"
-            : "from-gray-800 to-gray-900 opacity-40",
+            ? "from-blue-500/80 to-blue-700/80"
+            : "from-gray-800/80 to-gray-900/80 opacity-40",
           () => {
             if (count > 0)
               applyFilterAndStart(
                 (v) => v.telepules === "Budapest" && v.kerulet === ker
               );
+            else alert("Nincs lejátszható videó ebben a kerületben!");
           },
-          count
+          count,
+          bgImg
         )
       );
     });
   } else if (view === "telepules") {
     modalTitle.innerText = "Vidéki városok";
-    grid.appendChild(
-      createTile("Vissza", "⬅️", "from-gray-700 to-gray-800", () =>
-        renderDiscoveryGrid("main")
-      )
-    );
-
     const varosok = [
       ...new Set(
         allVideos
@@ -209,34 +248,47 @@ function renderDiscoveryGrid(view = "main") {
     ]
       .filter(Boolean)
       .sort();
+
     varosok.forEach((v) => {
       const count = allVideos.filter((item) => item.telepules === v).length;
+      // Dinamikus BG-image: település alapú fotó
+      const bgImg = `https://media.hazbazis.hu/static/cities/${v.toLowerCase()}.jpg`;
+
       grid.appendChild(
         createTile(
           v,
           "",
-          "from-green-600 to-green-800",
+          "from-green-600/80 to-green-800/80",
           () => {
             applyFilterAndStart((item) => item.telepules === v);
           },
-          count
+          count,
+          bgImg
         )
       );
     });
   }
 }
 
-function createTile(title, icon, color, onClick, count = null) {
+function createTile(title, icon, color, onClick, count = null, bgImg = null) {
   const btn = document.createElement("button");
-  btn.className = `relative h-32 rounded-2xl overflow-hidden shadow-lg border border-white/10 transition active:scale-95`;
+  btn.className = `relative h-32 rounded-2xl overflow-hidden shadow-lg border border-white/10 transition active:scale-95 bg-cover bg-center`;
+
+  // Ha van háttérkép, beállítjuk
+  if (bgImg) btn.style.backgroundImage = `url('${bgImg}')`;
+
   btn.innerHTML = `
-        <div class="absolute inset-0 bg-gradient-to-br ${color} opacity-80"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center text-white p-2">
-            ${icon ? `<div class="text-3xl mb-1">${icon}</div>` : ""}
-            <div class="font-bold text-base leading-tight text-center">${title}</div>
+        <div class="absolute inset-0 bg-gradient-to-br ${color} mix-blend-multiply"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-white p-2 z-10">
+            ${
+              icon
+                ? `<div class="text-3xl mb-1 drop-shadow-lg">${icon}</div>`
+                : ""
+            }
+            <div class="font-bold text-base leading-tight text-center drop-shadow-md">${title}</div>
             ${
               count !== null
-                ? `<div class="text-[10px] mt-1 bg-black/40 px-2 py-0.5 rounded-full">${count} videó</div>`
+                ? `<div class="text-[10px] mt-1 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/10">${count} videó</div>`
                 : ""
             }
         </div>
@@ -245,7 +297,7 @@ function createTile(title, icon, color, onClick, count = null) {
   return btn;
 }
 
-// --- 4. SZŰRÉS ÉS RENDERELÉS ---
+// --- SZŰRÉS ÉS RENDERELÉS ---
 function applyFilterAndStart(filterFn) {
   const filtered = allVideos.filter(filterFn);
   renderVideos(filtered);
@@ -324,7 +376,7 @@ function createVideoCard(data) {
   return container;
 }
 
-// --- 5. SEGÉDFUNKCIÓK (HANG ÉS MEGFIGYELŐ) ---
+// --- SEGÉDFUNKCIÓK ---
 window.toggleGlobalMute = function () {
   window.isGloballyMuted = !window.isGloballyMuted;
   document
