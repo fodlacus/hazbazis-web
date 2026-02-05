@@ -40,13 +40,12 @@ const BP_DISTRICTS = [
   "XXIII.",
 ];
 
-// Visszatettem az összes csempét a terved alapján
 const MAIN_CATEGORIES = [
   {
     id: "budapest",
     title: "Budapest",
     icon: "🏙️",
-    color: "from-blue-600 to-blue-900",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "selector",
     selectorType: "kerulet",
   },
@@ -54,7 +53,7 @@ const MAIN_CATEGORIES = [
     id: "videk",
     title: "Vidéki Élet",
     icon: "🌳",
-    color: "from-green-600 to-green-900",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "selector",
     selectorType: "telepules",
   },
@@ -62,7 +61,7 @@ const MAIN_CATEGORIES = [
     id: "olcso",
     title: "50M alatt",
     icon: "💰",
-    color: "from-yellow-600 to-yellow-900",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "direct",
     filter: (v) => v.vételár > 0 && v.vételár <= 50000000,
   },
@@ -70,7 +69,7 @@ const MAIN_CATEGORIES = [
     id: "luxus",
     title: "Luxus",
     icon: "💎",
-    color: "from-purple-600 to-purple-900",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "direct",
     filter: (v) => v.vételár >= 120000000,
   },
@@ -78,7 +77,7 @@ const MAIN_CATEGORIES = [
     id: "csaladi",
     title: "Családi (3+ szoba)",
     icon: "👨‍👩‍👧‍👦",
-    color: "from-red-600 to-red-900",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "direct",
     filter: (v) => v.szobák >= 3,
   },
@@ -86,26 +85,26 @@ const MAIN_CATEGORIES = [
     id: "kezdo",
     title: "Kezdő lakás",
     icon: "🔑",
-    color: "from-teal-600 to-teal-900",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "direct",
     filter: (v) => v.szobák > 0 && v.szobák <= 2,
   },
   {
-    id: "erkelyes",
-    title: "Erkélyes",
-    icon: "☀️",
-    color: "from-orange-600 to-orange-900",
+    id: "lakopark",
+    title: "Lakópark",
+    icon: "🏢",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "direct",
-    filter: (v) => v.erkely === true,
-  }, // Itt ellenőrizd a Firestore mezőt (erkely / erkelyes?)
+    filter: (v) => v.lakópark === true,
+  }, // Itt ellenőrizd a mezőt!
   {
-    id: "nagy",
-    title: "Nagy terek (80m²+)",
-    icon: "📐",
-    color: "from-gray-600 to-gray-900",
+    id: "alberlet",
+    title: "Albérlet",
+    icon: "🏠",
+    color: "from-[#3D4A16] to-[#5D6D2E]",
     type: "direct",
-    filter: (v) => v.alapterület >= 80,
-  },
+    filter: (v) => v.tipus === "Albérlet",
+  }, // Itt is ellenőrizd a mezőt!
 ];
 
 // --- INDÍTÁS ---
@@ -272,27 +271,29 @@ function renderDiscoveryGrid(view = "main") {
 
 function createTile(title, icon, color, onClick, count = null, bgImg = null) {
   const btn = document.createElement("button");
-  btn.className = `relative h-32 rounded-2xl overflow-hidden shadow-lg border border-white/10 transition active:scale-95 bg-cover bg-center`;
+  // Alapértelmezett háttér az arculati zöld, ha nincs kép
+  btn.className = `relative h-32 rounded-2xl overflow-hidden shadow-lg border border-[#E2F1B0]/20 transition active:scale-95 bg-cover bg-center bg-[#3D4A16]`;
 
-  // Ha van háttérkép, beállítjuk
   if (bgImg) btn.style.backgroundImage = `url('${bgImg}')`;
 
   btn.innerHTML = `
-        <div class="absolute inset-0 bg-gradient-to-br ${color} mix-blend-multiply"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center text-white p-2 z-10">
-            ${
-              icon
-                ? `<div class="text-3xl mb-1 drop-shadow-lg">${icon}</div>`
-                : ""
-            }
-            <div class="font-bold text-base leading-tight text-center drop-shadow-md">${title}</div>
-            ${
-              count !== null
-                ? `<div class="text-[10px] mt-1 bg-[#3D4A16]/90 px-2 py-0.5 rounded-full backdrop-blur-sm border border-[#E2F1B0]/30">${count} videó</div>`
-                : ""
-            }
-        </div>
-    `;
+      <div class="absolute inset-0 bg-gradient-to-br ${color} opacity-70 mix-blend-multiply"></div>
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-white p-2 z-10">
+          ${
+            icon
+              ? `<div class="text-3xl mb-1 drop-shadow-lg">${icon}</div>`
+              : ""
+          }
+          <div class="font-bold text-base leading-tight text-center drop-shadow-md uppercase tracking-wide">${title}</div>
+          ${
+            count !== null
+              ? `<div class="text-[10px] mt-2 bg-[#E2F1B0] text-[#3D4A16] px-3 py-0.5 rounded-full font-bold shadow-sm">
+                  ${count} videó
+              </div>`
+              : ""
+          }
+      </div>
+  `;
   btn.onclick = onClick;
   return btn;
 }
