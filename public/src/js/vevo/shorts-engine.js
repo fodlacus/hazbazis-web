@@ -98,11 +98,12 @@ const MAIN_CATEGORIES = [
     filter: (v) => v.vételár >= 120000000,
   },
   {
-    id: "kereso",
+    id: "hb_id",
     title: "HB Kereső",
     icon: "🔍",
     color: "from-blue-900 to-blue-700",
-    type: "prompt",
+    type: "selector",
+    selectorType: "hb_search",
   },
 ];
 
@@ -182,22 +183,35 @@ function renderDiscoveryGrid(view = "main") {
   // --- NÉZET: FŐMENÜ ---
   if (view === "main") {
     modalTitle.innerText = "Felfedezés 🌍";
+
     MAIN_CATEGORIES.forEach((cat) => {
-      const count = allVideos.filter(cat.filter || (() => true)).length;
+      // Kiszámoljuk a darabszámot, de csak ha van filter (HB keresőnél 0 lesz)
+      const count = cat.filter ? allVideos.filter(cat.filter).length : 0;
+
       grid.appendChild(
         createTile(
           cat.title,
           cat.icon,
           cat.color,
           () => {
-            if (cat.type === "selector") renderDiscoveryGrid(cat.selectorType);
-            else if (count > 0) applyFilterAndStart(cat.filter);
-            else alert("Nincs lejátszható videó ebben a kategóriában!");
+            // 1. Ha választó típus (Budapest, Vidék, HB Kereső), csak váltsunk nézetet
+            if (cat.type === "selector") {
+              renderDiscoveryGrid(cat.selectorType);
+              return; // Megállítjuk a futást, nem megyünk az applyFilter-re!
+            }
+
+            // 2. Ha direkt szűrő, ellenőrizzük a találatokat
+            if (count > 0) {
+              applyFilterAndStart(cat.filter);
+            } else {
+              alert("Sajnos ebben a kategóriában nincs lejátszható videó!");
+            }
           },
-          count
+          cat.id === "hb_id" ? null : count
         )
-      );
+      ); // HB keresőnél ne írjunk ki darabszámot
     });
+
     return;
   }
 
@@ -367,6 +381,10 @@ function createTile(title, icon, color, onClick, count = null, bgImg = null) {
 
 // --- SZŰRÉS ÉS RENDERELÉS ---
 function applyFilterAndStart(filterFn) {
+  if (typeof filterFn !== "function") {
+    console.error("Hiba: A szűrőfeltétel nem egy függvény!", filterFn);
+    return;
+  }
   const filtered = allVideos.filter(filterFn);
   renderVideos(filtered);
   closeFilterModal();
