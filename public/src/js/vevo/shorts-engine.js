@@ -141,6 +141,11 @@ async function loadVideos() {
     });
 
     if (allVideos.length > 0) renderVideos(allVideos);
+    const lastId = sessionStorage.getItem("lastShortId");
+    if (lastId) {
+      scrollToVideo(lastId);
+      sessionStorage.removeItem("lastShortId"); // Töröljük, hogy ne ugorjon oda legközelebb is magától
+    }
   } catch (error) {
     console.error("Firebase hiba:", error);
   }
@@ -402,6 +407,7 @@ function createVideoCard(data) {
   };
   container.querySelector(".info-btn").onclick = (e) => {
     e.stopPropagation();
+    sessionStorage.setItem("lastShortId", data.id);
     window.location.href = `adatlap.html?id=${data.id}`;
   };
 
@@ -449,3 +455,14 @@ window.szuroTorlese = function () {
   renderVideos(allVideos);
   closeFilterModal();
 };
+
+function scrollToVideo(id) {
+  setTimeout(() => {
+    const targetVideo = document
+      .querySelector(`.info-btn[data-id="${id}"]`)
+      ?.closest(".video-container");
+    if (targetVideo) {
+      targetVideo.scrollIntoView({ behavior: "smooth" });
+    }
+  }, 500); // Hagyunk egy kis időt a renderelésnek
+}
