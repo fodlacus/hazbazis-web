@@ -213,12 +213,7 @@ function normalizaldAFelteteleket(f) {
 
     kerulet: f.kerulet || null,
     telepules: f.telepules || null,
-
-    kategoria: f.kategoria || null, // elado / kiado
-    tipus: f.tipus || null, // Lakás / Ház / Garázs
-    lakoparkE: f.lakopark_e || null,
-    lakoparkNev: f.lakopark_nev || null,
-
+    tipus: f.tipus || null,
     allapot: f.allapot || null,
     kellErkely: f.van_erkely === true,
     minEmelet: f.min_emelet !== undefined ? Number(f.min_emelet) : null,
@@ -238,33 +233,6 @@ function megfelelAzIngatlan(ing, f) {
 
   let ok = true;
   let kizarasOka = "";
-
-  // --- KATEGÓRIA (Albérlet vs Eladó) ---
-  if (f.kategoria && ing.kategoria !== f.kategoria) {
-    ok = false;
-    kizarasOka = "Rossz kategória (eladó/kiadó)";
-  }
-
-  // --- TÍPUS (Garázs szűrés) ---
-  if (ok && f.tipus && ing.tipus !== f.tipus) {
-    ok = false;
-    kizarasOka = "Rossz ingatlantípus";
-  }
-
-  // --- LAKÓPARK SZŰRÉS ---
-  if (ok && f.lakoparkE === "Igen" && ing.lakopark_e !== "Igen") {
-    ok = false;
-    kizarasOka = "Nem lakóparki";
-  }
-
-  if (ok && f.lakoparkNev) {
-    const ingNev = (ing.lakopark_nev || "").toLowerCase();
-    const keresett = f.lakoparkNev.toLowerCase();
-    if (!ingNev.includes(keresett)) {
-      ok = false;
-      kizarasOka = "Más lakópark név";
-    }
-  }
 
   // 1. ÁR SZŰRÉS
   if (f.maxAr) {
@@ -397,11 +365,14 @@ async function fetchListFromFirebase(f) {
   // Firebase "Indexelt" szűrés
   if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
   if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
-  if (f.kategoria) q = query(q, where("kategoria", "==", f.kategoria));
+  // Ha használsz statusz szűrést:
+  // q = query(q, where("statusz", "==", "aktiv")); // Opcionális
 
   const snap = await getDocs(q);
   const nyersLista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
+  // Itt hívjuk meg a közös "Bírót" (megfelelAzIngatlan), amit már megírtunk
+  // Ez végzi az ár, erkély, emelet, stb. finomhangolást
   return nyersLista.filter((ing) => megfelelAzIngatlan(ing, f));
 }
 
