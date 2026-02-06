@@ -365,9 +365,15 @@ function renderDiscoveryGrid(view = "main") {
   }
 }
 
-function createTile(title, icon, color, onClick, count = null, bgImg = null) {
+function createTile(
+  title,
+  icon,
+  color,
+  onClick,
+  infoText = "Megtekintés",
+  bgImg = null
+) {
   const btn = document.createElement("button");
-  // Alapértelmezett háttér az arculati zöld, ha nincs kép
   btn.className = `relative h-32 rounded-2xl overflow-hidden shadow-lg border border-[#E2F1B0]/20 transition active:scale-95 bg-cover bg-center bg-[#3D4A16]`;
 
   if (bgImg) btn.style.backgroundImage = `url('${bgImg}')`;
@@ -381,13 +387,9 @@ function createTile(title, icon, color, onClick, count = null, bgImg = null) {
               : ""
           }
           <div class="font-bold text-base leading-tight text-center drop-shadow-md uppercase tracking-wide">${title}</div>
-          ${
-            count !== null
-              ? `<div class="text-[10px] mt-2 bg-[#E2F1B0] text-[#3D4A16] px-3 py-0.5 rounded-full font-bold shadow-sm">
-                  ${count} videó
-              </div>`
-              : ""
-          }
+          <div class="text-[10px] mt-2 bg-[#E2F1B0] text-[#3D4A16] px-3 py-0.5 rounded-full font-bold shadow-sm opacity-90">
+              ${infoText}
+          </div>
       </div>
   `;
   btn.onclick = onClick;
