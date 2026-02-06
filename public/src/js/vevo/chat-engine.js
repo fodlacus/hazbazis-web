@@ -248,8 +248,9 @@ function megfelelAzIngatlan(ing, f) {
 
   // --- TÍPUS (Garázs szűrés) ---
   if (ok && f.tipus && ing.tipus !== f.tipus) {
-    ok = false;
-    kizarasOka = "Rossz ingatlantípus";
+    //    ok = false;
+    //    kizarasOka = "Rossz ingatlantípus";
+    return false;
   }
 
   // --- LAKÓPARK SZŰRÉS ---
@@ -263,8 +264,9 @@ function megfelelAzIngatlan(ing, f) {
     const ingNev = (ing.lakopark_nev || "").toLowerCase();
     const keresett = f.lakoparkNev.toLowerCase();
     if (!ingNev.includes(keresett)) {
-      ok = false;
-      kizarasOka = "Más lakópark név";
+      //      ok = false;
+      //      kizarasOka = "Más lakópark név";
+      return false;
     }
   }
 
