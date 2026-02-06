@@ -480,3 +480,67 @@ function renderTelepulesMenu(view, grid, modalTitle) {
     ); // Itt írjuk ki a pontos számot!
   });
 }
+function renderDistrictMenu(grid, modalTitle) {
+  modalTitle.innerText = "Válassz kerületet";
+  BP_DISTRICTS.forEach((ker) => {
+    // Kiszámoljuk a pontos darabszámot (Csak Budapest + adott kerület)
+    const count = allVideos.filter(
+      (v) => v.telepules === "Budapest" && v.kerulet === ker
+    ).length;
+
+    // Kép elérési útja (WebP)
+    const bgImg = `https://media.hazbazis.hu/shorts/filter-img/${ker.replace(
+      ".",
+      ""
+    )}.webp`;
+
+    grid.appendChild(
+      createTile(
+        ker,
+        "",
+        count > 0
+          ? "from-blue-600/80 to-blue-900/80"
+          : "from-gray-800/80 to-gray-900/80 opacity-40",
+        () => {
+          if (count > 0)
+            applyFilterAndStart(
+              (v) => v.telepules === "Budapest" && v.kerulet === ker
+            );
+          else alert("Nincs videó ebben a kerületben!");
+        },
+        `${count} videó`, // Itt jelenik meg a pontos darabszám
+        bgImg
+      )
+    );
+  });
+}
+function renderHBSearch(grid, modalTitle) {
+  modalTitle.innerText = "Keresés HB-ID alapján";
+  grid.className = "flex flex-col gap-4 p-6";
+  grid.innerHTML = `
+    <div class="bg-white/5 p-6 rounded-2xl border border-[#E2F1B0]/20 text-center">
+        <input type="text" id="hb-input" placeholder="HB-407050" 
+               class="w-full bg-black/40 border border-[#E2F1B0]/30 p-4 rounded-xl text-white text-center font-mono outline-none focus:border-[#E2F1B0]">
+        <button onclick="window.searchByHBID()" class="w-full mt-4 bg-[#E2F1B0] text-[#3D4A16] font-bold py-4 rounded-xl active:scale-95 transition">
+            KERESÉS
+        </button>
+    </div>
+  `;
+}
+function handleBackButtonVisibility(view, modalTitle) {
+  const titleContainer = modalTitle.parentElement;
+  const existingBack = titleContainer.querySelector(".back-nav-btn");
+
+  if (view !== "main") {
+    if (!existingBack) {
+      const backBtn = document.createElement("button");
+      backBtn.className =
+        "back-nav-btn mr-3 p-2 bg-white/10 rounded-full text-white active:scale-90 transition";
+      backBtn.innerHTML = "⬅️";
+      backBtn.onclick = () => renderDiscoveryGrid("main");
+      titleContainer.prepend(backBtn);
+    }
+  } else if (existingBack) {
+    existingBack.remove();
+  }
+}
