@@ -175,21 +175,21 @@ function renderDiscoveryGrid(view = "main") {
   if (!grid) return;
 
   grid.innerHTML = "";
-  currentView = view; // FRISSÍTVE: Most már biztosan nem marad el!
+  currentView = view;
 
-  // Vissza gomb kezelése
+  // 1. Vissza gomb és rács stílus alaphelyzetbe állítása
   if (view !== "hb_search") {
     grid.className = "grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1";
   }
   handleBackButtonVisibility(view, modalTitle);
 
-  // --- NÉZET: FŐMENÜ ---
+  // --- NÉZET: FŐMENÜ (Keresési segédlet) ---
   if (view === "main") {
-    modalTitle.innerText = "Felfedezés 🌍";
+    modalTitle.innerText = "Keresési segédlet 🧭";
 
     MAIN_CATEGORIES.forEach((cat) => {
-      // Kiszámoljuk a darabszámot, de csak ha van filter (HB keresőnél 0 lesz)
-      const count = cat.filter ? allVideos.filter(cat.filter).length : 0;
+      // Itt már nem számoltatunk a rendszerrel minden megnyitáskor (Teljesítmény optimalizálás)
+      const infoText = "Megtekintés ➔";
 
       grid.appendChild(
         createTile(
@@ -197,32 +197,23 @@ function renderDiscoveryGrid(view = "main") {
           cat.icon,
           cat.color,
           () => {
-            // 1. Ha választó típus (Budapest, Vidék, HB Kereső), csak váltsunk nézetet
             if (cat.type === "selector") {
               renderDiscoveryGrid(cat.selectorType);
-              return; // Megállítjuk a futást, nem megyünk az applyFilter-re!
+              return;
             }
-
-            // 2. Ha direkt szűrő, ellenőrizzük a találatokat
-            if (count > 0) {
-              applyFilterAndStart(cat.filter);
-            } else {
-              alert("Sajnos ebben a kategóriában nincs lejátszható videó!");
-            }
+            applyFilterAndStart(cat.filter);
           },
-          cat.id === "hb_id" ? null : count
+          cat.id === "hb_id" ? null : infoText
         )
-      ); // HB keresőnél ne írjunk ki darabszámot
+      );
     });
-
     return;
   }
 
   // --- NÉZET: HB-ID KERESŐ ---
-
   if (view === "hb_search") {
     modalTitle.innerText = "Keresés HB-ID alapján";
-    grid.className = "flex flex-col gap-4 p-6"; // Átváltunk listára a rácsról
+    grid.className = "flex flex-col gap-4 p-6";
 
     grid.innerHTML = `
         <div class="bg-white/5 p-6 rounded-2xl border border-[#E2F1B0]/20">
@@ -239,8 +230,6 @@ function renderDiscoveryGrid(view = "main") {
         <p class="text-[10px] text-center text-white/30 uppercase tracking-widest mt-2">Hazbazis Intelligent Search</p>
     `;
     return;
-  } else {
-    grid.className = "grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1"; // Visszaállítjuk a rácsot
   }
 
   // --- NÉZET: LAKÓPARK -> TELEPÜLÉS ---
@@ -253,21 +242,18 @@ function renderDiscoveryGrid(view = "main") {
     ]
       .filter(Boolean)
       .sort();
+
     varosok.forEach((v) => {
-      const count = allVideos.filter(
-        (item) => item.lakopark_e === "Igen" && item.telepules === v
-      ).length;
       grid.appendChild(
         createTile(
           v,
           "",
           "from-[#3D4A16] to-green-800",
           () => {
-            // Itt dől el: ha Budapest, akkor kerület, egyébként a lakóparkok listája
             if (v === "Budapest") renderDiscoveryGrid("lakopark_kerulet");
             else renderDiscoveryGrid("lakoparkok_listaja", { city: v });
           },
-          count
+          "Felfedezés"
         )
       );
     });
@@ -284,10 +270,8 @@ function renderDiscoveryGrid(view = "main") {
     ]
       .filter(Boolean)
       .sort();
+
     varosok.forEach((v) => {
-      const count = allVideos.filter(
-        (item) => item.kategoria === "kiado" && item.telepules === v
-      ).length;
       grid.appendChild(
         createTile(
           v,
@@ -300,36 +284,38 @@ function renderDiscoveryGrid(view = "main") {
                 (item) => item.kategoria === "kiado" && item.telepules === v
               );
           },
-          count
+          "Lista ➔"
         )
       );
     });
     return;
   }
 
-  // --- NÉZET: KERÜLET (Sima eladó BP lakások) ---
+  // --- NÉZET: KERÜLET (Képekkel támogatva) ---
   if (view === "kerulet") {
     modalTitle.innerText = "Budapesti kerületek";
     BP_DISTRICTS.forEach((ker) => {
-      const count = allVideos.filter(
+      // Itt csak azt nézzük meg, létezik-e találat (gyorsabb, mint a darabszám)
+      const hasVideo = allVideos.some(
         (v) => v.telepules === "Budapest" && v.kerulet === ker
-      ).length;
+      );
       const bgImg = `https://media.hazbazis.hu/shorts/filter-img/${ker.replace(
         ".",
         ""
       )}.webp`;
+
       grid.appendChild(
         createTile(
           ker,
           "",
-          count > 0 ? "from-blue-600/80 to-blue-900/80" : "opacity-40",
+          hasVideo ? "from-blue-600/80 to-blue-900/80" : "opacity-40",
           () => {
-            if (count > 0)
+            if (hasVideo)
               applyFilterAndStart(
                 (v) => v.telepules === "Budapest" && v.kerulet === ker
               );
           },
-          count,
+          hasVideo ? "Választás" : "Nincs videó",
           bgImg
         )
       );
@@ -349,15 +335,15 @@ function renderDiscoveryGrid(view = "main") {
     ]
       .filter(Boolean)
       .sort();
+
     varosok.forEach((v) => {
-      const count = allVideos.filter((item) => item.telepules === v).length;
       grid.appendChild(
         createTile(
           v,
           "",
           "from-green-700 to-green-900",
           () => applyFilterAndStart((item) => item.telepules === v),
-          count
+          "Mutasd"
         )
       );
     });
@@ -409,6 +395,7 @@ function applyFilterAndStart(filterFn) {
 
 function renderVideos(list) {
   videoFeed.innerHTML = "";
+  console.log(`Keresési segédlet: ${list.length} találat megjelenítve.`);
   list.forEach((data) => videoFeed.appendChild(createVideoCard(data)));
   setupVideoObserver();
 }
