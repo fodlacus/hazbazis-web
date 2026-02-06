@@ -276,8 +276,13 @@ window.generaljLeirast = async function () {
 
 window.frissitArCimket = function (ertek) {
   const arCimke = document.querySelector('label[for="vételár"]');
-  if (arCimke) {
-    arCimke.innerText =
-      ertek === "kiado" ? "Bérleti díj / hó (Ft)" : "Vételár (Ft)";
+  const arMezo = document.getElementById("vételár");
+
+  if (ertek === "kiado") {
+    if (arCimke) arCimke.innerText = "Bérleti díj / hó (Ft)";
+    if (arMezo) arMezo.placeholder = "Havi bérleti díj összege";
+  } else {
+    if (arCimke) arCimke.innerText = "Vételár (Ft)";
+    if (arMezo) arMezo.placeholder = "Teljes vételár összege";
   }
 };

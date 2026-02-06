@@ -490,48 +490,56 @@ function renderDistrictMenu(grid, modalTitle) {
 
 function renderTelepulesMenu(view, grid, modalTitle) {
   let filterBase = (v) => true;
+
+  // 1. Meghatározzuk a kategória alapfeltételét
   if (view === "telepules") {
     modalTitle.innerText = "Vidéki városok";
-    filterBase = (v) => v.telepules !== "Budapest";
+    filterBase = (v) => v.telepules !== "Budapest" && v.kategoria !== "kiado";
   } else if (view === "alberlet_telepules") {
     modalTitle.innerText = "Albérletek városonként";
     filterBase = (v) => v.kategoria === "kiado";
-  } else if (view === "olcso_telepules") {
-    modalTitle.innerText = "Olcsó ingatlanok (50M alatt)";
-    filterBase = (v) => v.vételár > 0 && v.vételár <= 50000000;
   } else if (view === "garazs_telepules") {
     modalTitle.innerText = "Garázsok városonként";
     filterBase = (v) => v.tipus === "Garázs";
+  } else if (view === "olcso_telepules") {
+    modalTitle.innerText = "Olcsó ingatlanok (50M alatt)";
+    filterBase = (v) =>
+      v.vételár > 0 && v.vételár <= 50000000 && v.kategoria !== "kiado";
   } else if (view === "luxus_telepules") {
-    modalTitle.innerText = "Luxus városok szerint";
+    modalTitle.innerText = "Luxus ingatlanok (>120M)";
     filterBase = (v) => v.vételár >= 120000000;
   } else if (view === "lakopark_telepules") {
-    modalTitle.innerText = "Lakóparki városok";
+    modalTitle.innerText = "Lakóparkok városonként";
     filterBase = (v) => v.lakopark_e === "Igen";
   }
 
+  // 2. Kigyűjtjük azokat a városokat, ahol van az adott feltételnek megfelelő videó
   const varosok = [
     ...new Set(allVideos.filter(filterBase).map((v) => v.telepules)),
   ]
     .filter(Boolean)
     .sort();
 
+  // 3. Legeneráljuk a csempéket a pontos darabszámmal
   varosok.forEach((v) => {
     const count = allVideos.filter(
       (item) => filterBase(item) && item.telepules === v
     ).length;
+
     grid.appendChild(
       createTile(
         v,
         "",
         "from-[#3D4A16] to-green-800",
         () => {
-          if (v === "Budapest" && view === "alberlet_telepules")
+          // Speciális eset: Albérletnél Budapesten belül menjünk kerületekre
+          if (v === "Budapest" && view === "alberlet_telepules") {
             renderDiscoveryGrid("alberlet_kerulet");
-          else
+          } else {
             applyFilterAndStart(
               (item) => filterBase(item) && item.telepules === v
             );
+          }
         },
         `${count} videó`
       )
@@ -548,6 +556,11 @@ function renderAlberletKeruletMenu(grid, modalTitle) {
         v.telepules === "Budapest" &&
         v.kerulet === ker
     ).length;
+    const bgImg = `https://media.hazbazis.hu/shorts/filter-img/${ker.replace(
+      ".",
+      ""
+    )}.webp`;
+
     grid.appendChild(
       createTile(
         ker,
@@ -562,7 +575,8 @@ function renderAlberletKeruletMenu(grid, modalTitle) {
                 v.kerulet === ker
             );
         },
-        `${count} videó`
+        `${count} kiadó`,
+        bgImg
       )
     );
   });
