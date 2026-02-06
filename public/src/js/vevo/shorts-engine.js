@@ -178,6 +178,9 @@ function renderDiscoveryGrid(view = "main") {
   currentView = view; // FRISSÍTVE: Most már biztosan nem marad el!
 
   // Vissza gomb kezelése
+  if (view !== "hb_search") {
+    grid.className = "grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1";
+  }
   handleBackButtonVisibility(view, modalTitle);
 
   // --- NÉZET: FŐMENÜ ---
@@ -216,13 +219,25 @@ function renderDiscoveryGrid(view = "main") {
   }
 
   // --- NÉZET: HB-ID KERESŐ ---
+
   if (view === "hb_search") {
     modalTitle.innerText = "Keresés HB-ID alapján";
-    grid.className = "flex flex-col gap-4 p-4"; // Ideiglenes stílusváltás a keresőnek
+    grid.className = "flex flex-col gap-4 p-6"; // Átváltunk listára a rácsról
+
     grid.innerHTML = `
-          <input type="text" id="hb-input" placeholder="pl: HB-407050" class="w-full bg-white/10 border border-[#E2F1B0]/30 p-4 rounded-xl text-white outline-none focus:border-[#E2F1B0]">
-          <button onclick="window.searchByHBID()" class="w-full bg-[#E2F1B0] text-[#3D4A16] font-bold py-4 rounded-xl shadow-lg active:scale-95 transition">Keresés indítása</button>
-      `;
+        <div class="bg-white/5 p-6 rounded-2xl border border-[#E2F1B0]/20">
+            <p class="text-xs text-white/50 mb-4 italic text-center">Add meg az ingatlan pontos azonosítóját!</p>
+            <input type="text" id="hb-input" 
+                placeholder="Például: HB-407050" 
+                class="w-full bg-black/40 border border-[#E2F1B0]/30 p-4 rounded-xl text-white text-center text-lg font-mono outline-none focus:border-[#E2F1B0] transition-all">
+            
+            <button onclick="window.searchByHBID()" 
+                class="w-full mt-4 bg-[#E2F1B0] text-[#3D4A16] font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all">
+                KERESÉS INDÍTÁSA
+            </button>
+        </div>
+        <p class="text-[10px] text-center text-white/30 uppercase tracking-widest mt-2">Hazbazis Intelligent Search</p>
+    `;
     return;
   } else {
     grid.className = "grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1"; // Visszaállítjuk a rácsot
@@ -518,21 +533,26 @@ function scrollToVideo(id) {
 
 window.searchByHBID = function () {
   const input = document.getElementById("hb-input");
-  const id = input.value.trim().toUpperCase();
-  if (!id) return;
+  if (!input) return;
 
-  // Keresünk az ID-ben (lehet részleges is, pl "407050")
-  const match = allVideos.filter(
+  const rawId = input.value.trim().toUpperCase();
+  if (!rawId) {
+    alert("Kérlek, írj be egy azonosítót!");
+    return;
+  }
+
+  // Szigorú szűrés: csak akkor indítunk, ha van találat
+  const matches = allVideos.filter(
     (v) =>
-      v.id.toUpperCase().includes(id) ||
-      (v.azon && v.azon.toUpperCase().includes(id))
+      (v.id && v.id.toUpperCase().includes(rawId)) ||
+      (v.azon && v.azon.toUpperCase().includes(rawId))
   );
 
-  if (match.length > 0) {
-    renderVideos(match);
+  if (matches.length > 0) {
+    renderVideos(matches);
     closeFilterModal();
   } else {
-    alert("Sajnos nem találtunk ingatlant ezzel az azonosítóval.");
+    alert("Nincs találat erre az azonosítóra: " + rawId);
   }
 };
 
