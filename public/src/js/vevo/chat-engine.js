@@ -241,8 +241,9 @@ function megfelelAzIngatlan(ing, f) {
 
   // --- KATEGÓRIA (Albérlet vs Eladó) ---
   if (f.kategoria && ing.kategoria !== f.kategoria) {
-    ok = false;
-    kizarasOka = "Rossz kategória (eladó/kiadó)";
+    //    ok = false;
+    //    kizarasOka = "Rossz kategória (eladó/kiadó)";
+    return false;
   }
 
   // --- TÍPUS (Garázs szűrés) ---
@@ -253,8 +254,9 @@ function megfelelAzIngatlan(ing, f) {
 
   // --- LAKÓPARK SZŰRÉS ---
   if (ok && f.lakoparkE === "Igen" && ing.lakopark_e !== "Igen") {
-    ok = false;
-    kizarasOka = "Nem lakóparki";
+    //   ok = false;
+    //   kizarasOka = "Nem lakóparki";
+    return false;
   }
 
   if (ok && f.lakoparkNev) {
