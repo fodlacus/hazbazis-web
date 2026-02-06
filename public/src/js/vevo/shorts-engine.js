@@ -412,24 +412,6 @@ window.searchByHBID = function () {
   }
 };
 
-function handleBackButtonVisibility(view, modalTitle) {
-  const titleContainer = modalTitle.parentElement;
-  const existingBack = titleContainer.querySelector(".back-nav-btn");
-
-  if (view !== "main") {
-    if (!existingBack) {
-      const backBtn = document.createElement("button");
-      backBtn.className =
-        "back-nav-btn mr-3 p-2 bg-white/10 rounded-full text-white active:scale-90 transition";
-      backBtn.innerHTML = "⬅️";
-      backBtn.onclick = () => renderDiscoveryGrid("main");
-      titleContainer.prepend(backBtn);
-    }
-  } else {
-    if (existingBack) existingBack.remove();
-  }
-}
-
 function renderHBSearch(grid, modalTitle) {
   modalTitle.innerText = "Keresés HB-ID alapján";
   grid.className = "flex flex-col gap-4 p-6";
