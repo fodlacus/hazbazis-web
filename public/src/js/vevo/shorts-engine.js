@@ -184,9 +184,14 @@ function renderDiscoveryGrid(view = "main") {
 
   grid.innerHTML = "";
   currentView = view;
-  handleBackButtonVisibility(view, modalTitle); // A vissza nyíl kezelése
 
-  // Csak IF-ek, nincs ELSE-kavarodás
+  // Mindig visszaállítjuk a rácsot, kivéve a HB keresőnél
+  if (view !== "hb_search") {
+    grid.className = "grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4 pr-1";
+  }
+
+  handleBackButtonVisibility(view, modalTitle);
+
   if (view === "main") {
     renderMainMenu(grid, modalTitle);
     return;
@@ -197,13 +202,18 @@ function renderDiscoveryGrid(view = "main") {
     return;
   }
 
-  if (view.includes("_telepules")) {
+  if (view.includes("_telepules") || view === "telepules") {
     renderTelepulesMenu(view, grid, modalTitle);
     return;
   }
 
   if (view === "hb_search") {
     renderHBSearch(grid, modalTitle);
+    return;
+  }
+
+  if (view === "alberlet_kerulet") {
+    renderAlberletKeruletMenu(grid, modalTitle);
     return;
   }
 }
@@ -420,100 +430,6 @@ function handleBackButtonVisibility(view, modalTitle) {
   }
 }
 
-function renderMainMenu(grid, modalTitle) {
-  modalTitle.innerText = "Keresési segédlet 🧭";
-  MAIN_CATEGORIES.forEach((cat) => {
-    grid.appendChild(
-      createTile(
-        cat.title,
-        cat.icon,
-        cat.color,
-        () => {
-          renderDiscoveryGrid(cat.selectorType);
-        },
-        cat.hint
-      )
-    ); // Itt jelenik meg a "Városválasztó", "Helyszín szerint" stb.
-  });
-}
-
-function renderTelepulesMenu(view, grid, modalTitle) {
-  // Meghatározzuk az alap szűrőt a nézet alapján
-  let filterBase = (v) => true;
-  if (view === "alberlet_telepules") {
-    modalTitle.innerText = "Albérletek városonként";
-    filterBase = (v) => v.kategoria === "kiado";
-  } else if (view === "olcso_telepules") {
-    modalTitle.innerText = "Olcsó ingatlanok (50M alatt)";
-    filterBase = (v) => v.vételár > 0 && v.vételár <= 50000000;
-  } else if (view === "garazs_telepules") {
-    modalTitle.innerText = "Garázsok városonként";
-    filterBase = (v) => v.tipus === "Garázs";
-  }
-
-  const varosok = [
-    ...new Set(allVideos.filter(filterBase).map((v) => v.telepules)),
-  ]
-    .filter(Boolean)
-    .sort();
-
-  varosok.forEach((v) => {
-    const count = allVideos.filter(
-      (item) => filterBase(item) && item.telepules === v
-    ).length;
-    grid.appendChild(
-      createTile(
-        v,
-        "",
-        "from-[#3D4A16] to-green-800",
-        () => {
-          // Speciális eset: Ha Budapest és Albérlet, menjünk tovább kerületre
-          if (v === "Budapest" && view === "alberlet_telepules")
-            renderDiscoveryGrid("alberlet_kerulet");
-          else
-            applyFilterAndStart(
-              (item) => filterBase(item) && item.telepules === v
-            );
-        },
-        `${count} videó`
-      )
-    ); // Itt írjuk ki a pontos számot!
-  });
-}
-function renderDistrictMenu(grid, modalTitle) {
-  modalTitle.innerText = "Válassz kerületet";
-  BP_DISTRICTS.forEach((ker) => {
-    // Kiszámoljuk a pontos darabszámot (Csak Budapest + adott kerület)
-    const count = allVideos.filter(
-      (v) => v.telepules === "Budapest" && v.kerulet === ker
-    ).length;
-
-    // Kép elérési útja (WebP)
-    const bgImg = `https://media.hazbazis.hu/shorts/filter-img/${ker.replace(
-      ".",
-      ""
-    )}.webp`;
-
-    grid.appendChild(
-      createTile(
-        ker,
-        "",
-        count > 0
-          ? "from-blue-600/80 to-blue-900/80"
-          : "from-gray-800/80 to-gray-900/80 opacity-40",
-        () => {
-          if (count > 0)
-            applyFilterAndStart(
-              (v) => v.telepules === "Budapest" && v.kerulet === ker
-            );
-          else alert("Nincs videó ebben a kerületben!");
-        },
-        `${count} videó`, // Itt jelenik meg a pontos darabszám
-        bgImg
-      )
-    );
-  });
-}
 function renderHBSearch(grid, modalTitle) {
   modalTitle.innerText = "Keresés HB-ID alapján";
   grid.className = "flex flex-col gap-4 p-6";
@@ -543,4 +459,129 @@ function handleBackButtonVisibility(view, modalTitle) {
   } else if (existingBack) {
     existingBack.remove();
   }
+}
+
+function renderMainMenu(grid, modalTitle) {
+  modalTitle.innerText = "Keresési segédlet 🧭";
+  MAIN_CATEGORIES.forEach((cat) => {
+    grid.appendChild(
+      createTile(
+        cat.title,
+        cat.icon,
+        cat.color,
+        () => {
+          renderDiscoveryGrid(cat.selectorType);
+        },
+        cat.hint
+      )
+    );
+  });
+}
+
+function renderDistrictMenu(grid, modalTitle) {
+  modalTitle.innerText = "Budapesti kerületek";
+  BP_DISTRICTS.forEach((ker) => {
+    const count = allVideos.filter(
+      (v) => v.telepules === "Budapest" && v.kerulet === ker
+    ).length;
+    const bgImg = `https://media.hazbazis.hu/shorts/filter-img/${ker.replace(
+      ".",
+      ""
+    )}.webp`;
+    grid.appendChild(
+      createTile(
+        ker,
+        "",
+        count > 0 ? "from-blue-600/80 to-blue-900/80" : "opacity-40",
+        () => {
+          if (count > 0)
+            applyFilterAndStart(
+              (v) => v.telepules === "Budapest" && v.kerulet === ker
+            );
+        },
+        `${count} videó`,
+        bgImg
+      )
+    );
+  });
+}
+
+function renderTelepulesMenu(view, grid, modalTitle) {
+  let filterBase = (v) => true;
+  if (view === "telepules") {
+    modalTitle.innerText = "Vidéki városok";
+    filterBase = (v) => v.telepules !== "Budapest";
+  } else if (view === "alberlet_telepules") {
+    modalTitle.innerText = "Albérletek városonként";
+    filterBase = (v) => v.kategoria === "kiado";
+  } else if (view === "olcso_telepules") {
+    modalTitle.innerText = "Olcsó ingatlanok (50M alatt)";
+    filterBase = (v) => v.vételár > 0 && v.vételár <= 50000000;
+  } else if (view === "garazs_telepules") {
+    modalTitle.innerText = "Garázsok városonként";
+    filterBase = (v) => v.tipus === "Garázs";
+  } else if (view === "luxus_telepules") {
+    modalTitle.innerText = "Luxus városok szerint";
+    filterBase = (v) => v.vételár >= 120000000;
+  } else if (view === "lakopark_telepules") {
+    modalTitle.innerText = "Lakóparki városok";
+    filterBase = (v) => v.lakopark_e === "Igen";
+  }
+
+  const varosok = [
+    ...new Set(allVideos.filter(filterBase).map((v) => v.telepules)),
+  ]
+    .filter(Boolean)
+    .sort();
+
+  varosok.forEach((v) => {
+    const count = allVideos.filter(
+      (item) => filterBase(item) && item.telepules === v
+    ).length;
+    grid.appendChild(
+      createTile(
+        v,
+        "",
+        "from-[#3D4A16] to-green-800",
+        () => {
+          if (v === "Budapest" && view === "alberlet_telepules")
+            renderDiscoveryGrid("alberlet_kerulet");
+          else
+            applyFilterAndStart(
+              (item) => filterBase(item) && item.telepules === v
+            );
+        },
+        `${count} videó`
+      )
+    );
+  });
+}
+
+function renderAlberletKeruletMenu(grid, modalTitle) {
+  modalTitle.innerText = "Budapesti albérletek";
+  BP_DISTRICTS.forEach((ker) => {
+    const count = allVideos.filter(
+      (v) =>
+        v.kategoria === "kiado" &&
+        v.telepules === "Budapest" &&
+        v.kerulet === ker
+    ).length;
+    grid.appendChild(
+      createTile(
+        ker,
+        "",
+        count > 0 ? "from-blue-600/80 to-blue-900/80" : "opacity-40",
+        () => {
+          if (count > 0)
+            applyFilterAndStart(
+              (v) =>
+                v.kategoria === "kiado" &&
+                v.telepules === "Budapest" &&
+                v.kerulet === ker
+            );
+        },
+        `${count} videó`
+      )
+    );
+  });
 }
