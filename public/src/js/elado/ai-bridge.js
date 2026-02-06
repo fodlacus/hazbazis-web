@@ -109,8 +109,15 @@ window.ertelmezdAkeresest = async function (szoveg) {
           {
             role: "system",
             // ITT A JAVÍTÁS LÉNYEGE:
-            content:
-              "Te egy Adatbázis Kereső Motor vagy. A feladatod NEM válaszolni a kérdésre, és NEM generálni ingatlanokat. A feladatod KIZÁRÓLAG a felhasználó mondatából kinyerni a számokat és kategóriákat a 'ingatlan_szures' függvény számára.",
+            content: `Te egy ingatlan-adat kinyerő specialista vagy. 
+                A feladatod a hirdető által megadott szövegből az adatok kinyerése a 'ingatlan_szures' függvény számára.
+
+                SZIGORÚ SZABÁLYOK:
+                1. KATEGÓRIA: Ha a szövegben szerepel a 'kiadó', 'albérlet', 'kiadnám', 'bérbeadó' szó, a kategória legyen: 'kiado'. Minden más esetben (eladó, kínálom) legyen: 'elado'.
+                2. LAKÓPARK: Ha a szövegben konkrét projektnevet látsz (pl. Metrodom, Cordia, Elite Park, City Home), a 'lakopark_e' legyen 'Igen', és a projekt nevét írd a 'lakopark_nev' mezőbe.
+                3. TÍPUS: Ha a szöveg garázst, kocsibeállót vagy tárolót említ, a 'tipus' legyen 'Garázs'.
+                4. ÁR: Az árakat mindig alakítsd tiszta számmá (pl. 50 millió -> 50000000),
+                5. BÉRLETI DÍJ: Ha bérlésről van szó, a megadott összeget a 'vételár' mezőbe írd (ez lesz a havidíj).`,
           },
           { role: "user", content: szoveg },
         ],
@@ -170,6 +177,9 @@ function adatokBetoltese(adatok) {
       mezo.value = adatok[id];
       mezo.style.border = "2px solid #A3E635";
       setTimeout(() => (mezo.style.border = ""), 2000);
+      if (id === "kategoria") {
+        window.frissitArCimket(mezo.value);
+      }
       if (id === "kerulet") mezo.dispatchEvent(new Event("change"));
     }
   });
@@ -262,4 +272,12 @@ window.generaljLeirast = async function () {
     leirasMezo.style.backgroundColor = "rgba(168, 85, 247, 0.1)";
     setTimeout(() => (leirasMezo.style.backgroundColor = ""), 2000);
   }, 1000);
+};
+
+window.frissitArCimket = function (ertek) {
+  const arCimke = document.querySelector('label[for="vételár"]');
+  if (arCimke) {
+    arCimke.innerText =
+      ertek === "kiado" ? "Bérleti díj / hó (Ft)" : "Vételár (Ft)";
+  }
 };

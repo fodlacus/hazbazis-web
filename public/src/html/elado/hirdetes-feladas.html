@@ -211,6 +211,13 @@
                         }
                   });
 
+                  document.addEventListener('change', (e) => {
+                        if (e.target.id === 'kategoria') {
+                              window.frissitArCimket(e.target.value);
+                        }
+                        // A lakóparkos korábbi kódod is maradhat itt...
+                  });
+
             });
       </script>
 </body>
