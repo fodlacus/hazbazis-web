@@ -3,12 +3,25 @@ export const ingatlanStruktura = {
     cim: "Alapadatok",
     mezok: [
       { id: "nev", label: "Ingatlan megnevezése", type: "text" },
-      // ÚJ: Ingatlan típusa lista
+      {
+        id: "kategoria", // Ez az Albérlet csempe alapja!
+        label: "Hirdetés típusa",
+        type: "select",
+        options: ["elado", "kiado"],
+        labels: ["Eladó ingatlan", "Kiadó (Albérlet)"],
+      },
       {
         id: "tipus",
         label: "Ingatlan típusa",
         type: "select",
-        options: ["Lakás", "Családi ház", "Ikerház", "Sorház", "Telek"],
+        options: [
+          "Lakás",
+          "Családi ház",
+          "Ikerház",
+          "Sorház",
+          "Telek",
+          "Garázs",
+        ],
       },
       {
         id: "lakopark_e", // Boolean szűréshez a Shorts-ban
@@ -79,6 +92,7 @@ export const ingatlanStruktura = {
       { id: "szobák", label: "Szobák száma", type: "number", ai: "kinyerhető" },
     ],
   },
+
   műszaki: {
     cim: "Műszaki paraméterek",
     mezok: [

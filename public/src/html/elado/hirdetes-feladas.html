@@ -202,6 +202,15 @@
                               }
                         });
                   }
+                  document.addEventListener('change', (e) => {
+                        if (e.target.id === 'lakopark_e') {
+                              const nevMezoKontener = document.getElementById('lakopark_nev')?.parentElement;
+                              if (nevMezoKontener) {
+                                    nevMezoKontener.style.display = (e.target.value === 'Igen') ? 'block' : 'none';
+                              }
+                        }
+                  });
+
             });
       </script>
 </body>

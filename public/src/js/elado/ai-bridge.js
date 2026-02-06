@@ -25,6 +25,18 @@ const ingatlanTools = [
             type: "number",
             description: "Maximum méret (pl. '60 m2 alatt', 'kicsi lakás').",
           },
+          kategoria: {
+            type: "string",
+            enum: ["elado", "kiado"],
+            description:
+              "Ha bérlésről, albérletről van szó, akkor 'kiado', ha eladásról, akkor 'elado'.",
+          },
+          tipus: {
+            type: "string",
+            enum: ["Lakás", "Ház", "Garázs"],
+            description:
+              "Az ingatlan típusa. Ha gépkocsitároló vagy beálló, akkor 'Garázs'.",
+          },
           allapot: {
             type: "string",
             enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],
