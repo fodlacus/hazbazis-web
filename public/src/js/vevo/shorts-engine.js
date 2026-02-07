@@ -1,12 +1,22 @@
 // src/js/vevo/shorts-engine.js
 
 import { adatbazis as db } from "../util/firebase-config.js";
+
 import {
   collection,
   query,
-  orderBy,
+  where,
   getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import {
+  getAuth,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // --- GLOBÁLIS VÁLTOZÓK ---
 const videoFeed = document.querySelector(".video-feed");
