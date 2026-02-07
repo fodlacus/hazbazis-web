@@ -156,19 +156,18 @@ const MAIN_CATEGORIES = [
     hint: "Egyedi azonosító",
   },
   {
-    id: "favorites",
-    label: "KEDVENCEK",
-    sub: "Saját listád",
+    title: "KEDVENCEK",
     icon: "❤️",
-    filter: () => window.loadFavoritesFeed(), // Ezt a függvényt hívja majd meg
+    color: "from-red-900 to-black",
+    onClick: () => window.loadFavoritesFeed(),
+    infoText: "Saját listád",
   },
   {
-    id: "metro",
-    label: "METRÓ KÖZELBEN",
-    sub: "Gyors közlekedés",
+    title: "METRÓ KÖZELBEN",
     icon: "🚇",
-    filter: (v) =>
-      v.leiras?.toLowerCase().includes("metró") || v.utca?.includes("metró"),
+    color: "from-blue-900 to-black",
+    onClick: () => window.loadMetroVideos(),
+    infoText: "Gyors közlekedés",
   },
 ];
 
@@ -557,16 +556,21 @@ function handleBackButtonVisibility(view, modalTitle) {
 
 function renderMainMenu(grid, modalTitle) {
   modalTitle.innerText = "Keresési segédlet 🧭";
+
   MAIN_CATEGORIES.forEach((cat) => {
+    // Ha van egyedi onClick (Kedvencek/Metró), azt használjuk,
+    // egyébként a kategória választót (Város/Kerület)
+    const clickHandler = cat.onClick
+      ? cat.onClick
+      : () => renderDiscoveryGrid(cat.selectorType);
+
     grid.appendChild(
       createTile(
         cat.title,
         cat.icon,
         cat.color,
-        () => {
-          renderDiscoveryGrid(cat.selectorType);
-        },
-        cat.hint
+        clickHandler,
+        cat.infoText || cat.hint // Itt kezeljük mindkét elnevezést
       )
     );
   });
@@ -828,5 +832,61 @@ window.toggleFavorite = async function (hbId) {
     console.error("Hiba történt a kedvencek kezelésekor:", error);
     alert("Hiba történt a mentés során. Kérlek, próbáld újra!");
     return null;
+  }
+};
+
+window.loadFavoritesFeed = async function () {
+  if (!currentUser) {
+    alert("Kérlek, jelentkezz be a kedvenceid megtekintéséhez!");
+    return;
+  }
+
+  try {
+    // Lekérjük a kedvenceket a te 'azon' kódod alapján
+    const q = query(
+      collection(db, "kedvencek"),
+      where("felh_azon", "==", currentUser.azon)
+    );
+
+    const snapshot = await getDocs(q);
+    // Kigyűjtjük a HB-azonosítókat (pl. HB-372205)
+    const favHbIds = snapshot.docs.map((doc) => doc.data().hb_azon);
+
+    if (favHbIds.length === 0) {
+      alert("Még nincsenek kedvenc ingatlanjaid.");
+      return;
+    }
+
+    // Szűrés: Csak azokat a videókat mutatjuk, amik a kedvencekben vannak
+    const filteredVideos = allVideos.filter((v) =>
+      favHbIds.includes(v.id || v.azon)
+    );
+
+    if (filteredVideos.length > 0) {
+      renderVideos(filteredVideos);
+      closeFilterModal();
+    } else {
+      alert("A mentett ingatlanok jelenleg nem elérhetőek a videók között.");
+    }
+  } catch (e) {
+    console.error("Hiba a kedvencek betöltésekor:", e);
+  }
+};
+
+window.loadMetroVideos = function () {
+  const metroLines = ["M1", "M2", "M3", "M4", "METRÓ", "METRO"];
+
+  const metroResults = allVideos.filter((video) => {
+    const text = `${video.leiras || ""} ${video.utca || ""} ${
+      video.telepules || ""
+    }`.toUpperCase();
+    return metroLines.some((line) => text.includes(line));
+  });
+
+  if (metroResults.length > 0) {
+    renderVideos(metroResults);
+    closeFilterModal();
+  } else {
+    alert("Jelenleg nincs metró közeli ingatlan a kínálatban.");
   }
 };
