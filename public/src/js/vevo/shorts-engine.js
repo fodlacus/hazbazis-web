@@ -294,8 +294,8 @@ function createVideoCard(data) {
                 
                 <button class="bkk-btn" style="border-color: #E2F1B0; font-size: 1.2rem;" title="Közlekedés és környék infó">🚌</button>
                 
-                <button class="mute-btn" style="border-color: ${muteBorder}">${muteIcon}</button>
-                <button class="info-btn">📄</button>
+                <button class="mute-btn" title="Némítás / Hang" style="border-color: ${muteBorder}">${muteIcon}</button>
+                <button class="info-btn" title="Részletes adatlap">📄</button>
             </div>
             <div class="video-info">
                 <span class="brand-badge">${data.id}</span>
@@ -643,57 +643,48 @@ function addTransitButton(videoData, iconContainer) {
 }
 
 window.mutassKozlekedest = async function (videoData) {
-  // 1. Megnyitjuk/Létrehozzuk a panelt
   const panel =
     document.getElementById("transit-panel") || createTransitPanel();
-
-  // 2. Aktiváljuk a láthatóságot (legyőzzük a transform-ot)
   panel.style.transform = "translateY(0)";
 
-  // 3. Ellenőrizzük, hogy Budapest-e a helyszín
+  // Tájékoztatás nem budapesti ingatlan esetén
   if (videoData.telepules !== "Budapest") {
     panel.innerHTML = `
           <div style="width: 50px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 20px auto;"></div>
           <div style="padding: 20px; text-align: center;">
               <div style="font-size: 3rem; margin-bottom: 15px;">📍</div>
-              <h2 style="color: #E2F1B0; margin-bottom: 10px; text-transform: uppercase;">Hamarosan...</h2>
+              <h2 style="color: #E2F1B0; margin-bottom: 10px; text-transform: uppercase;">Információ</h2>
               <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px;">
-                  A hivatalos közlekedési és környék-információs szolgáltatásunk jelenleg csak <b>Budapest</b> területén érhető el. 
-                  <br><br>Fejlesztőink már dolgoznak a vidéki hálózat bővítésén!
+                  A hivatalos közlekedési és környék-információs szolgáltatás jelenleg kizárólag a <b>Budapesten</b> található ingatlanoknál érhető el.
               </p>
-              <button onclick="closeTransitPanel()" style="width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 15px; border-radius: 1rem; font-weight: bold; text-transform: uppercase;">Értem</button>
+              <button onclick="window.closeTransitPanel()" style="width: 100%; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 15px; border-radius: 1rem; font-weight: bold; text-transform: uppercase; cursor: pointer;">Értem</button>
           </div>
       `;
     return;
   }
 
-  // 4. Ha Budapest, akkor jöhet a betöltési animáció
+  // Budapest esetén betöltés indítása
   panel.innerHTML = `
     <div style="width: 50px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 20px auto;"></div>
     <div style="padding: 40px; text-align: center; color: #E2F1B0;">
-        <div class="animate-pulse">Kapcsolódás a BKK Futár rendszeréhez...</div>
+        <div style="animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">Kapcsolódás a BKK Futár rendszeréhez...</div>
     </div>`;
 
   try {
-    // Itt hívjuk a Cloudflare-t
     const response = await fetch(
       `/api/bkk-proximity?lat=${videoData.lat}&lon=${videoData.lng}`
     );
     const data = await response.json();
 
-    // Ezt a függvényt majd megírjuk, ha megjönnek a valós adatok
     if (typeof renderTransitContent === "function") {
       renderTransitContent(panel, data);
-    } else {
-      panel.innerHTML +=
-        '<p style="text-align:center">Adatok sikeresen fogadva!</p>';
     }
   } catch (error) {
     panel.innerHTML = `
         <div style="width: 50px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 20px auto;"></div>
         <div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.5);">
-            <p>Átmeneti hiba az adatlekérésben.</p>
-            <button onclick="closeTransitPanel()" style="margin-top:20px; color: white; text-decoration: underline;">Bezárás</button>
+            <p>A szolgáltatás átmenetileg nem elérhető.</p>
+            <button onclick="window.closeTransitPanel()" style="margin-top:20px; color: white; text-decoration: underline; background: none; border: none; cursor: pointer;">Bezárás</button>
         </div>`;
   }
 };
@@ -711,3 +702,10 @@ function createTransitPanel() {
   document.body.appendChild(panel);
   return panel;
 }
+
+window.closeTransitPanel = function () {
+  const panel = document.getElementById("transit-panel");
+  if (panel) {
+    panel.style.transform = "translateY(100%)";
+  }
+};
