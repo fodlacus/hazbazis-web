@@ -293,7 +293,7 @@ function createVideoCard(data) {
                 </button>
                 
                 <button class="bkk-btn" style="border-color: #E2F1B0; font-size: 1.2rem;" title="Közlekedés és környék infó">🚌</button>
-                
+                <button class="fav-btn" title="Kedvencek" style="border-color: #E2F1B0;">🤍</button>
                 <button class="mute-btn" title="Némítás / Hang" style="border-color: ${muteBorder}">${muteIcon}</button>
                 <button class="info-btn" title="Részletes adatlap">📄</button>
             </div>
@@ -346,6 +346,23 @@ function createVideoCard(data) {
   };
 
   return container;
+  const favBtn = container.querySelector(".fav-btn");
+
+  // Kattintás kezelése
+  favBtn.onclick = async (e) => {
+    e.stopPropagation();
+
+    // Meghívjuk a fenti toggle függvényt
+    const result = await window.toggleFavorite(data.id || data.azon);
+
+    if (result === true) {
+      favBtn.innerText = "❤️"; // Mentve
+      favBtn.style.borderColor = "#ff4b2b";
+    } else if (result === false) {
+      favBtn.innerText = "🤍"; // Törölve
+      favBtn.style.borderColor = "#E2F1B0";
+    }
+  };
 }
 // --- SEGÉDFUNKCIÓK ---
 window.toggleGlobalMute = function () {
@@ -707,5 +724,46 @@ window.closeTransitPanel = function () {
   const panel = document.getElementById("transit-panel");
   if (panel) {
     panel.style.transform = "translateY(100%)";
+  }
+};
+
+window.toggleFavorite = async function (hbId) {
+  if (!currentUser || !currentUser.active) {
+    alert("A funkció használatához aktív bejelentkezés szükséges!");
+    return null;
+  }
+
+  // A felhasználó azonosítója a te rendszered szerint: currentUser.azon
+  const felhAzon = currentUser.azon;
+
+  try {
+    // Megnézzük, létezik-e már ez a mentés
+    const q = query(
+      collection(db, "kedvencek"),
+      where("felh_azon", "==", felhAzon),
+      where("hb_azon", "==", hbId)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (!snapshot.empty) {
+      // TÖRLÉS: Ha megtaláltuk, töröljük az összes egyező dokumentumot
+      const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      console.log("Sikeresen eltávolítva a kedvencek közül: " + hbId);
+      return false; // Jelzi a UI-nak, hogy már nem kedvenc
+    } else {
+      // HOZZÁADÁS: Ha nincs benne, létrehozzuk az új dokumentumot
+      await addDoc(collection(db, "kedvencek"), {
+        felh_azon: felhAzon,
+        hb_azon: hbId,
+        datum: new Date().toISOString(),
+      });
+      console.log("Sikeresen mentve a kedvencekhez: " + hbId);
+      return true; // Jelzi a UI-nak, hogy kedvenc lett
+    }
+  } catch (error) {
+    console.error("Hiba a kedvencek kezelésekor:", error);
+    return null;
   }
 };
