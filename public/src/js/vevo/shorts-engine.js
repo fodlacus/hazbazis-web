@@ -15,6 +15,35 @@ let currentView = "main";
 let currentUser = null;
 window.isGloballyMuted = true;
 
+const auth = getAuth();
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      // Itt a trükk: a Firebase UID alapján lekérjük a dokumentumát a 'felhasznalok' közül
+      const userDocRef = doc(db, "felhasznalok", user.uid);
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+
+        // Most már a 'currentUser' tartalmazni fogja a 'hb-176...' azonosítót!
+        currentUser = {
+          uid: user.uid,
+          email: user.email,
+          azon: userData.azon, // <--- EZ KELL NEKÜNK!
+          active: userData.active, // Ezt is nézzük a biztonság kedvéért
+        };
+
+        console.log("Sikeres Shorts Auth. Azonosító:", currentUser.azon);
+      }
+    } catch (error) {
+      console.error("Hiba a felhasználói adatok lekérésekor:", error);
+    }
+  } else {
+    currentUser = null;
+  }
+});
+
 const BP_DISTRICTS = [
   "I.",
   "II.",
@@ -744,18 +773,21 @@ window.closeTransitPanel = function () {
 };
 
 window.toggleFavorite = async function (hbId) {
-  // Ellenőrizzük, hogy be van-e jelentkezve és aktív-e
+  // 1. Biztonsági ellenőrzés: Van-e bejelentkezett felhasználó?
   if (typeof currentUser === "undefined" || !currentUser) {
     alert("Kérlek, jelentkezz be a kedvencek mentéséhez!");
     return null;
   }
 
+  // 2. Aktivitás ellenőrzése
   if (!currentUser.active) {
     alert("Csak aktív felhasználók használhatják ezt a funkciót!");
     return null;
   }
+
+  // 3. Adatbázis művelet
   try {
-    // Keressük meg, hogy ez a felhasználó elmentette-e már ezt az ingatlant
+    // Keressük meg a konkrét mentést a 'felh_azon' és 'hb_azon' páros alapján
     const q = query(
       collection(db, "kedvencek"),
       where("felh_azon", "==", currentUser.azon),
@@ -765,21 +797,24 @@ window.toggleFavorite = async function (hbId) {
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
-      // TÖRLÉS: Ha már létezik, eltávolítjuk
+      // TÖRLÉS: Ha már szerepel a listában, eltávolítjuk
       const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
-      return false; // UI-nak: válts vissza fehérre
+      console.log(`Kedvenc törölve: ${hbId}`);
+      return false; // UI: fehér szív
     } else {
-      // MENTÉS: Új bejegyzés létrehozása
+      // MENTÉS: Ha még nincs benne, új dokumentumot hozunk létre
       await addDoc(collection(db, "kedvencek"), {
         felh_azon: currentUser.azon,
         hb_azon: hbId,
         datum: new Date().toISOString(),
       });
-      return true; // UI-nak: válts pirosra
+      console.log(`Kedvenc mentve: ${hbId}`);
+      return true; // UI: piros szív
     }
   } catch (error) {
-    console.error("Kedvenc művelet hiba:", error);
+    console.error("Hiba történt a kedvencek kezelésekor:", error);
+    alert("Hiba történt a mentés során. Kérlek, próbáld újra!");
     return null;
   }
 };
