@@ -113,6 +113,21 @@ const MAIN_CATEGORIES = [
     selectorType: "hb_search",
     hint: "Egyedi azonosító",
   },
+  {
+    id: "favorites",
+    label: "KEDVENCEK",
+    sub: "Saját listád",
+    icon: "❤️",
+    filter: () => window.loadFavoritesFeed(), // Ezt a függvényt hívja majd meg
+  },
+  {
+    id: "metro",
+    label: "METRÓ KÖZELBEN",
+    sub: "Gyors közlekedés",
+    icon: "🚇",
+    filter: (v) =>
+      v.leiras?.toLowerCase().includes("metró") || v.utca?.includes("metró"),
+  },
 ];
 
 // --- INDÍTÁS ---
@@ -345,7 +360,6 @@ function createVideoCard(data) {
     window.location.href = `adatlap.html?id=${data.id}`;
   };
 
-  return container;
   const favBtn = container.querySelector(".fav-btn");
 
   // Kattintás kezelése
@@ -363,6 +377,7 @@ function createVideoCard(data) {
       favBtn.style.borderColor = "#E2F1B0";
     }
   };
+  return container;
 }
 // --- SEGÉDFUNKCIÓK ---
 window.toggleGlobalMute = function () {
@@ -728,42 +743,38 @@ window.closeTransitPanel = function () {
 };
 
 window.toggleFavorite = async function (hbId) {
+  // Ellenőrizzük, hogy be van-e jelentkezve és aktív-e
   if (!currentUser || !currentUser.active) {
-    alert("A funkció használatához aktív bejelentkezés szükséges!");
+    alert("Csak bejelentkezett és aktív felhasználók menthetnek kedvenceket!");
     return null;
   }
 
-  // A felhasználó azonosítója a te rendszered szerint: currentUser.azon
-  const felhAzon = currentUser.azon;
-
   try {
-    // Megnézzük, létezik-e már ez a mentés
+    // Keressük meg, hogy ez a felhasználó elmentette-e már ezt az ingatlant
     const q = query(
       collection(db, "kedvencek"),
-      where("felh_azon", "==", felhAzon),
+      where("felh_azon", "==", currentUser.azon),
       where("hb_azon", "==", hbId)
     );
 
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
-      // TÖRLÉS: Ha megtaláltuk, töröljük az összes egyező dokumentumot
+      // TÖRLÉS: Ha már létezik, eltávolítjuk
       const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
-      console.log("Sikeresen eltávolítva a kedvencek közül: " + hbId);
-      return false; // Jelzi a UI-nak, hogy már nem kedvenc
+      return false; // UI-nak: válts vissza fehérre
     } else {
-      // HOZZÁADÁS: Ha nincs benne, létrehozzuk az új dokumentumot
+      // MENTÉS: Új bejegyzés létrehozása
       await addDoc(collection(db, "kedvencek"), {
-        felh_azon: felhAzon,
+        felh_azon: currentUser.azon,
         hb_azon: hbId,
         datum: new Date().toISOString(),
       });
-      console.log("Sikeresen mentve a kedvencekhez: " + hbId);
-      return true; // Jelzi a UI-nak, hogy kedvenc lett
+      return true; // UI-nak: válts pirosra
     }
   } catch (error) {
-    console.error("Hiba a kedvencek kezelésekor:", error);
+    console.error("Kedvenc művelet hiba:", error);
     return null;
   }
 };
