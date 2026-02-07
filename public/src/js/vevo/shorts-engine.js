@@ -397,7 +397,6 @@ window.searchByHBID = function () {
     return;
   }
 
-  // 1. Megkeressük a konkrét videót (pontos vagy részleges egyezés)
   const foundIndex = allVideos.findIndex(
     (v) =>
       (v.id && v.id.toUpperCase().includes(rawId)) ||
@@ -405,23 +404,33 @@ window.searchByHBID = function () {
   );
 
   if (foundIndex !== -1) {
-    // 2. Készítünk egy másolatot a teljes listáról, hogy ne rontsuk el az eredetit
     const reorderedList = [...allVideos];
-
-    // 3. Kivesszük a megtalált videót a helyéről
     const targetVideo = reorderedList.splice(foundIndex, 1)[0];
-
-    // 4. Betesszük a lista legelejére (0. index)
     reorderedList.unshift(targetVideo);
 
-    // 5. Kirajzoljuk a teljes, de átrendezett listát
-    // Így a keresett lesz az első, de lefelé görgetve ott a többi is!
+    // 1. Kirajzoljuk az új sorrendet
     renderVideos(reorderedList);
 
-    // Bezárjuk a kereső ablakot
+    // 2. Kényszerítjük a lejátszót, hogy az elejére ugorjon
+    // Megkeressük a konténert, amiben a videók vannak
+    const container =
+      document.getElementById("video-container") ||
+      document.querySelector(".shorts-container");
+
+    if (container) {
+      // Ha sima görgetős a felületed:
+      container.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    // Ha Swiper.js-t használsz, akkor ez is kellhet:
+    if (window.swiperInstance) {
+      window.swiperInstance.slideTo(0, 0); // Azonnali ugrás az első diára
+    }
+
+    // 3. UI takarítás
     closeFilterModal();
 
-    // Opcionális: Görgetés a tetejére, ha a mobil böngésző nem ugrana oda automatikusan
+    // Biztonsági görgetés a teljes ablakra
     window.scrollTo(0, 0);
   } else {
     alert("Nincs találat erre az azonosítóra: " + rawId);
