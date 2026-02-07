@@ -12,6 +12,7 @@ import {
 const videoFeed = document.querySelector(".video-feed");
 let allVideos = [];
 let currentView = "main";
+let currentUser = null;
 window.isGloballyMuted = true;
 
 const BP_DISTRICTS = [
@@ -744,11 +745,15 @@ window.closeTransitPanel = function () {
 
 window.toggleFavorite = async function (hbId) {
   // Ellenőrizzük, hogy be van-e jelentkezve és aktív-e
-  if (!currentUser || !currentUser.active) {
-    alert("Csak bejelentkezett és aktív felhasználók menthetnek kedvenceket!");
+  if (typeof currentUser === "undefined" || !currentUser) {
+    alert("Kérlek, jelentkezz be a kedvencek mentéséhez!");
     return null;
   }
 
+  if (!currentUser.active) {
+    alert("Csak aktív felhasználók használhatják ezt a funkciót!");
+    return null;
+  }
   try {
     // Keressük meg, hogy ez a felhasználó elmentette-e már ezt az ingatlant
     const q = query(
