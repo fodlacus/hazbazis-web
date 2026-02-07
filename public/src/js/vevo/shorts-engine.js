@@ -397,16 +397,32 @@ window.searchByHBID = function () {
     return;
   }
 
-  // Szigorú szűrés: csak akkor indítunk, ha van találat
-  const matches = allVideos.filter(
+  // 1. Megkeressük a konkrét videót (pontos vagy részleges egyezés)
+  const foundIndex = allVideos.findIndex(
     (v) =>
       (v.id && v.id.toUpperCase().includes(rawId)) ||
       (v.azon && v.azon.toUpperCase().includes(rawId))
   );
 
-  if (matches.length > 0) {
-    renderVideos(matches);
+  if (foundIndex !== -1) {
+    // 2. Készítünk egy másolatot a teljes listáról, hogy ne rontsuk el az eredetit
+    const reorderedList = [...allVideos];
+
+    // 3. Kivesszük a megtalált videót a helyéről
+    const targetVideo = reorderedList.splice(foundIndex, 1)[0];
+
+    // 4. Betesszük a lista legelejére (0. index)
+    reorderedList.unshift(targetVideo);
+
+    // 5. Kirajzoljuk a teljes, de átrendezett listát
+    // Így a keresett lesz az első, de lefelé görgetve ott a többi is!
+    renderVideos(reorderedList);
+
+    // Bezárjuk a kereső ablakot
     closeFilterModal();
+
+    // Opcionális: Görgetés a tetejére, ha a mobil böngésző nem ugrana oda automatikusan
+    window.scrollTo(0, 0);
   } else {
     alert("Nincs találat erre az azonosítóra: " + rawId);
   }
