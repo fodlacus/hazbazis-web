@@ -291,6 +291,9 @@ function createVideoCard(data) {
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                     </svg>
                 </button>
+                
+                <button class="bkk-btn" style="border-color: #E2F1B0; font-size: 1.2rem;">🚌</button>
+                
                 <button class="mute-btn" style="border-color: ${muteBorder}">${muteIcon}</button>
                 <button class="info-btn">📄</button>
             </div>
@@ -309,6 +312,13 @@ function createVideoCard(data) {
 
   const video = container.querySelector("video");
   const playIcon = container.querySelector(".play-icon");
+
+  // --- BKK GOMB ESEMÉNYKEZELŐ ---
+  container.querySelector(".bkk-btn").onclick = (e) => {
+    e.stopPropagation();
+    // Meghívjuk a korábban megírt ablakmegnyitó logikát, átadva a videó adatait
+    window.mutassKozlekedest(data);
+  };
 
   container.addEventListener("click", (e) => {
     if (e.target.closest("button") || e.target.closest("a")) return;
@@ -333,7 +343,6 @@ function createVideoCard(data) {
 
   return container;
 }
-
 // --- SEGÉDFUNKCIÓK ---
 window.toggleGlobalMute = function () {
   window.isGloballyMuted = !window.isGloballyMuted;
@@ -605,4 +614,80 @@ function renderAlberletKeruletMenu(grid, modalTitle) {
       )
     );
   });
+}
+// Minden videóhoz hozzáadjuk, településtől függetlenül
+function addTransitButton(videoData, iconContainer) {
+  const bkkBtn = document.createElement("div");
+  bkkBtn.className =
+    "flex flex-col items-center gap-1 group cursor-pointer mb-4";
+
+  // Átadjuk a videó adatait a kattintáskezelőnek
+  bkkBtn.onclick = () => window.mutassKozlekedest(videoData);
+
+  bkkBtn.innerHTML = `
+      <div class="w-11 h-11 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 group-hover:bg-[#E2F1B0] group-hover:text-black transition-all shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="7" y="10" width="10" height="8" rx="2"></rect>
+              <path d="M17 18v1"></path><path d="M7 18v1"></path>
+              <path d="M14 18h-4"></path><path d="M8 6h8"></path>
+              <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v7"></path>
+          </svg>
+      </div>
+      <span class="text-[8px] font-bold uppercase tracking-wider text-white/80">Közlekedés</span>
+  `;
+  iconContainer.appendChild(bkkBtn);
+}
+
+window.mutassKozlekedest = async function (videoData) {
+  // 1. Megnyitjuk a panelt (üres állapot)
+  const panel =
+    document.getElementById("transit-panel") || createTransitPanel();
+  panel.classList.remove("translate-y-full");
+
+  // 2. Ellenőrizzük, hogy Budapest-e a helyszín
+  if (videoData.telepules !== "Budapest") {
+    panel.innerHTML = `
+          <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6"></div>
+          <div class="p-8 text-center">
+              <div class="text-4xl mb-4">📍</div>
+              <h2 class="text-xl font-bold text-[#E2F1B0] mb-2 uppercase">Hamarosan...</h2>
+              <p class="text-white/70 text-sm mb-6 leading-relaxed">
+                  A hivatalos közlekedési és környék-információs szolgáltatásunk jelenleg csak <b>Budapest</b> területén érhető el. 
+                  <br><br>Fejlesztőink már dolgoznak a vidéki hálózat bővítésén!
+              </p>
+              <button onclick="closeTransitPanel()" class="w-full bg-white/10 py-4 rounded-2xl font-black uppercase tracking-widest border border-white/20">Értem</button>
+          </div>
+      `;
+    return;
+  }
+
+  // 3. Ha Budapest, akkor jöhet a tényleges API hívás (korábbi Cloudflare-es logika)
+  panel.innerHTML =
+    '<div class="p-10 text-center animate-pulse text-[#E2F1B0]">Kapcsolódás a BKK Futár rendszeréhez...</div>';
+
+  try {
+    const response = await fetch(
+      `/api/bkk-proximity?lat=${videoData.lat}&lon=${videoData.lng}`
+    );
+    const data = await response.json();
+    renderTransitContent(panel, data);
+  } catch (error) {
+    // Hiba esetén barátságos üzenet
+    panel.innerHTML =
+      '<div class="p-10 text-center text-white/50 italic">Átmeneti hiba az adatlekérésben. Kérlek próbáld újra később!</div>';
+  }
+};
+
+function createTransitPanel() {
+  let panel = document.getElementById("transit-panel");
+  if (panel) return panel;
+
+  panel = document.createElement("div");
+  panel.id = "transit-panel";
+  // Elegáns, becsúszó sötét panel CSS-sel
+  panel.style =
+    "position: fixed; bottom: 0; left: 0; width: 100%; min-height: 40vh; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 1000; border-top-left-radius: 2rem; border-top-right-radius: 2rem; transform: translateY(100%); transition: transform 0.3s ease-out; color: white; font-family: sans-serif; padding: 20px; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);";
+
+  document.body.appendChild(panel);
+  return panel;
 }
