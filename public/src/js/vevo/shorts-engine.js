@@ -362,13 +362,12 @@ function renderVideos(list) {
 }
 
 function createVideoCard(data) {
-  container.className = "video-container";
-
   const isFav = userFavoriteIds.includes(data.id || data.azon);
   const favIcon = isFav ? "❤️" : "🤍";
   const favBorder = isFav ? "#ff4b2b" : "#E2F1B0";
 
   const container = document.createElement("div");
+  container.className = "video-container";
 
   const arText =
     data.vételár > 0
