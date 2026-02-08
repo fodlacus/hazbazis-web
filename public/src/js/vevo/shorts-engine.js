@@ -29,39 +29,56 @@ let currentUser = null;
 window.isGloballyMuted = true;
 
 const auth = getAuth();
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     try {
-      // Itt a trükk: a Firebase UID alapján lekérjük a dokumentumát a 'felhasznalok' közül
       const userDocRef = doc(db, "felhasznalok", user.uid);
       const userSnap = await getDoc(userDocRef);
 
       if (userSnap.exists()) {
         const userData = userSnap.data();
 
-        // Most már a 'currentUser' tartalmazni fogja a 'hb-176...' azonosítót!
         currentUser = {
           uid: user.uid,
           email: user.email,
-          azon: userData.azon, // <--- EZ KELL NEKÜNK!
-          active: userData.active, // Ezt is nézzük a biztonság kedvéért
+          azon: userData.azon,
+          active: userData.active,
         };
 
         console.log("Sikeres Shorts Auth. Azonosító:", currentUser.azon);
 
+        // Kedvencek lekérése
         const favQ = query(
           collection(db, "kedvencek"),
           where("felh_azon", "==", userData.azon)
         );
         const favSnap = await getDocs(favQ);
+
+        // Elmentjük a globális változóba (ezt ellenőrzi a createVideoCard)
         userFavoriteIds = favSnap.docs.map((doc) => doc.data().hb_azon);
         console.log("Kedvencek betöltve:", userFavoriteIds);
+
+        // --- EZT A RÉSZT ADD HOZZÁ ---
+        // Végigmegyünk a már képernyőn lévő videókon, és bepirosítjuk a szíveket
+        document.querySelectorAll(".video-container").forEach((container) => {
+          const videoId = container.querySelector(".brand-badge")?.innerText;
+          if (videoId && userFavoriteIds.includes(videoId)) {
+            const favBtn = container.querySelector(".fav-btn");
+            if (favBtn) {
+              favBtn.innerText = "❤️";
+              favBtn.style.borderColor = "#ff4b2b";
+            }
+          }
+        });
+        // -----------------------------
       }
     } catch (error) {
       console.error("Hiba a felhasználói adatok lekérésekor:", error);
     }
   } else {
     currentUser = null;
+    userFavoriteIds = []; // Kijelentkezéskor ürítsük a listát
   }
 });
 
@@ -345,11 +362,13 @@ function renderVideos(list) {
 }
 
 function createVideoCard(data) {
-  const container = document.createElement("div");
   container.className = "video-container";
+
   const isFav = userFavoriteIds.includes(data.id || data.azon);
   const favIcon = isFav ? "❤️" : "🤍";
   const favBorder = isFav ? "#ff4b2b" : "#E2F1B0";
+
+  const container = document.createElement("div");
 
   const arText =
     data.vételár > 0
