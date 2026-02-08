@@ -393,10 +393,11 @@ function createVideoCard(data) {
     : "#E2F1B0";
 
   const isDefaultView = currentView === "main" || currentView === "all_videos";
-  const filterBg = isDefaultView ? "rgba(0,0,0,0.5)" : "#E2F1B0";
-  const filterIconColor = isDefaultView ? "#E2F1B0" : "#3D4A16";
-  const filterBorder = isDefaultView ? "#E2F1B0" : "#3D4A16";
 
+  const filterIconColor = isDefaultView ? "#E2F1B0" : "#fbff00"; // Aktívnál egy erősebb sárgás-zöld
+  const filterBorder = isDefaultView ? "#E2F1B0" : "#fbff00"; // Ugyanaz a szín a keretnek
+  const filterBg = "rgba(0,0,0,0.5)"; // A háttér mindig maradjon áttetsző sötét
+  
   container.innerHTML = `
           <video src="${data.videoUrl}" loop playsinline muted></video>
           <div class="video-overlay">
