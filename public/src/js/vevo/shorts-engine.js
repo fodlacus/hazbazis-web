@@ -211,14 +211,14 @@ function setupGlobalClicks() {
 }
 
 // --- ADATOK BETÖLTÉSE ---
+
 async function loadVideos() {
   try {
-    currentView = "main"; // Itt jelezzük, hogy ez az alapállapot
-    renderVideos(allVideos);
+    // 1. Először kérjük le az adatokat
     const q = query(collection(db, "lakasok"), orderBy("order", "asc"));
     const snapshot = await getDocs(q);
-    allVideos = [];
 
+    allVideos = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
       if (data.videoUrl) {
@@ -232,11 +232,17 @@ async function loadVideos() {
       }
     });
 
-    if (allVideos.length > 0) renderVideos(allVideos);
+    // 2. HA megvannak az adatok, AKKOR állítsuk be a nézetet és rendereljünk
+    if (allVideos.length > 0) {
+      currentView = "main"; // Itt fixáljuk, hogy ez az alapállapot
+      renderVideos(allVideos);
+    }
+
+    // Utólagos görgetés, ha kell
     const lastId = sessionStorage.getItem("lastShortId");
     if (lastId) {
       scrollToVideo(lastId);
-      sessionStorage.removeItem("lastShortId"); // Töröljük, hogy ne ugorjon oda legközelebb is magától
+      sessionStorage.removeItem("lastShortId");
     }
   } catch (error) {
     console.error("Firebase hiba:", error);
@@ -347,26 +353,28 @@ function applyFilterAndStart(filterFn) {
 function renderVideos(list) {
   videoFeed.innerHTML = "";
 
-  // Megkeressük az összes szűrő gombot a DOM-ban
   const filterBtns = document.querySelectorAll(".filter-trigger-btn");
 
-  // MEGHATÁROZZUK AZ ÁLLAPOTOT:
-  // Világítson, ha NEM a fő nézetben vagyunk (ami az 'all' vagy a kezdőállapot)
-  const isFilteredView = currentView !== "main" && currentView !== "all_videos";
+  // LOGIKA: Világítson, ha szűrt listát látunk VAGY ha a nézet nem a főoldal
+  // Kivéve, ha üres a lista (induláskor)
+  const isFiltered = list.length > 0 && list.length < allVideos.length;
+  const isSpecialView = currentView !== "main" && currentView !== "all_videos";
+
+  const shouldLightUp = isFiltered || isSpecialView;
 
   filterBtns.forEach((btn) => {
-    if (isFilteredView) {
-      // AKTÍV ÁLLAPOT: Hazbázis zöld háttér, sötét ikon
+    if (shouldLightUp) {
+      // AKTÍV: Világító zöld háttér, sötét ikon
       btn.style.backgroundColor = "#E2F1B0";
-      const svg = btn.querySelector("svg");
-      if (svg) svg.style.stroke = "#3D4A16"; // Sötétzöld kontraszt
       btn.style.borderColor = "#3D4A16";
+      const svg = btn.querySelector("svg");
+      if (svg) svg.style.stroke = "#3D4A16";
     } else {
-      // ALAPÁLLAPOT: Áttetsző háttér, zöldes keret és ikon
+      // ALAP: Sötét háttér, zöld ikon
       btn.style.backgroundColor = "rgba(0,0,0,0.5)";
+      btn.style.borderColor = "#E2F1B0";
       const svg = btn.querySelector("svg");
       if (svg) svg.style.stroke = "#E2F1B0";
-      btn.style.borderColor = "#E2F1B0";
     }
   });
 
