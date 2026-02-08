@@ -213,6 +213,8 @@ function setupGlobalClicks() {
 // --- ADATOK BETÖLTÉSE ---
 async function loadVideos() {
   try {
+    currentView = "main"; // Itt jelezzük, hogy ez az alapállapot
+    renderVideos(allVideos);
     const q = query(collection(db, "lakasok"), orderBy("order", "asc"));
     const snapshot = await getDocs(q);
     allVideos = [];
@@ -343,20 +345,31 @@ function applyFilterAndStart(filterFn) {
 }
 
 function renderVideos(list) {
-  const isFiltered = list.length < allVideos.length;
+  videoFeed.innerHTML = "";
+
+  // Megkeressük az összes szűrő gombot a DOM-ban
   const filterBtns = document.querySelectorAll(".filter-trigger-btn");
+
+  // MEGHATÁROZZUK AZ ÁLLAPOTOT:
+  // Világítson, ha NEM a fő nézetben vagyunk (ami az 'all' vagy a kezdőállapot)
+  const isFilteredView = currentView !== "main" && currentView !== "all_videos";
+
   filterBtns.forEach((btn) => {
-    if (isFiltered) {
-      btn.style.backgroundColor = "#E2F1B0"; // Az ikon háttere "kigyullad"
-      btn.querySelector("svg").style.stroke = "#3D4A16"; // A pipa/tölcsér sötét lesz
+    if (isFilteredView) {
+      // AKTÍV ÁLLAPOT: Hazbázis zöld háttér, sötét ikon
+      btn.style.backgroundColor = "#E2F1B0";
+      const svg = btn.querySelector("svg");
+      if (svg) svg.style.stroke = "#3D4A16"; // Sötétzöld kontraszt
+      btn.style.borderColor = "#3D4A16";
     } else {
-      btn.style.backgroundColor = "transparent";
-      btn.querySelector("svg").style.stroke = "#E2F1B0";
+      // ALAPÁLLAPOT: Áttetsző háttér, zöldes keret és ikon
+      btn.style.backgroundColor = "rgba(0,0,0,0.5)";
+      const svg = btn.querySelector("svg");
+      if (svg) svg.style.stroke = "#E2F1B0";
+      btn.style.borderColor = "#E2F1B0";
     }
   });
 
-  videoFeed.innerHTML = "";
-  console.log(`Keresési segédlet: ${list.length} találat megjelenítve.`);
   list.forEach((data) => videoFeed.appendChild(createVideoCard(data)));
   setupVideoObserver();
 }
@@ -514,7 +527,7 @@ function setupVideoObserver() {
 }
 
 window.szuroTorlese = function () {
-  currentView = "main";
+  currentView = "all_videos";
   renderVideos(allVideos);
   closeFilterModal();
 };
