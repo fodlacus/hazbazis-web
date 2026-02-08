@@ -355,25 +355,17 @@ function renderVideos(list) {
 
   const filterBtns = document.querySelectorAll(".filter-trigger-btn");
 
-  // LOGIKA: Csak akkor SÖTÉT, ha a főlistát látjuk (nincs szűrés)
-  // Minden más esetben (Kategóriák, Kedvencek, Metró) VILÁGÍTSON
-  const isMainView = currentView === "main" || currentView === "all_videos";
-  const isFiltered = list.length > 0 && list.length < allVideos.length;
+  // Meghatározzuk, hogy alaphelyzetben vagyunk-e
+  const isDefaultView = currentView === "main" || currentView === "all_videos";
+
+  // Csak akkor világítson, ha NEM alaphelyzetben vagyunk ÉS van szűrt listánk
+  const shouldActive = !isDefaultView;
 
   filterBtns.forEach((btn) => {
-    // Ha NEM a fő nézetben vagyunk VAGY a lista rövidebb az eredetinél
-    if (!isMainView || isFiltered) {
-      // AKTÍV ÁLLAPOT: Világító háttér, sötét ikon
-      btn.style.setProperty("background-color", "#E2F1B0", "important");
-      btn.style.setProperty("border-color", "#3D4A16", "important");
-      const svg = btn.querySelector("svg");
-      if (svg) svg.style.stroke = "#3D4A16";
+    if (shouldActive) {
+      btn.classList.add("filter-active");
     } else {
-      // ALAPÁLLAPOT: Sötét háttér, világos ikon
-      btn.style.setProperty("background-color", "rgba(0,0,0,0.5)", "important");
-      btn.style.setProperty("border-color", "#E2F1B0", "important");
-      const svg = btn.querySelector("svg");
-      if (svg) svg.style.stroke = "#E2F1B0";
+      btn.classList.remove("filter-active");
     }
   });
 
