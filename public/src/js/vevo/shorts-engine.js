@@ -398,12 +398,13 @@ function createVideoCard(data) {
   const filterBorder = isDefaultView ? "#E2F1B0" : "#fbff00"; // Ugyanaz a szín a keretnek
   const filterBg = "rgba(0,0,0,0.5)"; // A háttér mindig maradjon áttetsző sötét
 
-  const activeColor = "#fbff00"; // Erős sárga
-  const defaultColor = "#E2F1B0"; // Hazbázis zöld
+  const filterActiveColor = "#ff4b2b"; // Erős piros
+  const filterDefaultColor = "#E2F1B0"; // Alap zöld
 
-  const filterColor = isDefaultView ? defaultColor : activeColor;
-  // A vonalvastagság legyen 3-as, ha aktív, hogy jobban látszódjon
-  const filterStrokeWidth = isDefaultView ? "2" : "3";
+  const currentFilterColor = isDefaultView
+    ? filterDefaultColor
+    : filterActiveColor;
+  const filterStrokeWidth = isDefaultView ? "2" : "3"; // Vastagabb vonal, ha aktív
 
   container.innerHTML = `
         <video src="${data.videoUrl}" loop playsinline muted></video>
@@ -412,12 +413,11 @@ function createVideoCard(data) {
                 <a href="../../../index.html" class="control-circle" title="Főoldal">🏠</a>
                 
                 <button class="filter-trigger-btn control-circle" 
-                        style="border-color: ${filterColor}; background-color: rgba(0,0,0,0.5);" 
+                        style="border-color: ${currentFilterColor}; background-color: rgba(0,0,0,0.5);" 
                         title="Keresés és szűrés">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
-                         style="display: block;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" 
-                                 stroke="${filterColor}" 
+                                 stroke="${currentFilterColor}" 
                                  stroke-width="${filterStrokeWidth}" 
                                  stroke-linecap="round" 
                                  stroke-linejoin="round"></polygon>
