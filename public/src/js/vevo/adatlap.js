@@ -160,11 +160,14 @@ export function renderAdatok(data) {
   // ----------------------------------------
 
   // Leírás (sortörések cseréje <br>-re)
-  const leíras = data.leíras || "Ehhez az ingatlanhoz nem adtak meg leírást.";
-  document.getElementById("adat-leíras").innerHTML = leíras.replace(
-    /\n/g,
-    "<br>"
-  );
+  const leiras =
+    data.leírás || data.leiras || "Ehhez az ingatlanhoz nem adtak meg leírást.";
+
+  const leirasElem = document.getElementById("adat-leiras");
+  if (leirasElem) {
+    // Sortörések kezelése és kiírás
+    leirasElem.innerHTML = leiras.replace(/\n/g, "<br>");
+  }
 
   // Kapcsolat
   setText("hirdeto-email", data.hirdeto_email || "kapcsolat@hazbazis.hu");
