@@ -326,6 +326,18 @@ function applyFilterAndStart(filterFn) {
 }
 
 function renderVideos(list) {
+  const isFiltered = list.length < allVideos.length;
+  const filterBtns = document.querySelectorAll(".filter-trigger-btn");
+  filterBtns.forEach((btn) => {
+    if (isFiltered) {
+      btn.style.backgroundColor = "#E2F1B0"; // Az ikon háttere "kigyullad"
+      btn.querySelector("svg").style.stroke = "#3D4A16"; // A pipa/tölcsér sötét lesz
+    } else {
+      btn.style.backgroundColor = "transparent";
+      btn.querySelector("svg").style.stroke = "#E2F1B0";
+    }
+  });
+
   videoFeed.innerHTML = "";
   console.log(`Keresési segédlet: ${list.length} találat megjelenítve.`);
   list.forEach((data) => videoFeed.appendChild(createVideoCard(data)));
@@ -353,8 +365,8 @@ function createVideoCard(data) {
         <div class="play-icon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: white; opacity: 0; pointer-events: none; z-index: 10;">▶</div>
         <div class="video-overlay">
             <div class="controls">
-                <a href="../../../index.html" class="menu-btn" title="Főoldal">🏠</a>
-                <button class="filter-trigger-btn" style="border-color: #E2F1B0;" title="Keresés és szűrés">
+                <a href="../../../index.html" class="menu-btn control-circle" title="Főoldal">🏠</a>
+                <button class="filter-trigger-btn control-circle" style="border-color: #E2F1B0;" title="Keresés és szűrés">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E2F1B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                     </svg>
@@ -363,7 +375,7 @@ function createVideoCard(data) {
                 <button class="bkk-btn" style="border-color: #E2F1B0; font-size: 1.2rem;" title="Közlekedés és környék infó">🚌</button>
                 <button class="fav-btn" title="Kedvencek" style="border-color: ${favBorder};">${favIcon}</button>
                 <button class="mute-btn" title="Némítás / Hang" style="border-color: ${muteBorder}">${muteIcon}</button>
-                <button class="info-btn" title="Részletes adatlap">📄</button>
+                <button class="info-btn control-circle" title="Részletes adatlap">📄</button>
             </div>
             <div class="video-info">
                 <span class="brand-badge">${data.id}</span>
