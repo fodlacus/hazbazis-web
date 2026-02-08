@@ -16,6 +16,14 @@ import { budapestAdatok } from "../util/helyszin-adatok.js";
 // 2. AUTOMATIKUS INDÍTÁS
 window.addEventListener("DOMContentLoaded", () => {
   helyszinFigyelo();
+  const urlParams = new URLSearchParams(window.location.search);
+  const isEditMode = urlParams.get("mode") === "edit";
+  const mentesGomb = document.getElementById("hirdetes-bekuldes");
+
+  if (isEditMode && mentesGomb) {
+    mentesGomb.disabled = false;
+    mentesGomb.innerText = "Módosítások mentése";
+  }
 });
 
 // Helyszín figyelő
@@ -108,10 +116,22 @@ if (urlap) {
       adatok.letrehozva = new Date().toISOString();
       adatok.statusz = "Feldolgozás alatt";
 
-      if (!szerkesztendoId) {
-        // Most már 6 jegyű lesz!
-        adatok.azon = generalHirdetesAzonosito();
-        adatok.lakas_azon = adatok.azon;
+      if (szerkesztendoId) {
+        const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
+
+        // Csak akkor frissítjük a GPS-t, ha kaptunk újat, különben marad az eredeti
+        if (window.aktualisLat && window.aktualisLng) {
+          adatok.lat = window.aktualisLat;
+          adatok.lng = window.aktualisLng;
+        } else {
+          // Töröljük ki az adatok objektumból a null értékeket,
+          // hogy ne írja felül a már meglévő jó koordinátákat a Firebase-ben
+          delete adatok.lat;
+          delete adatok.lng;
+        }
+
+        await updateDoc(docRef, adatok);
+        alert("Sikeres módosítás!");
       }
 
       // GPS
