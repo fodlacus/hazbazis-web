@@ -160,8 +160,8 @@ export function renderAdatok(data) {
   // ----------------------------------------
 
   // Leírás (sortörések cseréje <br>-re)
-  const leiras = data.leiras || "Ehhez az ingatlanhoz nem adtak meg leírást.";
-  document.getElementById("adat-leiras").innerHTML = leiras.replace(
+  const leíras = data.leíras || "Ehhez az ingatlanhoz nem adtak meg leírást.";
+  document.getElementById("adat-leíras").innerHTML = leíras.replace(
     /\n/g,
     "<br>"
   );
