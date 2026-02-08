@@ -397,29 +397,40 @@ function createVideoCard(data) {
   const filterIconColor = isDefaultView ? "#E2F1B0" : "#fbff00"; // Aktívnál egy erősebb sárgás-zöld
   const filterBorder = isDefaultView ? "#E2F1B0" : "#fbff00"; // Ugyanaz a szín a keretnek
   const filterBg = "rgba(0,0,0,0.5)"; // A háttér mindig maradjon áttetsző sötét
-  
+
+  const activeColor = "#fbff00"; // Erős sárga
+  const defaultColor = "#E2F1B0"; // Hazbázis zöld
+
+  const filterColor = isDefaultView ? defaultColor : activeColor;
+  // A vonalvastagság legyen 3-as, ha aktív, hogy jobban látszódjon
+  const filterStrokeWidth = isDefaultView ? "2" : "3";
+
   container.innerHTML = `
-          <video src="${data.videoUrl}" loop playsinline muted></video>
-          <div class="video-overlay">
-              <div class="controls">
-                  <a href="../../../index.html" class="control-circle" title="Főoldal">🏠</a>
-                  
-                  <button class="filter-trigger-btn control-circle" 
-                          style="background-color: ${filterBg}; border-color: ${filterBorder};" 
-                          title="Keresés és szűrés">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
-                           stroke="${filterIconColor}" stroke-width="2">
-                          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                      </svg>
-                  </button>
-                  
-                  <button class="bkk-btn control-circle">🚌</button>
-                  <button class="fav-btn control-circle" style="border-color: ${favBorder};">${favIcon}</button>
-                  <button class="mute-btn control-circle">${muteIcon}</button>
-                  <button class="info-btn control-circle">📄</button>
-              </div>
-              </div>
-      `;
+        <video src="${data.videoUrl}" loop playsinline muted></video>
+        <div class="video-overlay">
+            <div class="controls">
+                <a href="../../../index.html" class="control-circle" title="Főoldal">🏠</a>
+                
+                <button class="filter-trigger-btn control-circle" 
+                        style="border-color: ${filterColor}; background-color: rgba(0,0,0,0.5);" 
+                        title="Keresés és szűrés">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                         style="display: block;">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" 
+                                 stroke="${filterColor}" 
+                                 stroke-width="${filterStrokeWidth}" 
+                                 stroke-linecap="round" 
+                                 stroke-linejoin="round"></polygon>
+                    </svg>
+                </button>
+                
+                <button class="bkk-btn control-circle">🚌</button>
+                <button class="fav-btn control-circle" style="border-color: ${favBorder};">${favIcon}</button>
+                <button class="mute-btn control-circle">${muteIcon}</button>
+                <button class="info-btn control-circle">📄</button>
+            </div>
+            </div>
+    `;
 
   const video = container.querySelector("video");
   const playIcon = container.querySelector(".play-icon");
