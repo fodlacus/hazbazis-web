@@ -108,11 +108,10 @@ export async function hirdeteseimListazasa() {
             </div>
             
             <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto justify-center">
-                <button onclick="window.location.href='adatlap.html?id=${id}'" 
+                <button onclick="window.location.href='../vevo/adatlap.html?id=${id}'" 
                         class="bg-lime-400/10 text-lime-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-lime-400 hover:text-black transition-all border border-lime-400/20">
                     Megtekintés
-                </button>
-        
+                </button>        
                 <button onclick="window.location.href='?id=${id}&mode=edit'" 
                         class="bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/20 transition-all border border-white/10">
                     Szerkesztés
