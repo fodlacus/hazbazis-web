@@ -24,6 +24,7 @@ import {
 const videoFeed = document.querySelector(".video-feed");
 let allVideos = [];
 let currentView = "main";
+let userFavoriteIds = [];
 let currentUser = null;
 window.isGloballyMuted = true;
 
@@ -47,6 +48,14 @@ onAuthStateChanged(auth, async (user) => {
         };
 
         console.log("Sikeres Shorts Auth. Azonosító:", currentUser.azon);
+
+        const favQ = query(
+          collection(db, "kedvencek"),
+          where("felh_azon", "==", userData.azon)
+        );
+        const favSnap = await getDocs(favQ);
+        userFavoriteIds = favSnap.docs.map((doc) => doc.data().hb_azon);
+        console.log("Kedvencek betöltve:", userFavoriteIds);
       }
     } catch (error) {
       console.error("Hiba a felhasználói adatok lekérésekor:", error);
@@ -326,6 +335,9 @@ function renderVideos(list) {
 function createVideoCard(data) {
   const container = document.createElement("div");
   container.className = "video-container";
+  const isFav = userFavoriteIds.includes(data.id || data.azon);
+  const favIcon = isFav ? "❤️" : "🤍";
+  const favBorder = isFav ? "#ff4b2b" : "#E2F1B0";
 
   const arText =
     data.vételár > 0
@@ -349,7 +361,7 @@ function createVideoCard(data) {
                 </button>
                 
                 <button class="bkk-btn" style="border-color: #E2F1B0; font-size: 1.2rem;" title="Közlekedés és környék infó">🚌</button>
-                <button class="fav-btn" title="Kedvencek" style="border-color: #E2F1B0;">🤍</button>
+                <button class="fav-btn" title="Kedvencek" style="border-color: ${favBorder};">${favIcon}</button>
                 <button class="mute-btn" title="Némítás / Hang" style="border-color: ${muteBorder}">${muteIcon}</button>
                 <button class="info-btn" title="Részletes adatlap">📄</button>
             </div>
@@ -406,18 +418,33 @@ function createVideoCard(data) {
   // Kattintás kezelése
   favBtn.onclick = async (e) => {
     e.stopPropagation();
-
-    // Meghívjuk a fenti toggle függvényt
-    const result = await window.toggleFavorite(data.id || data.azon);
+    const hbId = data.id || data.azon;
+    const result = await window.toggleFavorite(hbId);
 
     if (result === true) {
-      favBtn.innerText = "❤️"; // Mentve
+      favBtn.innerText = "❤️";
       favBtn.style.borderColor = "#ff4b2b";
+      if (!userFavoriteIds.includes(hbId)) userFavoriteIds.push(hbId);
     } else if (result === false) {
-      favBtn.innerText = "🤍"; // Törölve
+      favBtn.innerText = "🤍";
       favBtn.style.borderColor = "#E2F1B0";
+      userFavoriteIds = userFavoriteIds.filter((id) => id !== hbId);
+
+      // HA a Kedvencek nézetben vagyunk, azonnal tüntessük el a kártyát
+      if (currentView === "favorites_feed") {
+        container.style.opacity = "0";
+        setTimeout(() => {
+          container.remove();
+          // Ha ez volt az utolsó kedvenc, írjuk ki, hogy üres
+          if (videoFeed.children.length === 0) {
+            videoFeed.innerHTML =
+              '<div class="text-white p-10 text-center">Minden kedvencet eltávolítottál.</div>';
+          }
+        }, 300);
+      }
     }
   };
+
   return container;
 }
 // --- SEGÉDFUNKCIÓK ---
@@ -840,6 +867,7 @@ window.loadFavoritesFeed = async function () {
     alert("Kérlek, jelentkezz be a kedvenceid megtekintéséhez!");
     return;
   }
+  currentView = "favorites_feed";
 
   try {
     // Lekérjük a kedvenceket a te 'azon' kódod alapján
