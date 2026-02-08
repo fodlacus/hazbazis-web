@@ -107,6 +107,35 @@ export function renderAdatok(data) {
     `${data.telepules}, ${data.kerulet || ""} ${data.varosresz || ""}`
   );
 
+  const eredetiAr = Number(data.vételár);
+  const akciosAr = Number(data.akcios_ar);
+  const arKontener = document.getElementById("adat-ar");
+
+  if (akciosAr && akciosAr > 0 && akciosAr < eredetiAr) {
+    // Ha van érvényes akciós ár
+    arKontener.innerHTML = `
+        <span class="text-white/40 text-lg line-through mr-3">${eredetiAr.toLocaleString()} Ft</span>
+        <span class="text-arany">${akciosAr.toLocaleString()} Ft</span>
+    `;
+
+    // Négyzetméter ár számolása az akciós árból
+    if (data.alapterület) {
+      const nmAr = Math.round(akciosAr / data.alapterület);
+      setText("adat-nm-ar", nmAr.toLocaleString() + " Ft/m² (akciós)");
+    }
+  } else {
+    // Normál ár megjelenítése
+    setText(
+      "adat-ar",
+      !isNaN(eredetiAr) ? eredetiAr.toLocaleString() + " Ft" : "Ár kérésre"
+    );
+
+    if (data.alapterület && !isNaN(eredetiAr)) {
+      const nmAr = Math.round(eredetiAr / data.alapterület);
+      setText("adat-nm-ar", nmAr.toLocaleString() + " Ft/m²");
+    }
+  }
+
   // Ár formázás
   const ar = Number(data.vételár);
   setText("adat-ar", !isNaN(ar) ? ar.toLocaleString() + " Ft" : "Ár kérésre");

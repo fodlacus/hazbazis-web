@@ -84,6 +84,13 @@ export const ingatlanStruktura = {
         ai: "kinyerhető",
       },
       {
+        id: "akcios_ar",
+        label: "Akciós ár (Opcionális)",
+        type: "number",
+        placeholder: "Csak akkor töltsd ki, ha akciós!",
+        helper: "Hagyd üresen, ha nem akciós az ingatlan."
+      },
+      {
         id: "alapterület",
         label: "Alapterület (m2)",
         type: "number",

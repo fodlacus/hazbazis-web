@@ -63,7 +63,7 @@ function adatokOsszegyujtese() {
 
     let ertek = mezo.value;
 
-    if (["vételár", "alapterület", "szobák"].includes(id)) {
+    if (["vételár", "alapterület", "szobák", "akcios_ar"].includes(id)) {
       ertek = Number(String(ertek).replace(/[^0-9]/g, "")) || 0;
     }
     if (mezo.type === "checkbox") {
