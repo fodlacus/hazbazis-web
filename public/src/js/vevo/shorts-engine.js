@@ -188,12 +188,14 @@ const MAIN_CATEGORIES = [
     onClick: () => window.loadFavoritesFeed(),
     infoText: "Saját listád",
   },
+
   {
     title: "METRÓ KÖZELBEN",
     icon: "🚇",
     color: "from-blue-900 to-black",
-    onClick: () => window.loadMetroVideos(),
-    infoText: "Gyors közlekedés",
+    // Módosítás: window-on keresztül hívjuk, így biztosan a globálisat keresi
+    onClick: () => window.loadFavoritesFeed(),
+    infoText: "Válassz megállót",
   },
 ];
 

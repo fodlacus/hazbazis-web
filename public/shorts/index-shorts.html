@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <title>Házbázis Shorts | Prémium Ingatlanok</title>
+
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="css/shorts-style.css">
+
+      <script>
+            // Azonnali figyelő: amint megérkezik a lakasok, kiírja a konzolra
+            Object.defineProperty(window, 'lakasok', {
+                  set: function (val) {
+                        console.log("!!! ADAT MEGÉRKEZETT A GLOBÁLIS TÉRBE !!!", val.length, "db");
+                        this._lakasok = val;
+                  },
+                  get: function () {
+                        return this._lakasok;
+                  },
+                  configurable: true
+            });
+      </script>
+
+
+</head>
+
+<body class="bg-black text-white overflow-hidden">
+
+      <main id="shorts-container" class="video-feed">
+      </main>
+
+      <div id="filter-modal"
+            class="fixed inset-0 bg-black/95 z-[200] hidden flex flex-col justify-end md:justify-center items-center backdrop-blur-md">
+            <div
+                  class="bg-[#121212] w-full md:w-[500px] h-[85vh] md:h-auto md:max-h-[85vh] rounded-t-3xl md:rounded-3xl p-6 border-t md:border border-white/10 shadow-2xl flex flex-col">
+
+                  <div class="flex justify-between items-center mb-6">
+                        <h3 id="modal-title" class="text-xl font-bold">Felfedezés 🌍</h3>
+                        <button onclick="window.UI.closeModal()"
+                              class="p-2 bg-white/10 rounded-full hover:bg-white/20">✕</button>
+                  </div>
+
+                  <div id="modal-content-grid" class="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4">
+                  </div>
+
+                  <button id="reset-filter-btn"
+                        class="w-full mt-4 py-3 rounded-xl border border-white/20 font-bold bg-white/5 hover:bg-white/10 transition">
+                        🔄 Összes ingatlan mutatása
+                  </button>
+            </div>
+      </div>
+
+      <script type="module">
+            import { FilterRegistry } from './js/core/filter-registry.js';
+            import { ShortsEngine } from './js/engine/shorts-engine.js';
+
+            // Segédfüggvény a UI-nak a registry eléréséhez
+            window.executeFilter = async (tileId, params = null) => {
+                  // A Registry-ben definiált window.executeFilter-t használjuk
+                  if (typeof window.executeFilterInternal === 'function') {
+                        await window.executeFilterInternal(tileId, params);
+                  }
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                  // Itt indítjuk a motort
+                  ShortsEngine.init('shorts-container');
+            });
+      </script>
+
+</body>
+
+</html>
