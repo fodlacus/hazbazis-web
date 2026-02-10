@@ -108,12 +108,17 @@
             // 4. Adatlap megnyitása (HIÁNYZÓ FUNKCIÓ PÓTLÁSA)
             window.openDetails = function (hbAzon) {
                   if (!hbAzon) return;
-                  const tisztaId = hbAzon.replace('HB-', '').trim();
-                  console.log("🚀 Irány az adatlap:", tisztaId);
-                  // Visszanavigálunk a főoldalra a kereső paraméterrel
-                  //                 window.location.href = `../../index.html?kereses=${tisztaId}`;
-                  window.location.href = `../src/html/vevo/adatlap.html?id='HB-'${tisztaId}`;
 
+                  // Megtisztítjuk az ID-t (HB- prefix nélkül kell az adatlapnak)
+                  const tisztaId = hbAzon.toString().replace('HB-', '').trim();
+
+                  console.log("🚀 Irány az adatlap:", tisztaId);
+
+                  // ÚTVONAL JAVÍTÁSA: 
+                  // 1. Kilépünk a shorts-ból (../) 
+                  // 2. Kilépünk a public-ból (../) 
+                  // 3. Belépünk a src/html/vevo/adatlap.html-be
+                  window.location.href = `../../src/html/vevo/adatlap.html?id=${tisztaId}`;
             };
       </script>
 </body>
