@@ -10,41 +10,32 @@
       <link rel="stylesheet" href="css/shorts-style.css">
 
       <script>
-            // Azonnali figyelő: amint megérkezik a lakasok, kiírja a konzolra
+            // Adatfigyelő a DataManager számára
             Object.defineProperty(window, 'lakasok', {
                   set: function (val) {
-                        console.log("!!! ADAT MEGÉRKEZETT A GLOBÁLIS TÉRBE !!!", val.length, "db");
+                        console.log("!!! ADAT MEGÉRKEZETT !!!", val.length, "db");
                         this._lakasok = val;
                   },
-                  get: function () {
-                        return this._lakasok;
-                  },
+                  get: function () { return this._lakasok; },
                   configurable: true
             });
       </script>
-
-
 </head>
 
 <body class="bg-black text-white overflow-hidden">
 
-      <main id="shorts-container" class="video-feed">
-      </main>
+      <main id="shorts-container" class="video-feed"></main>
 
       <div id="filter-modal"
             class="fixed inset-0 bg-black/95 z-[200] hidden flex flex-col justify-end md:justify-center items-center backdrop-blur-md">
             <div
                   class="bg-[#121212] w-full md:w-[500px] h-[85vh] md:h-auto md:max-h-[85vh] rounded-t-3xl md:rounded-3xl p-6 border-t md:border border-white/10 shadow-2xl flex flex-col">
-
                   <div class="flex justify-between items-center mb-6">
-                        <h3 id="modal-title" class="text-xl font-bold">Keresési segédlet 🌍</h3>
+                        <h3 class="text-xl font-bold">Keresési segédlet 🌍</h3>
                         <button onclick="window.UI.closeModal()"
                               class="p-2 bg-white/10 rounded-full hover:bg-white/20">✕</button>
                   </div>
-
-                  <div id="modal-content-grid" class="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4">
-                  </div>
-
+                  <div id="modal-content-grid" class="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4"></div>
                   <button id="reset-filter-btn"
                         class="w-full mt-4 py-3 rounded-xl border border-white/20 font-bold bg-white/5 hover:bg-white/10 transition">
                         🔄 Összes ingatlan mutatása
@@ -58,36 +49,31 @@
             import { FilterRegistry } from './js/core/filter-registry.js';
             import { FavLogic } from './js/strategies/fav-logic.js';
             import { auth } from '../../src/js/util/firebase-config.js';
-            import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";           // Segédfüggvény a UI-nak a registry eléréséhez
+            import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+            // 1. Globális szűrő vezérlés
             window.executeFilter = async (tileId, params = null) => {
-                  // A Registry-ben definiált window.executeFilter-t használjuk
                   if (typeof window.executeFilterInternal === 'function') {
                         await window.executeFilterInternal(tileId, params);
                   }
             };
 
+            // 2. Bejelentkezés és Indítás
             document.addEventListener('DOMContentLoaded', () => {
                   onAuthStateChanged(auth, async (user) => {
                         if (user) {
-                              console.log("👤 Bejelentkezett felhasználó:", user.email);
-                              // Beállítjuk a globális user objektumot, amit a gombok várnak
+                              console.log("👤 User OK:", user.email);
                               window.currentUser = { azon: user.uid };
-
-                              // Szinkronizáljuk a kedvenceket a felhőből
                               await FavLogic.init(user.uid);
-                              console.log("✅ FavLogic inicializálva");
                         } else {
-                              console.warn("⚠️ Nincs bejelentkezett felhasználó.");
                               window.currentUser = null;
                         }
-
-                        // Csak miután megvan a user állapot (vagy a hiánya), indítjuk a Shorts-ot
                         await ShortsEngine.init('shorts-container');
                         UIManager.init();
                   });
             });
 
-
+            // 3. Kedvencek kezelése (Összevont, stabil verzió)
             window.handleToggleFav = async function (hbAzon, btnElement) {
                   const userAzon = window.currentUser?.azon;
                   if (!userAzon) {
@@ -95,24 +81,15 @@
                         return;
                   }
 
-                  // Azonnali vizuális "hamis" visszajelzés (optimista UI)
-                  const svg = btnElement.querySelector('svg');
-                  const currentlyActive = btnElement.classList.contains('is-favorite');
-
-                  // Átváltjuk azonnal, mielőtt a Firebase válaszolna
-                  if (currentlyActive) {
-                        btnElement.classList.remove('is-favorite');
-                        svg.setAttribute('fill', 'currentColor');
-                  } else {
-                        btnElement.classList.add('is-favorite');
-                        svg.setAttribute('fill', '#ff4b4b');
-                  }
+                  // Vizuális visszajelzés (védelem a dupla kattintás ellen)
+                  btnElement.style.opacity = "0.5";
+                  btnElement.style.pointerEvents = "none";
 
                   try {
                         const { FavLogic } = await import('./js/strategies/fav-logic.js');
                         const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
 
-                        // Véglegesítés a tényleges válasz alapján
+                        const svg = btnElement.querySelector('svg');
                         if (isActive) {
                               btnElement.classList.add('is-favorite');
                               svg.setAttribute('fill', '#ff4b4b');
@@ -121,53 +98,22 @@
                               svg.setAttribute('fill', 'currentColor');
                         }
                   } catch (err) {
-                        console.error("Hiba:", err);
-                        // Hiba esetén visszaállítjuk az eredeti állapotot
-                        if (currentlyActive) {
-                              btnElement.classList.add('is-favorite');
-                              svg.setAttribute('fill', '#ff4b4b');
-                        } else {
-                              btnElement.classList.remove('is-favorite');
-                              svg.setAttribute('fill', 'currentColor');
-                        }
+                        console.error("Fav hiba:", err);
+                  } finally {
+                        btnElement.style.opacity = "1";
+                        btnElement.style.pointerEvents = "auto";
                   }
             };
 
-            /**                  
- * A szív gomb kattintásakor lefutó globális függvény
- */
-            window.handleToggleFav = async function (hbAzon, btnElement) {
-                  // 1. Ellenőrizzük a bejelentkezést
-                  const userAzon = window.currentUser?.azon;
-                  if (!userAzon) {
-                        alert("A kedvencek mentéséhez be kell jelentkezned!");
-                        return;
-                  }
-
-                  // Vizuális visszajelzés indítása (pörgetés vagy elhalványítás, amíg ment)
-                  btnElement.style.opacity = "0.5";
-                  btnElement.style.pointerEvents = "none";
-
-                  // 2. Mentés/Törlés hívása a FavLogic felé
-                  const { FavLogic } = await import('./js/strategies/fav-logic.js');
-                  const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
-
-                  // 3. UI frissítése (szín és állapot)
-                  const svg = btnElement.querySelector('svg');
-                  if (isActive) {
-                        btnElement.classList.add('is-favorite');
-                        svg.setAttribute('fill', '#ff4b4b'); // Piros szín
-                  } else {
-                        btnElement.classList.remove('is-favorite');
-                        svg.setAttribute('fill', 'currentColor'); // Vissza az alap színre
-                  }
-
-                  // Visszaállítjuk a gombot
-                  btnElement.style.opacity = "1";
-                  btnElement.style.pointerEvents = "auto";
+            // 4. Adatlap megnyitása (HIÁNYZÓ FUNKCIÓ PÓTLÁSA)
+            window.openDetails = function (hbAzon) {
+                  if (!hbAzon) return;
+                  const tisztaId = hbAzon.replace('HB-', '');
+                  console.log("🚀 Irány az adatlap:", tisztaId);
+                  // Visszanavigálunk a főoldalra a kereső paraméterrel
+                  window.location.href = `../../index.html?kereses=${tisztaId}`;
             };
       </script>
-
 </body>
 
 </html>
