@@ -56,7 +56,9 @@
             import { ShortsEngine } from './js/engine/shorts-engine.js';
             import { UIManager } from './js/core/ui-manager.js';
             import { FilterRegistry } from './js/core/filter-registry.js';
-            import { FavLogic } from './js/strategies/fav-logic.js';            // Segédfüggvény a UI-nak a registry eléréséhez
+            import { FavLogic } from './js/strategies/fav-logic.js';
+            import { auth } from '../../src/js/util/firebase-config.js';
+            import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";           // Segédfüggvény a UI-nak a registry eléréséhez
             window.executeFilter = async (tileId, params = null) => {
                   // A Registry-ben definiált window.executeFilter-t használjuk
                   if (typeof window.executeFilterInternal === 'function') {
@@ -65,9 +67,23 @@
             };
 
             document.addEventListener('DOMContentLoaded', () => {
-                  // Itt indítjuk a motort
-                  ShortsEngine.init('shorts-container');
-                  UIManager.init();
+                  onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                              console.log("👤 Bejelentkezett felhasználó:", user.email);
+                              // Beállítjuk a globális user objektumot, amit a gombok várnak
+                              window.currentUser = { azon: user.uid };
+
+                              // Szinkronizáljuk a kedvenceket a felhőből
+                              await FavLogic.init(user.uid);
+                        } else {
+                              console.warn("⚠️ Nincs bejelentkezett felhasználó.");
+                              window.currentUser = null;
+                        }
+
+                        // Csak miután megvan a user állapot (vagy a hiánya), indítjuk a Shorts-ot
+                        ShortsEngine.init('shorts-container');
+                        UIManager.init();
+                  });
             });
             window.handleToggleFav = async function (hbAzon, btnElement) {
                   const userAzon = window.currentUser?.azon; // Feltételezve, hogy itt tárolod a bejelentkezett user ID-t
