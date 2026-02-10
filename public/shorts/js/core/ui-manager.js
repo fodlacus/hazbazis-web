@@ -65,9 +65,21 @@ export const UIManager = {
 
   openDiscovery: function () {
     const modal = document.getElementById("filter-modal");
+    const container = document.getElementById("modal-content-grid");
+    const title = document.getElementById("modal-title");
+
     if (modal) {
       modal.classList.remove("hidden");
-      this.renderTiles(); // Visszaállítjuk az alaprácsot, ha korábban a metró volt ott
+
+      // VISSZAÁLLÍTÁS: Ha a metró korábban átállította, itt visszatesszük
+      if (container) {
+        container.classList.replace("grid-cols-1", "grid-cols-2");
+      }
+      if (title) {
+        title.innerText = "Keresési segédlet 🌍";
+      }
+
+      this.renderTiles();
     }
   },
 
@@ -98,10 +110,10 @@ export const MetroUI = {
     const container = document.getElementById("modal-content-grid");
     const title = document.getElementById("modal-title");
 
-    title.innerText = "Válassz metróvonalat 🚇";
-    container.classList.replace("grid-cols-2", "grid-cols-1");
-
-    container.innerHTML = `
+    if (title) title.innerText = "Válassz metróvonalat 🚇";
+    if (container) {
+      container.classList.replace("grid-cols-2", "grid-cols-1");
+      container.innerHTML = `
           <div class="flex justify-between gap-2 mb-6 p-1 bg-white/5 rounded-2xl">
               <button onclick="window.MetroUI.renderLine('M1')" class="metro-btn m1">M1</button>
               <button onclick="window.MetroUI.renderLine('M2')" class="metro-btn m2">M2</button>
@@ -118,6 +130,7 @@ export const MetroUI = {
               </button>
           </div>
       `;
+    }
   },
 
   renderLine(lineId) {
