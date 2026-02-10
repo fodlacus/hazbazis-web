@@ -53,10 +53,10 @@
       </div>
 
       <script type="module">
-            import { FilterRegistry } from './js/core/filter-registry.js';
             import { ShortsEngine } from './js/engine/shorts-engine.js';
             import { UIManager } from './js/core/ui-manager.js';
-            // Segédfüggvény a UI-nak a registry eléréséhez
+            import { FilterRegistry } from './js/core/filter-registry.js';
+            import { FavLogic } from './js/strategies/fav-logic.js';            // Segédfüggvény a UI-nak a registry eléréséhez
             window.executeFilter = async (tileId, params = null) => {
                   // A Registry-ben definiált window.executeFilter-t használjuk
                   if (typeof window.executeFilterInternal === 'function') {
