@@ -108,16 +108,15 @@
             window.openDetails = function (hbAzon) {
                   if (!hbAzon) return;
 
-                  // Biztosítjuk, hogy a formátum "HB-XXXXXX" legyen, ahogy a Firebase-ben van
-                  let tisztaId = hbAzon.toString().trim();
-                  if (!tisztaId.startsWith('HB-')) {
-                        tisztaId = 'HB-' + tisztaId;
-                  }
+                  // 1. Megszüntetjük az esetleges kavarodást: először levágjuk, ha van, 
+                  // majd fixen visszatesszük a "HB-" előtagot.
+                  const tisztaSzam = hbAzon.toString().replace('HB-', '').trim();
+                  const veglegesId = 'HB-' + tisztaSzam;
 
-                  console.log("🚀 Navigáció az adatlapra (Firebase dokumentum név):", tisztaId);
+                  console.log("🚀 Navigáció a teljes azonosítóval:", veglegesId);
 
-                  // A relatív útvonalad a struktúra alapján (public/shorts -> src/html/vevo)
-                  window.location.href = `../../src/html/vevo/adatlap.html?id=${tisztaId}`;
+                  // 2. Az útvonal küldése a teljes HB-XXXXXX formátumban
+                  window.location.href = `../../src/html/vevo/adatlap.html?id=${veglegesId}`;
             };
 
       </script>
