@@ -105,21 +105,21 @@
                   }
             };
 
-            // 4. Adatlap megnyitása (HIÁNYZÓ FUNKCIÓ PÓTLÁSA)
             window.openDetails = function (hbAzon) {
                   if (!hbAzon) return;
 
-                  // Megtisztítjuk az ID-t (HB- prefix nélkül kell az adatlapnak)
-                  const tisztaId = hbAzon.toString().replace('HB-', '').trim();
+                  // Biztosítjuk, hogy a formátum "HB-XXXXXX" legyen, ahogy a Firebase-ben van
+                  let tisztaId = hbAzon.toString().trim();
+                  if (!tisztaId.startsWith('HB-')) {
+                        tisztaId = 'HB-' + tisztaId;
+                  }
 
-                  console.log("🚀 Irány az adatlap:", tisztaId);
+                  console.log("🚀 Navigáció az adatlapra (Firebase dokumentum név):", tisztaId);
 
-                  // ÚTVONAL JAVÍTÁSA: 
-                  // 1. Kilépünk a shorts-ból (../) 
-                  // 2. Kilépünk a public-ból (../) 
-                  // 3. Belépünk a src/html/vevo/adatlap.html-be
+                  // A relatív útvonalad a struktúra alapján (public/shorts -> src/html/vevo)
                   window.location.href = `../../src/html/vevo/adatlap.html?id=${tisztaId}`;
             };
+
       </script>
 </body>
 
