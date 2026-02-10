@@ -29,7 +29,7 @@ export const DataManager = {
 
       // Normalizálás: a motornak már csak a tiszta, ellenőrzött adatot adjuk át
       this._rawData = raw.map((item) => ({
-        id: item.lakas_azon || item.azon || item.id,
+        id: item.azon,
         video_url: item.videoUrl, // Most már fixen a jó mezőnév
         title: item.telepules || "Budapest",
         address: `${item.utca || ""} utca`,
