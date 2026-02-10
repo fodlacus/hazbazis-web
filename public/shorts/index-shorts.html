@@ -111,7 +111,9 @@
                   const tisztaId = hbAzon.replace('HB-', '').trim();
                   console.log("🚀 Irány az adatlap:", tisztaId);
                   // Visszanavigálunk a főoldalra a kereső paraméterrel
-                  window.location.href = `../../index.html?kereses=${tisztaId}`;
+                  //                 window.location.href = `../../index.html?kereses=${tisztaId}`;
+                  window.location.href = `../../adatlap?id=${tisztaId}`;
+
             };
       </script>
 </body>
