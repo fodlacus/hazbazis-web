@@ -26,9 +26,20 @@ export const FilterRegistry = {
   },
 
   // 4. KEDVENCEK (Dinamikus betöltéssel a strategies mappából)
-  KEDVENCEK: async () => {
+
+  KEDVENCEK: async function () {
     const { FavLogic } = await import("../strategies/fav-logic.js");
-    return FavLogic.filterFavorites(DataManager.getRawData());
+    const { DataManager } = await import("./data-manager.js");
+
+    const allData = DataManager.getRawData();
+
+    // Csak azokat tartjuk meg, amik benne vannak a FavLogic memóriájában
+    const filtered = allData.filter(function (item) {
+      return FavLogic.isFavorite(item.id);
+    });
+
+    console.log("📂 Kedvencek szűrése kész, találatok száma:", filtered.length);
+    return filtered;
   },
 
   // 5. METRÓ KÖZELBEN (Dinamikus betöltéssel)

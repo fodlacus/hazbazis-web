@@ -10,48 +10,49 @@ export const DataManager = {
 
   async init() {
     try {
-      // 1. Várakozási fázis (max 3 másodperc)
-      let attempts = 0;
-      while (!window.lakasok && attempts < 15) {
-        console.log(`[DataManager] Várakozás az adatokra (${attempts + 1})...`);
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        attempts++;
-      }
+      console.log("🔥 [DataManager] Firebase lekérdezés indítása...");
+      const querySnapshot = await getDocs(collection(adatbazis, "lakasok"));
+      const raw = [];
 
-      const raw = window.lakasok || [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
 
-      if (raw.length === 0) {
-        console.warn("[DataManager] Az adatok megérkeztek, de a lista üres.");
-        return [];
-      }
+        // SZŰRÉS: Csak azokat engedjük át, ahol a "videoUrl" létezik és nem üres
+        if (
+          data.videoUrl &&
+          typeof data.videoUrl === "string" &&
+          data.videoUrl.trim() !== ""
+        ) {
+          raw.push({ id: doc.id, ...data });
+        }
+      });
 
-      // 2. Normalizálási fázis
+      // Normalizálás: a motornak már csak a tiszta, ellenőrzött adatot adjuk át
       this._rawData = raw.map((item) => ({
-        id: item.lakas_azon || item.azon,
-        video_url: item.videoUrl || item.shorts_video,
-        title: `${item.telepules}${item.kerulet ? ", " + item.kerulet : ""}`,
+        id: item.lakas_azon || item.azon || item.id,
+        video_url: item.videoUrl, // Most már fixen a jó mezőnév
+        title: item.telepules || "Budapest",
         address: `${item.utca || ""} utca`,
         price: item.vételár
           ? (item.vételár / 1000000).toFixed(1) + " M Ft"
-          : "Ár nélkül",
+          : "Ár alatt",
         ar_szam: item.vételár || 0,
-        // Biztonsági mentés, ha véletlenül hiányozna egy mező
         size: `${item.alapterület || 0} m²`,
         rooms: `${item.szobák || 0} szoba`,
         city: item.telepules || "",
         district: item.kerulet || "",
-        description: item.leírás || "",
         coords: item.lat && item.lng ? [item.lat, item.lng] : null,
       }));
 
+      window.lakasok = this._rawData; // A Registry miatt maradjon meg a globális elérés
       this._currentFeed = [...this._rawData];
+
       console.log(
-        "DataManager kész, adatok normalizálva:",
-        this._rawData.length
+        `✅ [DataManager] Kész! ${this._rawData.length} videós ingatlan betöltve.`
       );
       return this._currentFeed;
     } catch (error) {
-      console.error("Kritikus hiba a DataManager inicializálásakor:", error);
+      console.error("❌ Hiba az adatok lekérésekor:", error);
       return [];
     }
   },

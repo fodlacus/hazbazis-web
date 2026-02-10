@@ -37,7 +37,7 @@
                   class="bg-[#121212] w-full md:w-[500px] h-[85vh] md:h-auto md:max-h-[85vh] rounded-t-3xl md:rounded-3xl p-6 border-t md:border border-white/10 shadow-2xl flex flex-col">
 
                   <div class="flex justify-between items-center mb-6">
-                        <h3 id="modal-title" class="text-xl font-bold">Felfedezés 🌍</h3>
+                        <h3 id="modal-title" class="text-xl font-bold">Keresési segédlet 🌍</h3>
                         <button onclick="window.UI.closeModal()"
                               class="p-2 bg-white/10 rounded-full hover:bg-white/20">✕</button>
                   </div>
@@ -55,7 +55,7 @@
       <script type="module">
             import { FilterRegistry } from './js/core/filter-registry.js';
             import { ShortsEngine } from './js/engine/shorts-engine.js';
-
+            import { UIManager } from './js/core/ui-manager.js';
             // Segédfüggvény a UI-nak a registry eléréséhez
             window.executeFilter = async (tileId, params = null) => {
                   // A Registry-ben definiált window.executeFilter-t használjuk
@@ -67,7 +67,55 @@
             document.addEventListener('DOMContentLoaded', () => {
                   // Itt indítjuk a motort
                   ShortsEngine.init('shorts-container');
+                  UIManager.init();
             });
+            window.handleToggleFav = async function (hbAzon, btnElement) {
+                  const userAzon = window.currentUser?.azon; // Feltételezve, hogy itt tárolod a bejelentkezett user ID-t
+                  const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
+
+                  // Azonnali vizuális visszajelzés
+                  const svg = btnElement.querySelector('svg');
+                  if (isActive) {
+                        btnElement.classList.add('is-favorite');
+                        svg.setAttribute('fill', '#ff4b4b');
+                  } else {
+                        btnElement.classList.remove('is-favorite');
+                        svg.setAttribute('fill', 'currentColor');
+                  }
+            };
+            /**
+ * A szív gomb kattintásakor lefutó globális függvény
+ */
+            window.handleToggleFav = async function (hbAzon, btnElement) {
+                  // 1. Ellenőrizzük a bejelentkezést
+                  const userAzon = window.currentUser?.azon;
+                  if (!userAzon) {
+                        alert("A kedvencek mentéséhez be kell jelentkezned!");
+                        return;
+                  }
+
+                  // Vizuális visszajelzés indítása (pörgetés vagy elhalványítás, amíg ment)
+                  btnElement.style.opacity = "0.5";
+                  btnElement.style.pointerEvents = "none";
+
+                  // 2. Mentés/Törlés hívása a FavLogic felé
+                  const { FavLogic } = await import('../strategies/fav-logic.js');
+                  const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
+
+                  // 3. UI frissítése (szín és állapot)
+                  const svg = btnElement.querySelector('svg');
+                  if (isActive) {
+                        btnElement.classList.add('is-favorite');
+                        svg.setAttribute('fill', '#ff4b4b'); // Piros szín
+                  } else {
+                        btnElement.classList.remove('is-favorite');
+                        svg.setAttribute('fill', 'currentColor'); // Vissza az alap színre
+                  }
+
+                  // Visszaállítjuk a gombot
+                  btnElement.style.opacity = "1";
+                  btnElement.style.pointerEvents = "auto";
+            };
       </script>
 
 </body>

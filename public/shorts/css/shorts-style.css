@@ -105,19 +105,31 @@
   }
   
   .control-btn {
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1.5px solid rgba(255, 255, 255, 0.8); /* Erősebb fehér keret */
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 1.2rem;
+      backdrop-filter: blur(4px);
+      transition: all 0.3s ease;
+  }
+
+  .control-btn:hover {
+      background: rgba(226, 241, 176, 0.2); /* A márkaszínünk halványan */
+      border-color: #E2F1B0;
   }
   
+  /* Aktív kedvenc stílusa */
+  .control-btn.is-favorite {
+      background: #E2F1B0;
+      color: #3D4A16;
+      border-color: #3D4A16;
+  }  
   .control-btn:active {
       transform: scale(0.85);
       background: var(--brand-light-green);
@@ -158,4 +170,72 @@
   
   .heart-animate {
       animation: heartPulse 0.4s ease-out;
+  }
+  
+  .tile-item span {
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  /* A modal stílusosabbá tétele */
+#filter-modal > div {
+      background-color: rgba(18, 18, 18, 0.95);
+      border: 1px solid rgba(226, 241, 176, 0.2);
+  }
+  
+  .tile-item {
+      min-height: 120px;
+      background: #222811; /* Sötétzöld alap */
+      border: 1px solid rgba(226, 241, 176, 0.1);
+      transition: all 0.25s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+  }  
+  
+  .tile-item:hover {
+      background: #2a3314; /* Csak egy lehelettel világosabb */
+      border-color: #E2F1B0; /* Hazbazis zöld keret */
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+  }
+
+  /* Ikon és szöveg stílusa a csempén belül */
+.tile-item .tile-icon {
+      font-size: 1.875rem; /* text-3xl */
+      margin-bottom: 0.5rem;
+  }
+  
+  .tile-item .tile-title {
+      font-size: 0.875rem; /* text-sm */
+      font-weight: 700;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+  }
+  
+  .tile-item .tile-hint {
+      font-size: 10px;
+      color: #E2F1B0;
+      margin-top: 0.25rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+  }
+  
+  /* Aktív (kattintás) állapot */
+  .tile-item:active {
+      scale: 0.95;
+  }
+
+  #reset-filter-btn {
+      background: rgba(255, 255, 255, 0.05);
+      color: #E2F1B0;
+      border-color: rgba(226, 241, 176, 0.3);
+  }
+  
+  #reset-filter-btn:hover {
+      background: #E2F1B0;
+      color: #3D4A16;
   }
