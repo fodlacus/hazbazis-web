@@ -1,6 +1,6 @@
 // public/shorts/js/core/ui-manager.js
 
-import { FilterRegistry } from "filter-registry.js";
+import { FilterRegistry } from "./filter-registry.js";
 
 // --- 1. ÁLTALÁNOS UI KEZELŐ ---
 export const UIManager = {
