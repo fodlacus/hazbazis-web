@@ -6,15 +6,21 @@ export const MetroLogic = {
   /**
    * Inicializálás: Betölti a metró megállók koordináta táblázatát
    */
+
   async init() {
     try {
-      // Fontos: Az útvonal a public/shorts/ mappához képest relatív!
+      // Megpróbáljuk betölteni a JSON-t
+      // Ha a fájlok egy mappában vannak, a './' a legbiztosabb
       const response = await fetch("./js/strategies/metro_megallok.json");
-      if (!response.ok) throw new Error("A JSON fájl nem található!");
+
+      if (!response.ok) {
+        throw new Error(`HTTP hiba! státusz: ${response.status}`);
+      }
+
       this.megallok = await response.json();
-      console.log("🚇 [MetroLogic] Adatok sikeresen betöltve.");
+      console.log("✅ [MetroLogic] JSON sikeresen betöltve.");
     } catch (error) {
-      console.error("❌ [MetroLogic] Hiba a JSON betöltésekor:", error);
+      console.error("❌ [MetroLogic] JSON betöltési hiba:", error);
     }
   },
 

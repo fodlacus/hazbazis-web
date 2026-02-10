@@ -1,0 +1,322 @@
+{
+      "M1": [
+            {
+                  "id": "m1_1",
+                  "nev": "Vörösmarty tér",
+                  "lat": 47.4967,
+                  "lng": 19.0503
+            },
+            {
+                  "id": "m1_2",
+                  "nev": "Deák Ferenc tér",
+                  "lat": 47.4979,
+                  "lng": 19.0552
+            },
+            {
+                  "id": "m1_3",
+                  "nev": "Bajcsy-Zsilinszky út",
+                  "lat": 47.5003,
+                  "lng": 19.0553
+            },
+            {
+                  "id": "m1_4",
+                  "nev": "Opera",
+                  "lat": 47.5027,
+                  "lng": 19.0584
+            },
+            {
+                  "id": "m1_5",
+                  "nev": "Oktogon",
+                  "lat": 47.5052,
+                  "lng": 19.0639
+            },
+            {
+                  "id": "m1_6",
+                  "nev": "Vörösmarty utca",
+                  "lat": 47.5073,
+                  "lng": 19.0667
+            },
+            {
+                  "id": "m1_7",
+                  "nev": "Kodály körönd",
+                  "lat": 47.5103,
+                  "lng": 19.0712
+            },
+            {
+                  "id": "m1_8",
+                  "nev": "Bajza utca",
+                  "lat": 47.5126,
+                  "lng": 19.0747
+            },
+            {
+                  "id": "m1_9",
+                  "nev": "Hősök tere",
+                  "lat": 47.5148,
+                  "lng": 19.0777
+            },
+            {
+                  "id": "m1_10",
+                  "nev": "Széchenyi fürdő",
+                  "lat": 47.5186,
+                  "lng": 19.0825
+            },
+            {
+                  "id": "m1_11",
+                  "nev": "Mexikói út",
+                  "lat": 47.5193,
+                  "lng": 19.0917
+            }
+      ],
+      "M2": [
+            {
+                  "id": "m2_1",
+                  "nev": "Déli pályaudvar",
+                  "lat": 47.5003,
+                  "lng": 19.0250
+            },
+            {
+                  "id": "m2_2",
+                  "nev": "Széll Kálmán tér",
+                  "lat": 47.5069,
+                  "lng": 19.0247
+            },
+            {
+                  "id": "m2_3",
+                  "nev": "Batthyány tér",
+                  "lat": 47.5063,
+                  "lng": 19.0392
+            },
+            {
+                  "id": "m2_4",
+                  "nev": "Kossuth Lajos tér",
+                  "lat": 47.5049,
+                  "lng": 19.0469
+            },
+            {
+                  "id": "m2_5",
+                  "nev": "Deák Ferenc tér",
+                  "lat": 47.4979,
+                  "lng": 19.0552
+            },
+            {
+                  "id": "m2_6",
+                  "nev": "Astoria",
+                  "lat": 47.4942,
+                  "lng": 19.0599
+            },
+            {
+                  "id": "m2_7",
+                  "nev": "Blaha Lujza tér",
+                  "lat": 47.4950,
+                  "lng": 19.0699
+            },
+            {
+                  "id": "m2_8",
+                  "nev": "Keleti pályaudvar",
+                  "lat": 47.5005,
+                  "lng": 19.0840
+            },
+            {
+                  "id": "m2_9",
+                  "nev": "Puskás Ferenc Stadion",
+                  "lat": 47.5004,
+                  "lng": 19.1042
+            },
+            {
+                  "id": "m2_10",
+                  "nev": "Pillangó utca",
+                  "lat": 47.5029,
+                  "lng": 19.1254
+            },
+            {
+                  "id": "m2_11",
+                  "nev": "Örs vezér tere",
+                  "lat": 47.5032,
+                  "lng": 19.1364
+            }
+      ],
+      "M3": [
+            {
+                  "id": "m3_1",
+                  "nev": "Kőbánya-Kispest",
+                  "lat": 47.4623,
+                  "lng": 19.1495
+            },
+            {
+                  "id": "m3_2",
+                  "nev": "Határ út",
+                  "lat": 47.4647,
+                  "lng": 19.1278
+            },
+            {
+                  "id": "m3_3",
+                  "nev": "Pöttyös utca",
+                  "lat": 47.4655,
+                  "lng": 19.1158
+            },
+            {
+                  "id": "m3_4",
+                  "nev": "Ecseri út",
+                  "lat": 47.4699,
+                  "lng": 19.1064
+            },
+            {
+                  "id": "m3_5",
+                  "nev": "Népliget",
+                  "lat": 47.4756,
+                  "lng": 19.0984
+            },
+            {
+                  "id": "m3_6",
+                  "nev": "Nagyvárad tér",
+                  "lat": 47.4791,
+                  "lng": 19.0890
+            },
+            {
+                  "id": "m3_7",
+                  "nev": "Semmelweis Klinikák",
+                  "lat": 47.4802,
+                  "lng": 19.0792
+            },
+            {
+                  "id": "m3_8",
+                  "nev": "Corvin-negyed",
+                  "lat": 47.4857,
+                  "lng": 19.0691
+            },
+            {
+                  "id": "m3_9",
+                  "nev": "Kálvin tér",
+                  "lat": 47.4894,
+                  "lng": 19.0620
+            },
+            {
+                  "id": "m3_10",
+                  "nev": "Ferenciek tere",
+                  "lat": 47.4930,
+                  "lng": 19.0559
+            },
+            {
+                  "id": "m3_11",
+                  "nev": "Deák Ferenc tér",
+                  "lat": 47.4979,
+                  "lng": 19.0552
+            },
+            {
+                  "id": "m3_12",
+                  "nev": "Arany János utca",
+                  "lat": 47.5020,
+                  "lng": 19.0543
+            },
+            {
+                  "id": "m3_13",
+                  "nev": "Nyugati pályaudvar",
+                  "lat": 47.5103,
+                  "lng": 19.0573
+            },
+            {
+                  "id": "m3_14",
+                  "nev": "Lehel tér",
+                  "lat": 47.5181,
+                  "lng": 19.0602
+            },
+            {
+                  "id": "m3_15",
+                  "nev": "Dózsa György út",
+                  "lat": 47.5235,
+                  "lng": 19.0653
+            },
+            {
+                  "id": "m3_16",
+                  "nev": "Göncz Árpád városközpont",
+                  "lat": 47.5317,
+                  "lng": 19.0651
+            },
+            {
+                  "id": "m3_17",
+                  "nev": "Forgách utca",
+                  "lat": 47.5401,
+                  "lng": 19.0659
+            },
+            {
+                  "id": "m3_18",
+                  "nev": "Gyöngyösi utca",
+                  "lat": 47.5476,
+                  "lng": 19.0664
+            },
+            {
+                  "id": "m3_19",
+                  "nev": "Újpest-városkapu",
+                  "lat": 47.5544,
+                  "lng": 19.0743
+            },
+            {
+                  "id": "m3_20",
+                  "nev": "Újpest-központ",
+                  "lat": 47.5614,
+                  "lng": 19.0841
+            }
+      ],
+      "M4": [
+            {
+                  "id": "m4_1",
+                  "nev": "Kelenföld vasútállomás",
+                  "lat": 47.4647,
+                  "lng": 19.0211
+            },
+            {
+                  "id": "m4_2",
+                  "nev": "Bikás park",
+                  "lat": 47.4665,
+                  "lng": 19.0308
+            },
+            {
+                  "id": "m4_3",
+                  "nev": "Újbuda-központ",
+                  "lat": 47.4744,
+                  "lng": 19.0449
+            },
+            {
+                  "id": "m4_4",
+                  "nev": "Móricz Zsigmond körtér",
+                  "lat": 47.4770,
+                  "lng": 19.0468
+            },
+            {
+                  "id": "m4_5",
+                  "nev": "Szent Gellért tér",
+                  "lat": 47.4839,
+                  "lng": 19.0506
+            },
+            {
+                  "id": "m4_6",
+                  "nev": "Fővám tér",
+                  "lat": 47.4862,
+                  "lng": 19.0585
+            },
+            {
+                  "id": "m4_7",
+                  "nev": "Kálvin tér",
+                  "lat": 47.4894,
+                  "lng": 19.0620
+            },
+            {
+                  "id": "m4_8",
+                  "nev": "Rákóczi tér",
+                  "lat": 47.4925,
+                  "lng": 19.0712
+            },
+            {
+                  "id": "m4_9",
+                  "nev": "II. János Pál pápa tér",
+                  "lat": 47.4952,
+                  "lng": 19.0768
+            },
+            {
+                  "id": "m4_10",
+                  "nev": "Keleti pályaudvar",
+                  "lat": 47.5005,
+                  "lng": 19.0840
+            }
+      ]
+}
