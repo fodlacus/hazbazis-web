@@ -86,21 +86,54 @@
                         UIManager.init();
                   });
             });
-            window.handleToggleFav = async function (hbAzon, btnElement) {
-                  const userAzon = window.currentUser?.azon; // Feltételezve, hogy itt tárolod a bejelentkezett user ID-t
-                  const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
 
-                  // Azonnali vizuális visszajelzés
+
+            window.handleToggleFav = async function (hbAzon, btnElement) {
+                  const userAzon = window.currentUser?.azon;
+                  if (!userAzon) {
+                        alert("A kedvencek mentéséhez be kell jelentkezned!");
+                        return;
+                  }
+
+                  // Azonnali vizuális "hamis" visszajelzés (optimista UI)
                   const svg = btnElement.querySelector('svg');
-                  if (isActive) {
-                        btnElement.classList.add('is-favorite');
-                        svg.setAttribute('fill', '#ff4b4b');
-                  } else {
+                  const currentlyActive = btnElement.classList.contains('is-favorite');
+
+                  // Átváltjuk azonnal, mielőtt a Firebase válaszolna
+                  if (currentlyActive) {
                         btnElement.classList.remove('is-favorite');
                         svg.setAttribute('fill', 'currentColor');
+                  } else {
+                        btnElement.classList.add('is-favorite');
+                        svg.setAttribute('fill', '#ff4b4b');
+                  }
+
+                  try {
+                        const { FavLogic } = await import('./js/strategies/fav-logic.js');
+                        const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
+
+                        // Véglegesítés a tényleges válasz alapján
+                        if (isActive) {
+                              btnElement.classList.add('is-favorite');
+                              svg.setAttribute('fill', '#ff4b4b');
+                        } else {
+                              btnElement.classList.remove('is-favorite');
+                              svg.setAttribute('fill', 'currentColor');
+                        }
+                  } catch (err) {
+                        console.error("Hiba:", err);
+                        // Hiba esetén visszaállítjuk az eredeti állapotot
+                        if (currentlyActive) {
+                              btnElement.classList.add('is-favorite');
+                              svg.setAttribute('fill', '#ff4b4b');
+                        } else {
+                              btnElement.classList.remove('is-favorite');
+                              svg.setAttribute('fill', 'currentColor');
+                        }
                   }
             };
-            /**
+
+            /**                  
  * A szív gomb kattintásakor lefutó globális függvény
  */
             window.handleToggleFav = async function (hbAzon, btnElement) {

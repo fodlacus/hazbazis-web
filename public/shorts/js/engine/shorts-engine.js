@@ -74,10 +74,12 @@ export const ShortsEngine = {
         <video 
             src="${item.video_url}" 
             loop 
+            muted 
             playsinline 
+            webkit-playsinline
             class="main-video"
-            ${this.isGlobalMuted ? "muted" : ""}
-            preload="metadata">
+            style="background: black;"
+            preload="auto">
         </video>
         
         <div class="video-overlay">
@@ -141,15 +143,23 @@ export const ShortsEngine = {
   /**
    * Observer beállítása
    */
+
   setupObserver: function () {
-    const options = { threshold: 0.6 };
+    const options = { threshold: 0.5 }; // Kicsit engedékenyebb küszöb
 
     this.observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const video = entry.target.querySelector("video");
         if (entry.isIntersecting) {
           video.muted = this.isGlobalMuted;
-          video.play().catch(() => {});
+          // Kényszerített újratöltés és lejátszás iPhone-ra optimalizálva
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+              // Autoplay megakadályozva, de legalább látszódjon a kép
+              video.load();
+            });
+          }
           entry.target.classList.add("active");
         } else {
           video.pause();
