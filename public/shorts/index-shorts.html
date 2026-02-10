@@ -75,13 +75,14 @@
 
                               // Szinkronizáljuk a kedvenceket a felhőből
                               await FavLogic.init(user.uid);
+                              console.log("✅ FavLogic inicializálva");
                         } else {
                               console.warn("⚠️ Nincs bejelentkezett felhasználó.");
                               window.currentUser = null;
                         }
 
                         // Csak miután megvan a user állapot (vagy a hiánya), indítjuk a Shorts-ot
-                        ShortsEngine.init('shorts-container');
+                        await ShortsEngine.init('shorts-container');
                         UIManager.init();
                   });
             });
@@ -115,7 +116,7 @@
                   btnElement.style.pointerEvents = "none";
 
                   // 2. Mentés/Törlés hívása a FavLogic felé
-                  const { FavLogic } = await import('../strategies/fav-logic.js');
+                  const { FavLogic } = await import('./js/strategies/fav-logic.js');
                   const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
 
                   // 3. UI frissítése (szín és állapot)
