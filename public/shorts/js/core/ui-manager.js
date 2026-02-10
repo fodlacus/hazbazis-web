@@ -1,7 +1,9 @@
-import { FilterRegistry } from "./filter-registry.js";
+// public/shorts/js/core/ui-manager.js
 
+import { FilterRegistry } from "filter-registry.js";
+
+// --- 1. ÁLTALÁNOS UI KEZELŐ ---
 export const UIManager = {
-  // A te kategória listád alapján bővítve
   categories: [
     {
       id: "budapest",
@@ -39,15 +41,18 @@ export const UIManager = {
     const grid = document.getElementById("modal-content-grid");
     if (!grid) return;
 
-    // A régi stílusú gombok generálása (ikon fentre, alulra a felirat és a hint)
     grid.innerHTML = this.categories
       .map(function (cat) {
+        // Ha metró, akkor a MetroUI-t hívjuk meg, egyébként a sima szűrőt
+        const clickAction =
+          cat.id === "metro"
+            ? "window.MetroUI.openMetroPicker()"
+            : `window.executeFilter('${cat.id}')`;
+
         return `
-                <div onclick="window.executeFilter('${cat.id}')" 
+                <div onclick="${clickAction}" 
                      class="tile-item group relative overflow-hidden bg-[#222811] border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-between hover:bg-[#E2F1B0] transition-all duration-300 active:scale-95 shadow-xl">
-                    
                     <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">${cat.icon}</div>
-                    
                     <div class="flex flex-col items-center">
                         <span class="text-sm font-bold text-white group-hover:text-[#3D4A16] uppercase tracking-wider">${cat.title}</span>
                         <span class="text-[10px] text-[#E2F1B0] group-hover:text-[#3D4A16]/70 mt-1 bg-black/30 group-hover:bg-transparent px-2 py-0.5 rounded-full">${cat.hint}</span>
@@ -60,7 +65,10 @@ export const UIManager = {
 
   openDiscovery: function () {
     const modal = document.getElementById("filter-modal");
-    if (modal) modal.classList.remove("hidden");
+    if (modal) {
+      modal.classList.remove("hidden");
+      this.renderTiles(); // Visszaállítjuk az alaprácsot, ha korábban a metró volt ott
+    }
   },
 
   closeModal: function () {
@@ -76,4 +84,98 @@ export const UIManager = {
   },
 };
 
+// --- 2. SPECIFIKUS METRÓ UI KEZELŐ ---
+export const MetroUI = {
+  selectedLine: null,
+  tempSelectedStops: [],
+
+  async openMetroPicker() {
+    const { MetroLogic } = await import("../strategies/metro-logic.js");
+    if (!MetroLogic.megallok || Object.keys(MetroLogic.megallok).length === 0) {
+      await MetroLogic.init();
+    }
+
+    const container = document.getElementById("modal-content-grid");
+    const title = document.getElementById("modal-title");
+
+    title.innerText = "Válassz metróvonalat 🚇";
+    container.classList.replace("grid-cols-2", "grid-cols-1");
+
+    container.innerHTML = `
+          <div class="flex justify-between gap-2 mb-6 p-1 bg-white/5 rounded-2xl">
+              <button onclick="window.MetroUI.renderLine('M1')" class="metro-btn m1">M1</button>
+              <button onclick="window.MetroUI.renderLine('M2')" class="metro-btn m2">M2</button>
+              <button onclick="window.MetroUI.renderLine('M3')" class="metro-btn m3">M3</button>
+              <button onclick="window.MetroUI.renderLine('M4')" class="metro-btn m4">M4</button>
+          </div>
+          <div id="stop-list" class="space-y-2 overflow-y-auto max-h-[40vh] pr-2 custom-scrollbar">
+              <p class="text-center text-white/30 py-10">Kattints egy vonalra a megállókhoz!</p>
+          </div>
+          <div class="mt-6 flex gap-3">
+              <button onclick="window.UI.openDiscovery()" class="flex-1 py-4 rounded-xl bg-white/10 font-bold">Vissza</button>
+              <button onclick="window.MetroUI.applyFilter()" class="flex-[2] py-4 rounded-xl bg-lime-400 text-black font-black shadow-lg shadow-lime-400/20">
+                  MEGÁLLÓK SZŰRÉSE
+              </button>
+          </div>
+      `;
+  },
+
+  renderLine(lineId) {
+    this.selectedLine = lineId;
+    // Itt a MetroLogic-ra szükség van, de mivel az openMetroPicker már betöltötte, elérhető
+    import("../strategies/metro-logic.js").then((module) => {
+      const MetroLogic = module.MetroLogic;
+      const stops = MetroLogic.megallok[lineId] || [];
+      const listContainer = document.getElementById("stop-list");
+
+      document
+        .querySelectorAll(".metro-btn")
+        .forEach((btn) => btn.classList.remove("active"));
+      const activeBtn = document.querySelector(
+        `.metro-btn.${lineId.toLowerCase()}`
+      );
+      if (activeBtn) activeBtn.classList.add("active");
+
+      listContainer.innerHTML = stops
+        .map(
+          (stop) => `
+              <label class="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
+                  <input type="checkbox" value="${stop.id}" 
+                      ${
+                        this.tempSelectedStops.includes(stop.id)
+                          ? "checked"
+                          : ""
+                      }
+                      onchange="window.MetroUI.toggleStop('${stop.id}')"
+                      class="w-6 h-6 rounded border-white/20 accent-lime-400">
+                  <span class="flex-1 font-medium group-hover:text-lime-400 transition">${
+                    stop.nev
+                  }</span>
+              </label>
+          `
+        )
+        .join("");
+    });
+  },
+
+  toggleStop(stopId) {
+    const index = this.tempSelectedStops.indexOf(stopId);
+    if (index > -1) this.tempSelectedStops.splice(index, 1);
+    else this.tempSelectedStops.push(stopId);
+  },
+
+  async applyFilter() {
+    if (this.tempSelectedStops.length === 0) {
+      alert("Válassz legalább egy megállót!");
+      return;
+    }
+    if (typeof window.executeFilter === "function") {
+      window.executeFilter("METRO_SZURO", this.tempSelectedStops);
+    }
+    window.UI.closeModal();
+  },
+};
+
+// --- GLOBÁLIS REGISZTRÁCIÓ ---
 window.UI = UIManager;
+window.MetroUI = MetroUI;

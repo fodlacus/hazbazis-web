@@ -239,3 +239,28 @@
       background: #E2F1B0;
       color: #3D4A16;
   }
+  /* Metró vonal gombok */
+.metro-btn {
+    flex: 1;
+    padding: 12px 0;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.metro-btn.m1 { background: #ffbe00; color: black; }
+.metro-btn.m2 { background: #e41f18; color: white; }
+.metro-btn.m3 { background: #005ca5; color: white; }
+.metro-btn.m4 { background: #009540; color: white; }
+
+.metro-btn.active {
+    transform: scale(1.05);
+    border-color: white;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+
+/* Egyedi görgetősáv a listának */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
