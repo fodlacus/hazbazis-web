@@ -61,6 +61,19 @@ export const UIManager = {
             `;
       })
       .join("");
+    // A renderTiles-ben vagy a kattintás kezelőnél:
+    async function kedvencek_megnyitasa() {
+      const { KedvencekManager } = await import("./kedvencek-manager.js");
+      const lista = await KedvencekManager.kedvencek_lekerese();
+
+      if (lista.length === 0) {
+        alert("Még nincsenek kedvenceid!");
+        return;
+      }
+
+      // Meghívjuk a szűrőt a kapott ID listával
+      window.executeFilter("KEDVENCEK_LISTA", lista);
+    }
   },
 
   openDiscovery: function () {
