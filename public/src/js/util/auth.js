@@ -1,4 +1,5 @@
 import { auth, adatbazis, doc, setDoc, getDoc } from "./firebase-config.js";
+import { KedvencekManager } from "../../shorts/js/core/kedvencek-manager.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -20,9 +21,15 @@ onAuthStateChanged(auth, async (felhasznalo) => {
     console.log("Bejelentkezett felhasználó:", felhasznalo.email);
     // Ha van a fejlécben egy elem az emailnek, itt töltheted ki:
     // document.getElementById('user-email-display').innerText = felhasznalo.email;
+    KedvencekManager.figyelo_inditasa((friss_lista) => {
+      console.log("⭐ Kedvencek szinkronizálva az eszközök között.");
+    });
+    const nevKijelzo = document.getElementById("felhasznalo-nev");
+    if (nevKijelzo) nevKijelzo.innerText = felhasznalo.email;
+  } else {
+    // Ha kijelentkezik, érdemes lehet üríteni a listát (opcionális)
+    KedvencekManager.aktualis_kedvencek = [];
   }
-  const nevKijelzo = document.getElementById("felhasznalo-nev");
-  if (nevKijelzo) nevKijelzo.innerText = felhasznalo.email;
 });
 
 // 2. Váltás Belépés/Regisztráció között
