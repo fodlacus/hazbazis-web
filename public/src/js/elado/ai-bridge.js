@@ -197,6 +197,7 @@ window.urlapUrites = function () {
 
 // src/js/util/ai-bridge.js
 
+/* 
 window.automataCimEllenorzes = async function () {
   const irsz = document.getElementById("iranyitoszam")?.value;
   const varos = document.getElementById("telepules")?.value;
@@ -260,6 +261,7 @@ window.automataCimEllenorzes = async function () {
   }
 };
 
+ */
 // FIGYELŐK FELRAKÁSA: Hogy gépelés közben magától frissüljön
 document.addEventListener("DOMContentLoaded", () => {
   const mezok = ["iranyitoszam", "telepules", "utca", "hazszam"];
