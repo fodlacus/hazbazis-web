@@ -137,6 +137,34 @@ if (urlap) {
       // GPS
       adatok.lat = window.aktualisLat || null;
       adatok.lng = window.aktualisLng || null;
+      if (lat && lng) {
+        console.log("🚇 Metró távolságok számítása...");
+        try {
+          // Relatív útvonal a feladas.js-től a metro-logic.js-ig
+          // src/js/elado/ -> public/shorts/js/strategies/
+          const module = await import(
+            "../../../public/shorts/js/strategies/metro-logic.js"
+          );
+          const MetroLogic = module.MetroLogic;
+
+          await MetroLogic.init(); // Betölti a megállók koordinátáit
+
+          // Kiszámoljuk, melyik megállók vannak 800m-en belül
+          const közeliMegállók = MetroLogic.getNearbyStopIds([lat, lng], 800);
+
+          // Mentjük az adatot az ingatlanhoz
+          adatok.metro_kozelseg = közeliMegállók;
+          console.log("✅ Talált közeli megállók:", közeliMegállók);
+        } catch (metroError) {
+          console.warn(
+            "⚠️ Metró adatok számítása sikertelen, de a mentés folytatódik:",
+            metroError
+          );
+          adatok.metro_kozelseg = [];
+        }
+      } else {
+        adatok.metro_kozelseg = []; // Ha nincs GPS, nincs metró adat
+      }
 
       // 5. Mentés
       if (szerkesztendoId) {
