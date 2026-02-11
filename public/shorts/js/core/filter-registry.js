@@ -27,34 +27,28 @@ export const FilterRegistry = {
 
   // 4. KEDVENCEK (Dinamikus betöltéssel a strategies mappából)
 
-  KEDVENCEK: async function () {
-    const { FavLogic } = await import("../strategies/fav-logic.js");
-    const { DataManager } = await import("./data-manager.js");
+  KEDVENCEK_LISTA: (lista, kedvenc_id_lista) => {
+    if (!kedvenc_id_lista || kedvenc_id_lista.length === 0) return [];
 
-    const allData = DataManager.getRawData();
+    // Csak azokat a hirdetéseket tartjuk meg, amiknek az azonosítója
+    // szerepel a Firebase-ből lekért listában
+    return lista.filter((hirdetes) => kedvenc_id_lista.includes(hirdetes.azon));
+  },
 
-    // Csak azokat tartjuk meg, amik benne vannak a FavLogic memóriájában
-    const filtered = allData.filter(function (item) {
-      return FavLogic.isFavorite(item.id);
+  // METRÓ SZŰRŐJE
+  METRO_SZURO: (lista, kivalasztott_megallok) => {
+    if (!kivalasztott_megallok || kivalasztott_megallok.length === 0)
+      return lista;
+
+    return lista.filter((hirdetes) => {
+      if (!hirdetes.metro_kozelseg) return false;
+      // Megnézzük, van-e átfedés a hirdetés metrói és a választott megállók között
+      return hirdetes.metro_kozelseg.some((id) =>
+        kivalasztott_megallok.includes(id)
+      );
     });
-
-    console.log("📂 Kedvencek szűrése kész, találatok száma:", filtered.length);
-    return filtered;
-  },
-
-  // 5. METRÓ KÖZELBEN (Dinamikus betöltéssel)
-  metro: async (params) => {
-    const { MetroLogic } = await import("../strategies/metro-logic.js");
-    // A params tartalmazza a kiválasztott koordinátákat
-    return MetroLogic.filterByStation(DataManager.getRawData(), params.coords);
-  },
-
-  // 6. MINDEN VIDEÓ (Reset)
-  all: async () => {
-    return DataManager.getRawData();
   },
 };
-
 /**
  * Globális hívókezelő, amit a UI használ
  */
