@@ -83,3 +83,5 @@ export const KedvencekManager = {
     return this.aktualis_kedvencek;
   },
 };
+// public/shorts/js/core/kedvencek-manager.js legvége
+window.KedvencekManager = KedvencekManager;
