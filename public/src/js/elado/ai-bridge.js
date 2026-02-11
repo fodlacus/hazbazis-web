@@ -194,6 +194,9 @@ window.urlapUrites = function () {
 };
 
 // Cím ellenőrzés Nominatim-mal
+
+// src/js/util/ai-bridge.js
+
 window.automataCimEllenorzes = async function () {
   const irsz = document.getElementById("iranyitoszam")?.value;
   const varos = document.getElementById("telepules")?.value;
@@ -201,56 +204,71 @@ window.automataCimEllenorzes = async function () {
   const hazszam = document.getElementById("hazszam")?.value;
   const mentesGomb = document.getElementById("hirdetes-bekuldes");
 
+  // Csak akkor indulunk el, ha az alap adatok megvannak
   if (irsz?.length >= 4 && varos?.length >= 2 && utca?.length >= 3) {
     const teljesCim = `${irsz} ${varos}, ${utca} ${hazszam || ""}`;
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           teljesCim
         )}&addressdetails=1&countrycodes=hu`
       );
-      const adatok = await response.json();
-      const siker = adatok && adatok.length > 0;
+      let adatok = await response.json();
 
-      if (siker) {
-        // SIKER
+      // HA NINCS TALÁLAT A HÁZSZÁMMAL, próbáljuk meg csak az utcával
+      if (adatok.length === 0 && hazszam) {
+        const utcaCim = `${irsz} ${varos}, ${utca}`;
+        const resp2 = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            utcaCim
+          )}&countrycodes=hu`
+        );
+        adatok = await resp2.json();
+      }
+
+      if (adatok && adatok.length > 0) {
         window.aktualisLat = parseFloat(adatok[0].lat);
         window.aktualisLng = parseFloat(adatok[0].lon);
 
-        console.log("📍 Koordináták:", window.aktualisLat, window.aktualisLng);
+        console.log(
+          "📍 Koordináták rögzítve:",
+          window.aktualisLat,
+          window.aktualisLng
+        );
 
-        // Zöld visszajelzés
-        ["iranyitoszam", "telepules", "utca", "hazszam"].forEach((id) => {
+        // Vizuális visszajelzés: Lime border
+        ["iranyitoszam", "telepules", "utca"].forEach((id) => {
           const el = document.getElementById(id);
-          if (el) el.style.borderColor = "#A3E635"; // Lime
+          if (el) el.style.border = "2px solid #A3E635";
         });
 
         if (mentesGomb) {
           mentesGomb.disabled = false;
           mentesGomb.style.opacity = "1";
+          mentesGomb.style.cursor = "pointer";
         }
       } else {
-        // HIBA
+        // NINCS TALÁLAT
         window.aktualisLat = null;
         window.aktualisLng = null;
-
-        // Piros visszajelzés
-        ["iranyitoszam", "telepules", "utca"].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) el.style.borderColor = "#EF4444"; // Red
-        });
-
-        if (mentesGomb) {
-          // JAVÍTÁS: Itt volt az elírás (mmentesGomb -> mentesGomb)
-          mentesGomb.disabled = true;
-          mentesGomb.style.opacity = "0.5";
-        }
+        console.warn("⚠️ A címet nem sikerült beazonosítani.");
       }
     } catch (e) {
       console.error("Cím ellenőrzési hiba", e);
     }
   }
 };
+
+// FIGYELŐK FELRAKÁSA: Hogy gépelés közben magától frissüljön
+document.addEventListener("DOMContentLoaded", () => {
+  const mezok = ["iranyitoszam", "telepules", "utca", "hazszam"];
+  mezok.forEach((id) => {
+    document
+      .getElementById(id)
+      ?.addEventListener("blur", window.automataCimEllenorzes);
+  });
+});
 
 window.generaljLeirast = async function () {
   const leirasMezo = document.getElementById("leírás");

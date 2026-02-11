@@ -86,6 +86,16 @@ const urlap = document.getElementById("hirdetes-urlap");
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
+    if (!window.aktualisLat) {
+      console.log("🔄 Koordináták pótlása mentés előtt...");
+      await window.automataCimEllenorzes();
+    }
+    if (!window.aktualisLat) {
+      alert(
+        "⚠️ Nem sikerült meghatározni az ingatlan pontos helyét. Kérlek, ellenőrizd a címet (Irsz, Város, Utca)!"
+      );
+      return;
+    }
     const mentesGomb = document.getElementById("hirdetes-bekuldes");
 
     // 1. Mentés gomb azonnali blokkolása
@@ -93,8 +103,9 @@ if (urlap) {
       mentesGomb.disabled = true;
       mentesGomb.innerText = "Mentes folyamatban...";
     }
-
     try {
+      console.log("try ág: ");
+
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Nincs bejelentkezett felhasznalo!");
 
