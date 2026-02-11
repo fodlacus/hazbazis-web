@@ -1,45 +1,29 @@
 // public/shorts/js/strategies/metro-logic.js
 
-export const MetroLogic = {
-  megallok: {}, // Ide kerülnek be a JSON-ből betöltött adatok
-  async initWithPath(path) {
+export const MetroLogika = {
+  megallok_adatai: {},
+
+  // Dinamikus betoltes az utvonal alapjan
+  async inditas_utvonal(utvonal) {
     try {
-      const response = await fetch(path);
-      this.megallok = await response.json();
-    } catch (e) {
-      console.error(e);
-    }
-  },
-  /**
-   * Inicializálás: Betölti a metró megállók koordináta táblázatát
-   */
-
-  async init() {
-    return this.initWithPath("./js/strategies/metro_megallok.json");
-    try {
-      // Megpróbáljuk betölteni a JSON-t
-      // Ha a fájlok egy mappában vannak, a './' a legbiztosabb
-      const response = await fetch("./js/strategies/metro_megallok.json");
-
-      if (!response.ok) {
-        throw new Error(`HTTP hiba! státusz: ${response.status}`);
-      }
-
-      this.megallok = await response.json();
-      console.log("✅ [MetroLogic] JSON sikeresen betöltve.");
-    } catch (error) {
-      console.error("❌ [MetroLogic] JSON betöltési hiba:", error);
+      const valasz = await fetch(utvonal);
+      if (!valasz.ok) throw new Error("JSON nem talalhato");
+      this.megallok_adatai = await valasz.json();
+      console.log("🚇 Metro adatok sikeresen betoltve:", utvonal);
+      return true;
+    } catch (hiba) {
+      console.error("❌ Metro betoltesi hiba:", hiba);
+      return false;
     }
   },
 
-  /**
-   * Távolság számítása két pont között (Haversine formula)
-   * @param {number} lat1, lon1 - Első pont koordinátái
-   * @param {number} lat2, lon2 - Második pont koordinátái
-   * @returns {number} Távolság méterben
-   */
-  getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Föld sugara méterben
+  // Alapertelemezett inditas a Shorts oldalhoz
+  async inditas() {
+    return await this.inditas_utvonal("./js/strategies/metro_megallok.json");
+  },
+
+  tavolsag_szamitas(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Fold sugara meterben
     const f1 = (lat1 * Math.PI) / 180;
     const f2 = (lat2 * Math.PI) / 180;
     const df = ((lat2 - lat1) * Math.PI) / 180;
@@ -53,27 +37,20 @@ export const MetroLogic = {
     return Math.round(R * c);
   },
 
-  /**
-   * Kiszámolja, mely megállók vannak az ingatlan közelében (pl. mentéskor)
-   * @param {Array} coords - [lat, lng] formátumban
-   * @param {number} maxDist - Maximális távolság méterben (alapértelmezett 800m)
-   * @returns {Array} A közeli megállók ID-jei
-   */
-  getNearbyStopIds(coords, maxDist = 800) {
-    if (!coords || coords.length < 2) return [];
-    const [lat, lng] = coords;
-    const foundIds = [];
+  kozelben_levo_megallok(koordinatak, max_tavolsag = 800) {
+    if (!koordinatak || koordinatak.length < 2) return [];
+    const [lat, lng] = koordinatak;
+    const talalt_idk = [];
 
-    // Végigmegyünk az összes vonalon (M1, M2, M3, M4)
-    Object.keys(this.megallok).forEach((line) => {
-      this.megallok[line].forEach((stop) => {
-        const dist = this.getDistance(lat, lng, stop.lat, stop.lng);
-        if (dist <= maxDist) {
-          foundIds.push(stop.id);
+    Object.keys(this.megallok_adatai).forEach((vonal) => {
+      this.megallok_adatai[vonal].forEach((megallo) => {
+        const tav = this.tavolsag_szamitas(lat, lng, megallo.lat, megallo.lng);
+        if (tav <= max_tavolsag) {
+          talalt_idk.push(megallo.id);
         }
       });
     });
 
-    return foundIds;
+    return talalt_idk;
   },
 };
