@@ -2,12 +2,20 @@
 
 export const MetroLogic = {
   megallok: {}, // Ide kerülnek be a JSON-ből betöltött adatok
-
+  async initWithPath(path) {
+    try {
+      const response = await fetch(path);
+      this.megallok = await response.json();
+    } catch (e) {
+      console.error(e);
+    }
+  },
   /**
    * Inicializálás: Betölti a metró megállók koordináta táblázatát
    */
 
   async init() {
+    return this.initWithPath("./js/strategies/metro_megallok.json");
     try {
       // Megpróbáljuk betölteni a JSON-t
       // Ha a fájlok egy mappában vannak, a './' a legbiztosabb

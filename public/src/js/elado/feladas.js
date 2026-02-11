@@ -80,7 +80,6 @@ function adatokOsszegyujtese() {
 // --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
 
-// --- FŐ BEKÜLDÉSI FOLYAMAT JAVÍTVA ---
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
@@ -97,25 +96,23 @@ if (urlap) {
 
       const userDocRef = doc(adatbazis, "felhasznalok", currentUser.uid);
       const userSnap = await getDoc(userDocRef);
-      if (!userSnap.exists())
-        throw new Error("A felhasználói profil nem található!");
+      if (!userSnap.exists()) throw new Error("A profil nem található!");
 
       const userData = userSnap.data();
 
       // 1. Adatok begyűjtése
       const adatok = adatokOsszegyujtese();
 
-      // 2. Alapinformációk kiegészítése
+      // 2. Alapadatok és GPS
       adatok.hirdeto_azon = userData.azon;
       adatok.hirdeto_uid = currentUser.uid;
       adatok.letrehozva = new Date().toISOString();
       adatok.statusz = "Feldolgozás alatt";
 
-      // GPS adatok fixálása
       const lat = window.aktualisLat || null;
       const lng = window.aktualisLng || null;
 
-      // Csak akkor írjuk felül, ha van új koordináta, vagy ha új hirdetés
+      // GPS adatok kezelése (csak ha van koordináta)
       if (lat && lng) {
         adatok.lat = lat;
         adatok.lng = lng;
@@ -124,31 +121,41 @@ if (urlap) {
         adatok.lng = null;
       }
 
-      // 3. Metró logika (Előszámítás mentés előtt)
-      adatok.metro_kozelseg = []; // Alapértelmezett üres tömb
+      // 3. METRÓ LOGIKA (Helyes útvonallal a feladási oldalhoz)
+      adatok.metro_kozelseg = [];
       if (adatok.lat && adatok.lng) {
-        console.log("Metró távolságok számítása...");
         try {
+          // Importáljuk a logikát
           const module = await import(
             "../../../public/shorts/js/strategies/metro-logic.js"
           );
           const MetroLogic = module.MetroLogic;
-          await MetroLogic.init();
+
+          // MEGOLDÁS: Itt adjuk meg a JSON pontos útvonalát a feladási oldalhoz képest
+          const jsonUtvonal =
+            "../../../public/shorts/js/strategies/metro_megallok.json";
+
+          // Egy kis módosítás az init-en, hogy elfogadja az útvonalat
+          if (typeof MetroLogic.initWithPath === "function") {
+            await MetroLogic.initWithPath(jsonUtvonal);
+          } else {
+            await MetroLogic.init(); // Tartalék, ha még a régi van
+          }
+
           adatok.metro_kozelseg = MetroLogic.getNearbyStopIds(
             [adatok.lat, adatok.lng],
             800
           );
-          console.log("Talált megállók:", adatok.metro_kozelseg);
+          console.log("🚇 Metró adatok kiszámolva:", adatok.metro_kozelseg);
         } catch (mErr) {
-          console.warn("Metró hiba:", mErr);
+          console.warn("⚠️ Metró hiba (valószínűleg útvonal):", mErr);
         }
       }
 
       // 4. EGYETLEN MENTÉSI PONT
       if (szerkesztendoId) {
-        // MÓDOSÍTÁS
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
-        // Ha szerkesztés van és nem kaptunk új GPS-t, ne töröljük a régit
+        // Szerkesztésnél ne töröljük a régi GPS-t, ha most nincs megadva
         if (!lat || !lng) {
           delete adatok.lat;
           delete adatok.lng;
@@ -156,18 +163,16 @@ if (urlap) {
         await updateDoc(docRef, adatok);
         alert("Sikeres módosítás!");
       } else {
-        // ÚJ HIRDETÉS
         if (!adatok.azon) adatok.azon = generalHirdetesAzonosito();
         const docRef = doc(adatbazis, "lakasok", adatok.azon);
         await setDoc(docRef, adatok);
         alert(`Hirdetés feladva! Azonosító: ${adatok.azon}`);
       }
 
-      // 5. SIKERES LEZÁRÁS
       window.location.href = window.location.pathname;
     } catch (error) {
-      console.error("Hiba történt:", error);
-      alert("Hiba: " + error.message);
+      console.error("Hiba:", error);
+      alert("Hiba történt: " + error.message);
     } finally {
       if (mentesGomb) {
         mentesGomb.disabled = false;
@@ -176,7 +181,7 @@ if (urlap) {
     }
   };
 }
-
+// --- FŐ BEKÜLDÉSI FOLYAMAT JAVÍTVA ---
 window.urlapUrites = function () {
   if (confirm("Biztosan törlöd az adatokat?")) {
     document.getElementById("hirdetes-urlap")?.reset();
