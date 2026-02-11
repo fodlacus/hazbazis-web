@@ -130,11 +130,11 @@ if (urlap) {
 
           // Metró logika futtatása
           const modul = await import(
-            "../../../public/shorts/js/strategies/metro-logic.js"
+            "../../../shorts/js/strategies/metro-logic.js"
           );
           const MetroLogika = modul.MetroLogika;
           const jsonUtvonal =
-            "../../../public/shorts/js/strategies/metro_megallok.json";
+            "../../../shorts/js/strategies/metro_megallok.json";
 
           await MetroLogika.inditas_utvonal(jsonUtvonal);
           adatok.metro_kozelseg = MetroLogika.kozelben_levo_megallok(
