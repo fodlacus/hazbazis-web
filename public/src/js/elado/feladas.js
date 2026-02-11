@@ -104,15 +104,18 @@ if (urlap) {
       const lat = window.aktualisLat || null;
       const lng = window.aktualisLng || null;
 
-      // Mindig mentsük el a koordinátákat az adatok közé, ha léteznek!
       if (lat && lng) {
         adatok.lat = lat;
         adatok.lng = lng;
+        console.log("📍 GPS koordináták rögzítve az adatok közé:", lat, lng);
+      } else {
+        console.warn("⚠️ Nincs koordináta! Kérlek, ellenőrizd a címkeresőt.");
       }
 
       // 3. METRÓ KALKULÁCIÓ
       adatok.metro_kozelseg = [];
-      if (lat && lng) {
+
+      if (adatok.lat && adatok.lng) {
         try {
           const modul = await import(
             "../../../public/shorts/js/strategies/metro-logic.js"
@@ -124,13 +127,12 @@ if (urlap) {
           await MetroLogika.inditas_utvonal(json_utvonal);
 
           adatok.metro_kozelseg = MetroLogika.kozelben_levo_megallok(
-            [lat, lng],
+            [adatok.lat, adatok.lng],
             800
           );
-          console.log("✅ Metro adatok rogzitve:", adatok.metro_kozelseg);
+          console.log("✅ Metro adatok kiszámolva:", adatok.metro_kozelseg);
         } catch (metro_hiba) {
-          console.error("Hiba a metro szamitasnal:", metro_hiba);
-          // Hiba esetén marad az üres tömb, de a mentés mehet tovább
+          console.error("Hiba a metro számításnál:", metro_hiba);
         }
       } else {
         console.warn(
