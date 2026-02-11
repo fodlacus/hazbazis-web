@@ -1,5 +1,5 @@
 import { auth, adatbazis, doc, setDoc, getDoc } from "./firebase-config.js";
-import { KedvencekManager } from "../../shorts/js/core/kedvencek-manager.js";
+import { KedvencekManager } from "../../../shorts/js/core/kedvencek-manager.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
