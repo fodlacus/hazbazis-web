@@ -79,6 +79,7 @@ function adatokOsszegyujtese() {
 
 // --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
+
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +116,9 @@ if (urlap) {
       adatok.hirdeto_uid = currentUser.uid;
       adatok.letrehozva = new Date().toISOString();
       adatok.statusz = "Feldolgozás alatt";
+      
+      const lat = window.aktualisLat || null;
+      const lng = window.aktualisLng || null;
 
       if (szerkesztendoId) {
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
@@ -135,8 +139,6 @@ if (urlap) {
       }
 
       // GPS
-      const lat = window.aktualisLat || null;
-      const lng = window.aktualisLng || null;
 
       adatok.lat = window.aktualisLat || null;
       adatok.lng = window.aktualisLng || null;
