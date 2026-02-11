@@ -37,42 +37,55 @@ export const UIManager = {
     this.setupEventListeners();
   },
 
+  // public/shorts/js/core/ui-manager.js
+
   renderTiles: function () {
     const grid = document.getElementById("modal-content-grid");
     if (!grid) return;
 
     grid.innerHTML = this.categories
       .map(function (cat) {
-        // Ha metró, akkor a MetroUI-t hívjuk meg, egyébként a sima szűrőt
-        const clickAction =
-          cat.id === "metro"
-            ? "window.MetroUI.openMetroPicker()"
-            : `window.executeFilter('${cat.id}')`;
+        // MEGOLDÁS: Meghatározzuk a helyes kattintási műveletet
+        let clickAction;
+        if (cat.id === "metro") {
+          clickAction = "window.MetroUI.openMetroPicker()";
+        } else if (cat.id === "KEDVENCEK") {
+          clickAction = "window.UI.kedvencek_megnyitasa()"; // Az új függvényünk
+        } else {
+          clickAction = `window.executeFilter('${cat.id}')`;
+        }
 
         return `
-                <div onclick="${clickAction}" 
-                     class="tile-item group relative overflow-hidden bg-[#222811] border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-between hover:bg-[#E2F1B0] transition-all duration-300 active:scale-95 shadow-xl">
-                    <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">${cat.icon}</div>
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm font-bold text-white group-hover:text-[#3D4A16] uppercase tracking-wider">${cat.title}</span>
-                        <span class="text-[10px] text-[#E2F1B0] group-hover:text-[#3D4A16]/70 mt-1 bg-black/30 group-hover:bg-transparent px-2 py-0.5 rounded-full">${cat.hint}</span>
-                    </div>
-                </div>
-            `;
+              <div onclick="${clickAction}" 
+                   class="tile-item group relative overflow-hidden bg-[#222811] border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-between hover:bg-[#E2F1B0] transition-all duration-300 active:scale-95 shadow-xl">
+                  <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">${cat.icon}</div>
+                  <div class="flex flex-col items-center">
+                      <span class="text-sm font-bold text-white group-hover:text-[#3D4A16] uppercase tracking-wider">${cat.title}</span>
+                      <span class="text-[10px] text-[#E2F1B0] group-hover:text-[#3D4A16]/70 mt-1 bg-black/30 group-hover:bg-transparent px-2 py-0.5 rounded-full">${cat.hint}</span>
+                  </div>
+              </div>
+          `;
       })
       .join("");
-    // A renderTiles-ben vagy a kattintás kezelőnél:
-    async function kedvencek_megnyitasa() {
+  },
+
+  // EZT A FÜGGVÉNYT TEDD KÍVÜLRE, az init vagy a closeModal után:
+  async kedvencek_megnyitasa() {
+    try {
       const { KedvencekManager } = await import("./kedvencek-manager.js");
       const lista = await KedvencekManager.kedvencek_lekerese();
 
-      if (lista.length === 0) {
-        alert("Még nincsenek kedvenceid!");
+      if (!lista || lista.length === 0) {
+        alert("Még nincsenek kedvenceid ezen a fiókon!");
         return;
       }
 
-      // Meghívjuk a szűrőt a kapott ID listával
+      // Bezárjuk a modalt és indítjuk a szűrést
+      this.closeModal();
       window.executeFilter("KEDVENCEK_LISTA", lista);
+      console.log("⭐ Kedvencek betöltve a felhőből:", lista);
+    } catch (hiba) {
+      console.error("Hiba a kedvencek megnyitásakor:", hiba);
     }
   },
 
