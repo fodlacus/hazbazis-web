@@ -135,6 +135,9 @@ if (urlap) {
       }
 
       // GPS
+      const lat = window.aktualisLat || null;
+      const lng = window.aktualisLng || null;
+
       adatok.lat = window.aktualisLat || null;
       adatok.lng = window.aktualisLng || null;
       if (lat && lng) {
