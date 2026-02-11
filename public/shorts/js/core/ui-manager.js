@@ -131,13 +131,18 @@ export const MetroUI = {
           <div id="stop-list" class="space-y-2 overflow-y-auto max-h-[40vh] pr-2 custom-scrollbar">
               <p class="text-center text-white/30 py-10">Kattints egy vonalra a megállókhoz!</p>
           </div>
-          <div class="mt-6 flex gap-3">
-              <button onclick="window.UI.openDiscovery()" class="flex-1 py-4 rounded-xl bg-white/10 font-bold">Vissza</button>
-              <button onclick="window.MetroUI.applyFilter()" class="flex-[2] py-4 rounded-xl bg-lime-400 text-black font-black shadow-lg shadow-lime-400/20">
-                  MEGÁLLÓK SZŰRÉSE
-              </button>
-          </div>
-      `;
+          <div class="mt-6 flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <button onclick="window.UI.openDiscovery()" class="flex-1 py-4 rounded-xl bg-white/10 font-bold text-white">Vissza</button>
+                    <button onclick="window.MetroUI.clearSelections()" class="flex-1 py-4 rounded-xl bg-red-500/20 text-red-400 font-bold border border-red-500/30">
+                        TÖRLÉS
+                    </button>
+                </div>
+                <button onclick="window.MetroUI.applyFilter()" class="w-full py-4 rounded-xl bg-lime-400 text-black font-black shadow-lg shadow-lime-400/20">
+                      MEGÁLLÓK SZŰRÉSE
+                </button>
+           </div>     
+     `;
     }
   },
 
@@ -194,6 +199,24 @@ export const MetroUI = {
       window.executeFilter("METRO_SZURO", this.tempSelectedStops);
     }
     window.UI.closeModal();
+  },
+
+  clearSelections() {
+    // 1. Üresre állítjuk a kiválasztott megállók tömbjét
+    this.tempSelectedStops = [];
+
+    // 2. Ha éppen nyitva van egy vonal, frissítjük a listát, hogy eltűnjenek a pipák
+    if (this.selectedLine) {
+      this.renderLine(this.selectedLine);
+    } else {
+      // Ha nincs vonal kiválasztva, csak egy alap üzenetet teszünk vissza
+      const listContainer = document.getElementById("stop-list");
+      if (listContainer) {
+        listContainer.innerHTML =
+          '<p class="text-center text-white/30 py-10">Kijelölések törölve.</p>';
+      }
+    }
+    console.log("Empty: Kijelölések kiürítve.");
   },
 };
 
