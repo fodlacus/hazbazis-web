@@ -80,6 +80,7 @@ function adatokOsszegyujtese() {
 // --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
 
+// --- FŐ BEKÜLDÉSI FOLYAMAT JAVÍTVA ---
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
@@ -91,104 +92,82 @@ if (urlap) {
     }
 
     try {
-      // 1. Ellenőrzés
       const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error("Nincs bejelentkezett felhasználó!");
-      }
+      if (!currentUser) throw new Error("Nincs bejelentkezett felhasználó!");
 
-      // 2. USER PROFIL LEKÉRDEZÉSE
       const userDocRef = doc(adatbazis, "felhasznalok", currentUser.uid);
       const userSnap = await getDoc(userDocRef);
-
-      if (!userSnap.exists()) {
+      if (!userSnap.exists())
         throw new Error("A felhasználói profil nem található!");
-      }
 
       const userData = userSnap.data();
-      const hirdetoEgyediAzonosito = userData.azon; // A 'hb-...' azonosító
 
-      // 3. Adatok begyűjtése
+      // 1. Adatok begyűjtése
       const adatok = adatokOsszegyujtese();
 
-      // 4. Kiegészítés
-      adatok.hirdeto_azon = hirdetoEgyediAzonosito;
+      // 2. Alapinformációk kiegészítése
+      adatok.hirdeto_azon = userData.azon;
       adatok.hirdeto_uid = currentUser.uid;
       adatok.letrehozva = new Date().toISOString();
       adatok.statusz = "Feldolgozás alatt";
-      
+
+      // GPS adatok fixálása
       const lat = window.aktualisLat || null;
       const lng = window.aktualisLng || null;
 
-      if (szerkesztendoId) {
-        const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
-
-        // Csak akkor frissítjük a GPS-t, ha kaptunk újat, különben marad az eredeti
-        if (window.aktualisLat && window.aktualisLng) {
-          adatok.lat = window.aktualisLat;
-          adatok.lng = window.aktualisLng;
-        } else {
-          // Töröljük ki az adatok objektumból a null értékeket,
-          // hogy ne írja felül a már meglévő jó koordinátákat a Firebase-ben
-          delete adatok.lat;
-          delete adatok.lng;
-        }
-
-        await updateDoc(docRef, adatok);
-        alert("Sikeres módosítás!");
+      // Csak akkor írjuk felül, ha van új koordináta, vagy ha új hirdetés
+      if (lat && lng) {
+        adatok.lat = lat;
+        adatok.lng = lng;
+      } else if (!szerkesztendoId) {
+        adatok.lat = null;
+        adatok.lng = null;
       }
 
-      // GPS
-
-      adatok.lat = window.aktualisLat || null;
-      adatok.lng = window.aktualisLng || null;
-      if (lat && lng) {
-        console.log("🚇 Metró távolságok számítása...");
+      // 3. Metró logika (Előszámítás mentés előtt)
+      adatok.metro_kozelseg = []; // Alapértelmezett üres tömb
+      if (adatok.lat && adatok.lng) {
+        console.log("Metró távolságok számítása...");
         try {
-          // Relatív útvonal a feladas.js-től a metro-logic.js-ig
-          // src/js/elado/ -> public/shorts/js/strategies/
           const module = await import(
             "../../../public/shorts/js/strategies/metro-logic.js"
           );
           const MetroLogic = module.MetroLogic;
-
-          await MetroLogic.init(); // Betölti a megállók koordinátáit
-
-          // Kiszámoljuk, melyik megállók vannak 800m-en belül
-          const közeliMegállók = MetroLogic.getNearbyStopIds([lat, lng], 800);
-
-          // Mentjük az adatot az ingatlanhoz
-          adatok.metro_kozelseg = közeliMegállók;
-          console.log("✅ Talált közeli megállók:", közeliMegállók);
-        } catch (metroError) {
-          console.warn(
-            "⚠️ Metró adatok számítása sikertelen, de a mentés folytatódik:",
-            metroError
+          await MetroLogic.init();
+          adatok.metro_kozelseg = MetroLogic.getNearbyStopIds(
+            [adatok.lat, adatok.lng],
+            800
           );
-          adatok.metro_kozelseg = [];
+          console.log("Talált megállók:", adatok.metro_kozelseg);
+        } catch (mErr) {
+          console.warn("Metró hiba:", mErr);
         }
-      } else {
-        adatok.metro_kozelseg = []; // Ha nincs GPS, nincs metró adat
       }
 
-      // 5. Mentés
+      // 4. EGYETLEN MENTÉSI PONT
       if (szerkesztendoId) {
+        // MÓDOSÍTÁS
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
+        // Ha szerkesztés van és nem kaptunk új GPS-t, ne töröljük a régit
+        if (!lat || !lng) {
+          delete adatok.lat;
+          delete adatok.lng;
+        }
         await updateDoc(docRef, adatok);
         alert("Sikeres módosítás!");
       } else {
-        // Új létrehozása a 6 jegyű ID-val
+        // ÚJ HIRDETÉS
+        if (!adatok.azon) adatok.azon = generalHirdetesAzonosito();
         const docRef = doc(adatbazis, "lakasok", adatok.azon);
         await setDoc(docRef, adatok);
-
-        alert(`Hirdetés sikeresen feladva!\nAzonosító: ${adatok.azon}`);
+        alert(`Hirdetés feladva! Azonosító: ${adatok.azon}`);
       }
 
-      // 6. Frissítés
+      // 5. SIKERES LEZÁRÁS
       window.location.href = window.location.pathname;
     } catch (error) {
-      console.error("Hiba:", error);
-      alert("Hiba történt: " + error.message);
+      console.error("Hiba történt:", error);
+      alert("Hiba: " + error.message);
     } finally {
       if (mentesGomb) {
         mentesGomb.disabled = false;
