@@ -97,14 +97,22 @@ export const UIManager = {
 };
 
 // --- 2. SPECIFIKUS METRÓ UI KEZELŐ ---
+
 export const MetroUI = {
   selectedLine: null,
   tempSelectedStops: [],
 
   async openMetroPicker() {
-    const { MetroLogic } = await import("../strategies/metro-logic.js");
-    if (!MetroLogic.megallok || Object.keys(MetroLogic.megallok).length === 0) {
-      await MetroLogic.init();
+    // 1. Dinamikus import
+    const module = await import("../strategies/metro-logic.js");
+    const MetroLogika = module.MetroLogika; // Itt figyeltem a nevedre (Logika)
+
+    // 2. Ellenőrzés és inicializálás az ÚJ neveken
+    if (
+      !MetroLogika.megallok_adatai ||
+      Object.keys(MetroLogika.megallok_adatai).length === 0
+    ) {
+      await MetroLogika.inditas(); // init helyett inditas()
     }
 
     const container = document.getElementById("modal-content-grid");
@@ -135,10 +143,10 @@ export const MetroUI = {
 
   renderLine(lineId) {
     this.selectedLine = lineId;
-    // Itt a MetroLogic-ra szükség van, de mivel az openMetroPicker már betöltötte, elérhető
     import("../strategies/metro-logic.js").then((module) => {
-      const MetroLogic = module.MetroLogic;
-      const stops = MetroLogic.megallok[lineId] || [];
+      const MetroLogika = module.MetroLogika;
+      // Itt is: megallok helyett megallok_adatai
+      const stops = MetroLogika.megallok_adatai[lineId] || [];
       const listContainer = document.getElementById("stop-list");
 
       document
