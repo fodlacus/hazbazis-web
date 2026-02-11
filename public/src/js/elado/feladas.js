@@ -82,11 +82,13 @@ const urlap = document.getElementById("hirdetes-urlap");
 
 // src/js/elado/feladas.js -> urlap.onsubmit resz
 
+// --- FŐ BEKÜLDÉSI FOLYAMAT JAVÍTVA ---
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
     const mentesGomb = document.getElementById("hirdetes-bekuldes");
 
+    // 1. Mentés gomb azonnali blokkolása
     if (mentesGomb) {
       mentesGomb.disabled = true;
       mentesGomb.innerText = "Mentes folyamatban...";
@@ -96,25 +98,21 @@ if (urlap) {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Nincs bejelentkezett felhasznalo!");
 
-      // 1. Adatok begyujtese
       const adatok = adatokOsszegyujtese();
 
-      // 2. Koordinatak ellenorzese
+      // 2. KOORDINÁTÁK FIXÁLÁSA (Ezt előrébb hoztuk és fixre vesszük)
       const lat = window.aktualisLat || null;
       const lng = window.aktualisLng || null;
 
-      if (!lat || !lng) {
-        console.warn(
-          "⚠️ Figyelem: Nincs koordinata megadva! Metro szamitas kihagyva."
-        );
-      }
-
-      // 3. Metro kalkulacio (Csak ha van koordinata)
-      adatok.metro_kozelseg = [];
+      // Mindig mentsük el a koordinátákat az adatok közé, ha léteznek!
       if (lat && lng) {
         adatok.lat = lat;
         adatok.lng = lng;
+      }
 
+      // 3. METRÓ KALKULÁCIÓ
+      adatok.metro_kozelseg = [];
+      if (lat && lng) {
         try {
           const modul = await import(
             "../../../public/shorts/js/strategies/metro-logic.js"
@@ -132,13 +130,18 @@ if (urlap) {
           console.log("✅ Metro adatok rogzitve:", adatok.metro_kozelseg);
         } catch (metro_hiba) {
           console.error("Hiba a metro szamitasnal:", metro_hiba);
+          // Hiba esetén marad az üres tömb, de a mentés mehet tovább
         }
+      } else {
+        console.warn(
+          "⚠️ Nincs koordinata! A metro szures nem fog mukodni ezen az ingatlanon."
+        );
       }
 
-      // 4. Mentes a Firebase-be (Egyetlen mentesi pont)
+      // 4. MENTÉS A FIREBASE-BE
       if (szerkesztendoId) {
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
-        // Ha szerkesztesnel nincs uj koordinata, ne toroljuk a regit
+        // Szerkesztésnél: ha nincs új koordináta, ne írjuk felül a régit null-al
         if (!lat || !lng) {
           delete adatok.lat;
           delete adatok.lng;
@@ -146,10 +149,11 @@ if (urlap) {
         await updateDoc(docRef, adatok);
         alert("Sikeres modositas!");
       } else {
+        // Új hirdetés
         adatok.azon = adatok.azon || generalHirdetesAzonosito();
         const docRef = doc(adatbazis, "lakasok", adatok.azon);
         await setDoc(docRef, adatok);
-        alert(`Hirdetes feladva! Azonosito: ${adatok.azon}`);
+        alert(`Hirdetes sikeresen feladva!\nAzonosító: ${adatok.azon}`);
       }
 
       window.location.href = window.location.pathname;
@@ -159,7 +163,7 @@ if (urlap) {
     } finally {
       if (mentesGomb) {
         mentesGomb.disabled = false;
-        mentesGomb.innerText = "Hirdetes bekuldese";
+        mentesGomb.innerText = "Hirdetés beküldése";
       }
     }
   };
