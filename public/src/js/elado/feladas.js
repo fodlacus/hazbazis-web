@@ -86,6 +86,8 @@ const urlap = document.getElementById("hirdetes-urlap");
 
 // src/js/elado/feladas.js
 
+// src/js/elado/feladas.js
+
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
@@ -93,25 +95,23 @@ if (urlap) {
 
     if (mentesGomb) {
       mentesGomb.disabled = true;
-      mentesGomb.innerText = "Mentés folyamatban...";
+      mentesGomb.innerText = "Mentes folyamatban...";
     }
 
-    // Alap adatok az objektumhoz
+    // 1. Alapadatok begyujtese
     let adatok = adatokOsszegyujtese();
-    adatok.hibakod = "OK"; // Alapértelmezett állapot
+    adatok.hibakod = "OK";
     adatok.leiras_hiba = "";
     adatok.metro_kozelseg = [];
 
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Nincs bejelentkezett felhasználó!");
+      if (!currentUser) throw new Error("Nincs bejelentkezett felhasznalo!");
 
-      // --- GEOLOKÁCIÓ ÉS METRÓ SZÁMÍTÁS ---
-      const irsz = adatok.iranyitoszam;
-      const varos = adatok.telepules;
-      const utca = adatok.utca;
-      const hazszam = adatok.hazszam || "";
-      const teljesCim = `${irsz} ${varos}, ${utca} ${hazszam}`;
+      // 2. GEOLOKALIZACIO (Koordinatak lekerese)
+      const teljesCim = `${adatok.iranyitoszam} ${adatok.telepules}, ${
+        adatok.utca
+      } ${adatok.hazszam || ""}`;
 
       try {
         const geoResponse = await fetch(
@@ -122,70 +122,63 @@ if (urlap) {
         const geoAdatok = await geoResponse.json();
 
         if (geoAdatok && geoAdatok.length > 0) {
-          // SIKERES BEAZONOSÍTÁS
-          const lat = parseFloat(geoAdatok[0].lat);
-          const lng = parseFloat(geoAdatok[0].lon);
-          adatok.lat = lat;
-          adatok.lng = lng;
+          adatok.lat = parseFloat(geoAdatok[0].lat);
+          adatok.lng = parseFloat(geoAdatok[0].lon);
 
-          // Metró logika futtatása
-          const modul = await import(
-            "../../../shorts/js/strategies/metro-logic.js"
-          );
-          const MetroLogika = modul.MetroLogika;
-          const jsonUtvonal =
-            "../../../shorts/js/strategies/metro_megallok.json";
+          // 3. METRO LOGIKA (Csak ha van koordinata es a jo utvonalon)
+          try {
+            const modul = await import(
+              "../../../shorts/js/strategies/metro-logic.js"
+            );
+            const MetroLogika = modul.MetroLogika;
+            const json_utvonal =
+              "../../../shorts/js/strategies/metro_megallok.json";
 
-          await MetroLogika.inditas_utvonal(jsonUtvonal);
-          adatok.metro_kozelseg = MetroLogika.kozelben_levo_megallok(
-            [lat, lng],
-            800
-          );
+            await MetroLogika.inditas_utvonal(json_utvonal);
+            adatok.metro_kozelseg = MetroLogika.kozelben_levo_megallok(
+              [adatok.lat, adatok.lng],
+              800
+            );
+            console.log("✅ Metro adatok rogzitve:", adatok.metro_kozelseg);
+          } catch (metro_error) {
+            console.warn("⚠️ Metro szamitas hiba:", metro_error);
+            adatok.hibakod = "METRO_HIBA";
+          }
         } else {
-          // NEM TALÁLHATÓ CÍM - DE MENTÜNK TOVÁBB!
           adatok.lat = null;
           adatok.lng = null;
           adatok.hibakod = "GEO_HIBA";
-          adatok.leiras_hiba =
-            "A címet nem sikerült koordinátává alakítani. A metró szűrő nem fog működni.";
-          console.warn("⚠️ Cím nem található, hibakód rögzítve.");
+          adatok.leiras_hiba = "A cimet nem sikerult beazonositani.";
         }
-      } catch (err) {
-        adatok.hibakod = "RENDSZER_HIBA";
-        adatok.leiras_hiba = "A geolokalizációs szolgáltatás nem elérhető.";
+      } catch (geo_error) {
+        adatok.hibakod = "HALOZATI_HIBA";
+        console.error("Geokodolasi hiba:", geo_error);
       }
 
-      // --- FIREBASE MENTÉS ---
+      // 4. MENTES (Firebase)
       adatok.hirdeto_uid = currentUser.uid;
       adatok.letrehozva = new Date().toISOString();
-      adatok.statusz = "Feldolgozás alatt";
+      adatok.statusz = "Feldolgozas alatt";
 
       if (szerkesztendoId) {
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
-        alert("Sikeres módosítás!");
+        alert("Sikeres modositas!");
       } else {
         adatok.azon = adatok.azon || generalHirdetesAzonosito();
         const docRef = doc(adatbazis, "lakasok", adatok.azon);
         await setDoc(docRef, adatok);
-
-        if (adatok.hibakod !== "OK") {
-          alert(
-            `Figyelem! A hirdetés mentve (Azonosító: ${adatok.azon}), de a címet nem sikerült beazonosítani. Kérjük, később ellenőrizd a címet a szerkesztés menüben!`
-          );
-        } else {
-          alert(`Hirdetés sikeresen feladva!\nAzonosító: ${adatok.azon}`);
-        }
+        alert(`Hirdetes sikeresen feladva! Azonosito: ${adatok.azon}`);
       }
 
       window.location.href = window.location.pathname;
     } catch (hiba) {
-      console.error("Mentési hiba:", hiba);
-      alert("Hiba történt: " + hiba.message);
+      console.error("Folyami hiba:", hiba);
+      alert("Hiba tortent: " + hiba.message);
     } finally {
       if (mentesGomb) {
         mentesGomb.disabled = false;
-        mentesGomb.innerText = "Hirdetés beküldése";
+        mentesGomb.innerText = "Hirdetes bekuldese";
       }
     }
   };
