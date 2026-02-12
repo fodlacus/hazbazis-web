@@ -7,131 +7,156 @@ import {
   collection,
   doc,
   deleteDoc,
-  orderBy,
+  getDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
 import { adatbazis, auth } from "../util/firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Törlés funkció
+// --- TÖRLÉS FUNKCIÓ (CSAK VÁRÓLISTÁSHOZ!) ---
 window.hirdetesTorlese = async function (id) {
-  if (confirm("Biztosan véglegesen törlöd ezt a hirdetést?")) {
-    try {
-      await deleteDoc(doc(adatbazis, "lakasok", id));
-      alert("Hirdetés sikeresen törölve!");
-      location.reload();
-    } catch (error) {
-      console.error("Törlési hiba:", error);
-      alert("Hiba történt a törlés során.");
-    }
+  if (!confirm("Biztosan törlöd ezt a kérelmet?")) return;
+  try {
+    const varolistaRef = doc(adatbazis, "hirdetesek_varolista", id);
+    await deleteDoc(varolistaRef);
+    alert("Kérelem törölve.");
+    hirdeteseimListazasa();
+  } catch (error) {
+    console.error(error);
+    alert("Hiba: Csak a függőben lévő hirdetéseket törölheted.");
   }
 };
 
-// Listázás funkció
+// --- LISTÁZÁS ---
 export async function hirdeteseimListazasa() {
   const listaKontener = document.getElementById("sajat-lista");
   if (!listaKontener) return;
 
-  auth.onAuthStateChanged(async (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
+      listaKontener.innerHTML =
+        '<p class="text-white/50 p-4 animate-pulse">Betöltés...</p>';
+
       try {
-        const lakasokRef = collection(adatbazis, "lakasok");
+        // 1. AKTÍV HIRDETÉSEK (READ ONLY)
+        const aktivSnapshot = await getDocs(
+          query(
+            collection(adatbazis, "lakasok"),
+            where("hirdeto_uid", "==", user.uid)
+          )
+        );
 
-        // Szűrés a saját hirdetésekre
-        const q = query(lakasokRef, where("hirdeto_uid", "==", user.uid));
-
-        const querySnapshot = await getDocs(q);
+        // 2. VÁRÓLISTA (EDITABLE)
+        const varolistaSnapshot = await getDocs(
+          query(
+            collection(adatbazis, "hirdetesek_varolista"),
+            where("hirdeto_uid", "==", user.uid)
+          )
+        );
 
         listaKontener.innerHTML = "";
 
-        if (querySnapshot.empty) {
+        if (aktivSnapshot.empty && varolistaSnapshot.empty) {
           listaKontener.innerHTML =
-            '<p class="text-white/50 italic p-4">Nincs rögzített hirdetésed.</p>';
+            '<p class="text-white/50 italic p-4">Nincs hirdetésed.</p>';
           return;
         }
 
-        querySnapshot.forEach((documentum) => {
-          const hirdetes = documentum.data();
-          const id = documentum.id;
+        // --- KÁRTYA GENERÁLÓ ---
+        const kartyaKeszito = (docSnap, isPending) => {
+          const hirdetes = docSnap.data();
+          const id = docSnap.id;
 
-          // --- FOTÓ JAVÍTÁS (OKOS VERZIÓ) ---
+          // Kép kezelés
           let kepUrl =
             "https://placehold.co/150x150/3D4A16/E2F1B0?text=Nincs+kép";
-
-          // Ugyanaz a sorrend, mint a térképnél
-          if (hirdetes.kepek_horiz && hirdetes.kepek_horiz.length > 0) {
+          if (hirdetes.kepek_horiz?.[0])
             kepUrl = hirdetes.kepek_horiz[0].url || hirdetes.kepek_horiz[0];
-          } else if (hirdetes.kepek_vert && hirdetes.kepek_vert.length > 0) {
-            kepUrl = hirdetes.kepek_vert[0].url || hirdetes.kepek_vert[0];
-          } else if (hirdetes.kepek && hirdetes.kepek.length > 0) {
+          else if (hirdetes.kepek?.[0])
             kepUrl = hirdetes.kepek[0].url || hirdetes.kepek[0];
+
+          // Adatok
+          const ar = hirdetes.vételár || hirdetes.ar || 0;
+          const statuszSzoveg = isPending
+            ? "⏳ Jóváhagyásra vár"
+            : "✅ Aktív (Nem módosítható)";
+          const statuszSzin = isPending
+            ? "text-yellow-400 bg-yellow-400/10"
+            : "text-lime-400 bg-lime-400/10";
+          const keretSzin = isPending
+            ? "border-yellow-500/30"
+            : "border-lime-500/30";
+
+          // Lejárat kijelzése (ha aktív)
+          let lejaratInfo = "";
+          if (!isPending && hirdetes.lejarat_datum) {
+            const hatralevoNap = Math.ceil(
+              (new Date(hirdetes.lejarat_datum) - new Date()) /
+                (1000 * 60 * 60 * 24)
+            );
+            lejaratInfo = `<span class="text-xs text-gray-400 ml-2">(${hatralevoNap} nap van hátra)</span>`;
           }
 
           const kartya = document.createElement("div");
+          kartya.className = `bg-white/5 p-4 rounded-2xl border ${keretSzin} flex flex-col sm:flex-row gap-4 items-center mb-4 relative overflow-hidden`;
 
-          // Flexbox elrendezés: Kép balra, szöveg középen, gombok jobbra
-          kartya.className =
-            "bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row gap-4 items-center hover:border-lime-400/30 transition-all mb-4";
+          // GOMBOK LOGIKÁJA (EZ A LÉNYEG!)
+          let gombokHTML = "";
+
+          if (isPending) {
+            // VÁRÓLISTA: Minden gomb elérhető
+            gombokHTML = `
+                    <button disabled class="bg-white/5 text-gray-500 px-4 py-2 rounded-xl text-xs font-bold border border-white/5 cursor-not-allowed">
+                        Még nem publikus
+                    </button>
+                    <button onclick="window.location.href='?id=${id}&mode=edit'" class="bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/20 border border-white/10">
+                        Szerkesztés
+                    </button>
+                    <button onclick="hirdetesTorlese('${id}')" class="bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20 border border-red-500/20">
+                        Törlés
+                    </button>
+                `;
+          } else {
+            // AKTÍV: CSAK NÉZÉS, NINCS SZERKESZTÉS/TÖRLÉS
+            gombokHTML = `
+                    <button onclick="window.location.href='../vevo/adatlap.html?id=${id}'" class="bg-lime-400/10 text-lime-400 px-6 py-2 rounded-xl text-sm font-bold hover:bg-lime-400 hover:text-black border border-lime-400/20 w-full sm:w-auto">
+                        Megtekintés
+                    </button>
+                    <div class="text-[10px] text-gray-500 text-center mt-2 sm:mt-0 max-w-[120px]">
+                        Módosításhoz vedd fel a kapcsolatot az ügyfélszolgálattal.
+                    </div>
+                `;
+          }
 
           kartya.innerHTML = `
-            <div class="w-full sm:w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-black/20 border border-white/5">
-                <img src="${kepUrl}" alt="Ingatlan kép" class="w-full h-full object-cover">
-            </div>
+                <div class="w-full sm:w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-black/20 relative">
+                    <img src="${kepUrl}" class="w-full h-full object-cover">
+                </div>
 
-            <div class="flex-1 w-full text-center sm:text-left space-y-1">
-               <span class="bg-lime-400/20 text-lime-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">
-                    ${hirdetes.azon || id}
-               </span>
-
-                <h4 class="font-bold text-white text-base truncate">
-                  ${hirdetes.nev || "Név nélküli ingatlan"}
-                </h4>
+                <div class="flex-1 w-full text-center sm:text-left">
+                    <div class="flex flex-wrap gap-2 justify-center sm:justify-start mb-1">
+                        <span class="${statuszSzin} text-[10px] px-2 py-1 rounded uppercase font-bold">${statuszSzoveg}</span>
+                        ${lejaratInfo}
+                    </div>
+                    <h4 class="font-bold text-white truncate">${
+                      hirdetes.telepules
+                    }, ${hirdetes.utca || ""}</h4>
+                    <p class="text-lime-400 font-mono text-lg font-bold">${Number(
+                      ar
+                    ).toLocaleString()} Ft</p>
+                </div>
                 
-                <p class="text-xs text-gray-400">
-                  ${hirdetes.telepules || ""} ${
-            hirdetes.varosresz ? "- " + hirdetes.varosresz : ""
-          }
-                </p>
-                
-                <p class="text-lime-400 font-mono text-lg font-bold">
-                  ${Number(hirdetes.vételár || 0).toLocaleString()} Ft
-                </p>
-                <p class="text-xs text-gray-400">
-                  ${hirdetes.telepules || ""} ${
-            hirdetes.varosresz ? "- " + hirdetes.varosresz : ""
-          }
-                  ${
-                    hirdetes.lakopark_e === "Igen"
-                      ? ` | <span class="text-blue-400">🏢 ${hirdetes.lakopark_nev}</span>`
-                      : ""
-                  }
-                </p>
-            </div>
-            
-            <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto justify-center">
-                <button onclick="window.location.href='../vevo/adatlap.html?id=${id}'" 
-                        class="bg-lime-400/10 text-lime-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-lime-400 hover:text-black transition-all border border-lime-400/20">
-                    Megtekintés
-                </button>        
-                <button onclick="window.location.href='?id=${id}&mode=edit'" 
-                        class="bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/20 transition-all border border-white/10">
-                    Szerkesztés
-                </button>
-        
-                <button onclick="hirdetesTorlese('${id}')" 
-                        class="bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all border border-red-500/20">
-                    Törlés
-                </button>
-            </div>
-        `;
+                <div class="flex flex-col gap-2 w-full sm:w-auto items-center justify-center">
+                    ${gombokHTML}
+                </div>
+            `;
           listaKontener.appendChild(kartya);
-        });
+        };
+
+        varolistaSnapshot.forEach((doc) => kartyaKeszito(doc, true));
+        aktivSnapshot.forEach((doc) => kartyaKeszito(doc, false));
       } catch (error) {
-        console.error("Hiba:", error);
-        listaKontener.innerHTML = `<p class="text-red-400 p-4">Hiba történt: ${error.message}</p>`;
+        console.error(error);
       }
-    } else {
-      listaKontener.innerHTML =
-        '<p class="text-yellow-400 p-4">Jelentkezz be a hirdetéseid megtekintéséhez!</p>';
     }
   });
 }
