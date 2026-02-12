@@ -80,14 +80,6 @@ function adatokOsszegyujtese() {
 // --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
 
-// src/js/elado/feladas.js -> urlap.onsubmit resz
-
-// --- FŐ BEKÜLDÉSI FOLYAMAT JAVÍTVA ---
-
-// src/js/elado/feladas.js
-
-// src/js/elado/feladas.js
-
 if (urlap) {
   urlap.onsubmit = async (e) => {
     e.preventDefault();
@@ -158,17 +150,24 @@ if (urlap) {
       // 4. MENTES (Firebase)
       adatok.hirdeto_uid = currentUser.uid;
       adatok.letrehozva = new Date().toISOString();
-      adatok.statusz = "Feldolgozas alatt";
+      //      adatok.statusz = "Feldolgozas alatt";
 
       if (szerkesztendoId) {
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
         alert("Sikeres modositas!");
       } else {
+        // HA ÚJ HIRDETÉS: A "hirdetesek_varolista" kollekcióba megy!
         adatok.azon = adatok.azon || generalHirdetesAzonosito();
-        const docRef = doc(adatbazis, "lakasok", adatok.azon);
+        adatok.statusz = "Jóváhagyásra vár"; // Státusz beállítása
+
+        // ITT A VÁLTOZÁS: Nem 'lakasok', hanem 'hirdetesek_varolista'
+        const docRef = doc(adatbazis, "hirdetesek_varolista", adatok.azon);
         await setDoc(docRef, adatok);
-        alert(`Hirdetes sikeresen feladva! Azonosito: ${adatok.azon}`);
+
+        alert(
+          `Hirdetés beküldve! Azonosító: ${adatok.azon}\n\nA hirdetés a jóváhagyás/díjrendezés után válik láthatóvá a rendszerben.`
+        );
       }
 
       window.location.href = window.location.pathname;

@@ -50,12 +50,23 @@
                   </div>
             </a>
 
-            <div
-                  class="border border-dashed border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center text-white/20">
-                  <i class="fa-solid fa-plus text-3xl mb-2"></i>
-                  <span class="text-sm">Hamarosan új eszköz...</span>
-            </div>
-
+            <a href="admin-approve.html"
+                  class="group relative bg-[#3D4A16] border border-white/10 rounded-2xl p-8 hover:bg-[#4d5e1c] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-lime-900/20 cursor-pointer flex flex-col items-center text-center">
+                  <div
+                        class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform relative">
+                        <i class="fa-solid fa-clipboard-check text-2xl text-[#E2F1B0]"></i>
+                        <span
+                              class="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-[#3D4A16]"></span>
+                  </div>
+                  <h2 class="text-xl font-bold text-white mb-2">Hirdetés Jóváhagyó</h2>
+                  <p class="text-sm text-white/60">
+                        A "Függőben lévő" (fizetésre váró) hirdetések ellenőrzése és élesítése.
+                  </p>
+                  <div
+                        class="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-[#E2F1B0]">
+                        <i class="fa-solid fa-arrow-right"></i>
+                  </div>
+            </a>
       </div>
 
       <div class="mt-12">
@@ -72,8 +83,6 @@
 
             // 2. A MŰVELETEKET (signOut, onAuthStateChanged) PEDIG A CDN-RŐL (Verzió: 10.7.1)
             import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-            // --- INNENTŐL A KÓD UGYANAZ, MINT EDDIG ---
 
             // Biztonsági ellenőrzés (Be van-e lépve?)
             onAuthStateChanged(auth, (user) => {
