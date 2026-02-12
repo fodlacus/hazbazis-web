@@ -121,7 +121,7 @@ export async function hirdeteseimListazasa() {
                     <button onclick="window.location.href='../vevo/adatlap.html?id=${id}'" class="bg-lime-400/10 text-lime-400 px-6 py-2 rounded-xl text-sm font-bold hover:bg-lime-400 hover:text-black border border-lime-400/20 w-full sm:w-auto">
                         Megtekintés
                     </button>
-                    <div class="text-[10px] text-gray-500 text-center mt-2 sm:mt-0 max-w-[120px]">
+                    <div class="text-[10px] text-gray-300 text-center mt-2 sm:mt-0 max-w-[120px]">
                         Módosításhoz vedd fel a kapcsolatot az ügyfélszolgálattal.
                     </div>
                 `;
