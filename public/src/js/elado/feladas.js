@@ -149,6 +149,7 @@ if (urlap) {
 
       // 4. MENTES (Firebase)
       adatok.hirdeto_uid = currentUser.uid;
+      adatok.email = currentUser.email;
       adatok.letrehozva = new Date().toISOString();
       //      adatok.statusz = "Feldolgozas alatt";
 

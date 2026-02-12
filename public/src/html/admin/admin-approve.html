@@ -52,15 +52,14 @@
                   kontener.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-[#E2F1B0]"></i></div>';
 
                   try {
-                        // Csak a várólistát kérdezzük le
                         const snapshot = await getDocs(collection(adatbazis, "hirdetesek_varolista"));
 
                         if (snapshot.empty) {
                               kontener.innerHTML = `
-                        <div class="text-center py-10 bg-white/5 rounded-2xl border border-white/10">
-                            <i class="fa-regular fa-folder-open text-4xl text-white/20 mb-3"></i>
-                            <p class="text-white/60">Jelenleg nincs függőben lévő hirdetés.</p>
-                        </div>`;
+                            <div class="text-center py-10 bg-white/5 rounded-2xl border border-white/10">
+                                <i class="fa-regular fa-folder-open text-4xl text-white/20 mb-3"></i>
+                                <p class="text-white/60">Jelenleg nincs függőben lévő hirdetés.</p>
+                            </div>`;
                               return;
                         }
 
@@ -68,35 +67,45 @@
 
                         snapshot.forEach(docSnap => {
                               const data = docSnap.data();
+
+                              // --- ADATMEZŐK JAVÍTÁSA (Ékezetes vs Ékezet nélküli) ---
+                              // Itt kezeljük le, hogy mi van az adatbázisban
+                              const ar = data.vételár || data.ar || 0;
+                              const terulet = data.alapterület || data.alapterulet || 0;
+                              const szobak = data.szobák || data.szobak || 0;
+                              const hirdetoNev = data.nev || "Ismeretlen hirdető";
+                              const utca = data.utca || 'Nincs megadva';
+                              const varosresz = data.varosresz ? `(${data.varosresz})` : '';
+
                               const kartya = document.createElement("div");
                               kartya.className = "bg-[#2a2a2a] border border-white/10 rounded-xl p-6 hover:border-[#E2F1B0]/50 transition flex flex-col md:flex-row justify-between gap-6 shadow-lg";
 
                               kartya.innerHTML = `
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded font-bold">${data.azon}</span>
-                                <span class="text-white/40 text-xs"><i class="fa-regular fa-clock"></i> ${new Date(data.letrehozva).toLocaleDateString()}</span>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded font-bold">${data.azon}</span>
+                                    <span class="text-white/40 text-xs"><i class="fa-regular fa-clock"></i> ${new Date(data.letrehozva).toLocaleDateString()}</span>
+                                </div>
+                                <h3 class="text-xl font-bold text-white">${data.telepules}, ${utca} ${varosresz}</h3>
+                                <p class="text-[#E2F1B0] font-bold text-lg mb-2">${Number(ar).toLocaleString()} Ft</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-white/70 bg-black/20 p-3 rounded-lg">
+                                    <p>👤 ${hirdetoNev}</p>
+                                    <p>📧 ${data.email || 'Nincs adat'}</p>
+                                    <p>📐 ${terulet} m²</p>
+                                    <p>🛏️ ${szobak} szoba</p>
+                                </div>
                             </div>
-                            <h3 class="text-xl font-bold text-white">${data.telepules}, ${data.utca || 'Nincs utca'}</h3>
-                            <p class="text-[#E2F1B0] font-bold text-lg mb-2">${Number(data.ar).toLocaleString()} Ft</p>
-                            
-                            <div class="grid grid-cols-2 gap-2 text-sm text-white/70 bg-black/20 p-3 rounded-lg">
-                                <p>📧 ${data.hirdeto_uid} (User ID)</p>
-                                <p>📐 ${data.alapterulet} m²</p>
-                                <p>🛏️ ${data.szobak} szoba</p>
-                                <p>📍 ${data.varosresz || '-'}</p>
+    
+                            <div class="flex flex-col justify-center gap-3 border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6 min-w-[160px]">
+                                <button onclick="approve('${docSnap.id}')" class="bg-[#E2F1B0] hover:bg-[#cde088] text-[#3D4A16] font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
+                                    <i class="fa-solid fa-check"></i> ÉLESÍTÉS
+                                </button>
+                                <button onclick="reject('${docSnap.id}')" class="bg-white/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition border border-transparent hover:border-red-500/30">
+                                    <i class="fa-solid fa-trash"></i> Elutasítás
+                                </button>
                             </div>
-                        </div>
-
-                        <div class="flex flex-col justify-center gap-3 border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6 min-w-[160px]">
-                            <button onclick="approve('${docSnap.id}')" class="bg-[#E2F1B0] hover:bg-[#cde088] text-[#3D4A16] font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                                <i class="fa-solid fa-check"></i> ÉLESÍTÉS
-                            </button>
-                            <button onclick="reject('${docSnap.id}')" class="bg-white/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition border border-transparent hover:border-red-500/30">
-                                <i class="fa-solid fa-trash"></i> Elutasítás
-                            </button>
-                        </div>
-                    `;
+                        `;
                               kontener.appendChild(kartya);
                         });
 
@@ -106,30 +115,38 @@
                   }
             };
 
-            // 2. JÓVÁHAGYÁS (Átmozgatás)
+            // 2. JÓVÁHAGYÁS (Átmozgatás és mezőnevek egységesítése)
             window.approve = async function (id) {
-                  if (!confirm("Biztosan publikálod ezt a hirdetést? Innentől látható lesz a Shortsban és a Térképen.")) return;
+                  if (!confirm("Biztosan publikálod ezt a hirdetést? Innentől látható lesz a rendszerben.")) return;
 
                   try {
-                        // 1. Adat kiolvasása a Várólistából
+                        // A. Olvasás
                         const sourceRef = doc(adatbazis, "hirdetesek_varolista", id);
                         const sourceSnap = await getDoc(sourceRef);
 
                         if (!sourceSnap.exists()) { alert("A hirdetés már nem létezik!"); return; }
-                        const data = sourceSnap.data();
+                        const rawData = sourceSnap.data();
 
-                        // 2. Átírás az ÉLES 'lakasok' táblába (Ugyanazzal az ID-vel!)
-                        // Státusz frissítése
-                        data.statusz = "Aktiv";
-                        data.aktivalas_ideje = new Date().toISOString();
+                        // B. ADATTISZTÍTÁS (Ékezetmentesítés a végleges táblához)
+                        // Ez fontos, hogy a Shorts/Kereső (amik 'ar'-t és 'szobak'-at keresnek) jól működjenek!
+                        const cleanData = {
+                              ...rawData,
+                              ar: rawData.vételár || rawData.ar,
+                              alapterulet: rawData.alapterület || rawData.alapterulet,
+                              szobaszam: rawData.szobák || rawData.szobak || rawData.szobaszam, // Figyelj: szobaszam vs szobak
+                              szobak: rawData.szobák || rawData.szobak, // Biztonság kedvéért mindkettőt elmentjük
+                              statusz: "Aktiv",
+                              aktivalas_ideje: new Date().toISOString()
+                        };
 
-                        await setDoc(doc(adatbazis, "lakasok", id), data);
+                        // C. Átírás az ÉLES 'lakasok' táblába
+                        await setDoc(doc(adatbazis, "lakasok", id), cleanData);
 
-                        // 3. Törlés a várólistából
+                        // D. Törlés a várólistából
                         await deleteDoc(sourceRef);
 
                         alert("✅ Sikeres publikálás!");
-                        betoltes(); // Lista frissítése
+                        betoltes();
 
                   } catch (err) {
                         console.error(err);
@@ -137,9 +154,9 @@
                   }
             };
 
-            // 3. ELUTASÍTÁS (Törlés)
+            // 3. ELUTASÍTÁS
             window.reject = async function (id) {
-                  if (!confirm("VÉGLEG törlöd a hirdetést? Ez nem vonható vissza!")) return;
+                  if (!confirm("VÉGLEG törlöd a hirdetést?")) return;
                   try {
                         await deleteDoc(doc(adatbazis, "hirdetesek_varolista", id));
                         alert("🗑️ Hirdetés törölve.");
@@ -150,6 +167,8 @@
                   }
             };
       </script>
+
+
 </body>
 
 </html>
