@@ -136,11 +136,12 @@ window.ertelmezdAkeresest = async function (szoveg) {
       }),
     });
 
-    if (!response.ok) {
-      console.error("Szerver hiba:", response.status);
-      return null;
+    if (response.status === 405 || !response.ok) {
+      console.error(
+        "❌ A szerver (Cloudflare) nem engedélyezi a POST hívást az /ai-proxy-ra."
+      );
+      return null; // Így nem fut rá a JSON hibára
     }
-
     const data = await response.json();
 
     // Ellenőrzés: kaptunk-e function call-t?
