@@ -1,4 +1,5 @@
 /* chat-engine.js - Megtartott eredeti struktúra, javított AI logikával */
+console.log("A chat-engine.js.ben vsgyunk");
 
 import {
   query,
