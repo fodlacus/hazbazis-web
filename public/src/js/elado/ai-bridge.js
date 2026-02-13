@@ -140,30 +140,32 @@ window.ertelmezdAkeresest = async function (szoveg) {
     const data = await response.json();
     console.log("📥 Nyers AI válasz érkezett:", data);
 
-    // --- BIZTONSÁGI ELLENŐRZÉS ELEJE ---
+    // --- JAVÍTOTT ELLENŐRZÉS A WORKER FORMÁTUMÁHOZ ---
+
+    // 1. Ha a Worker a "reply" kulcsban küldi a választ (ahogy a konzolon látszik)
+    if (data && data.reply) {
+      try {
+        const args = JSON.parse(data.reply);
+        console.log("✅ AI Szigorú Eredmény (Worker reply-ból):", args);
+        return args;
+      } catch (e) {
+        console.error("Hiba a reply JSON parzolásakor:", e);
+      }
+    }
+
+    // 2. Szabványos OpenAI struktúra (ha később változna a Worker)
     if (data && data.choices && data.choices[0] && data.choices[0].message) {
       const message = data.choices[0].message;
-
-      // Megnézzük, van-e benne függvényhívás (tool_calls)
       if (message.tool_calls && message.tool_calls[0]) {
-        const toolCall = message.tool_calls[0];
-        const args = JSON.parse(toolCall.function.arguments);
-        console.log("✅ AI Szigorú Eredmény (Kinyert adatok):", args);
+        const args = JSON.parse(message.tool_calls[0].function.arguments);
+        console.log("✅ AI Szigorú Eredmény (Tool Call-ból):", args);
         return args;
-      } else {
-        console.warn(
-          "⚠️ Az AI nem használt függvényt, csak szöveget küldött:",
-          message.content
-        );
-        return {};
       }
-    } else {
-      console.error(
-        "❌ Váratlan válasz szerkezet (Hiba az OpenAI-tól?):",
-        data
-      );
-      return {};
     }
+
+    console.error("❌ Nem sikerült kinyerni az adatokat a válaszból:", data);
+    return {};
+
     // --- BIZTONSÁGI ELLENŐRZÉS VÉGE ---
   } catch (hiba) {
     console.error("AI Hiba a feldolgozás során:", hiba);
