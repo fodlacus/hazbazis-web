@@ -107,7 +107,7 @@ window.ertelmezdAkeresest = async function (szoveg) {
   console.log("AI elemzés indítása:", szoveg);
 
   try {
-    const response = await fetch("/ai-proxy", {
+    const response = await fetch("https://hazbazis-ai.fodlaci.workers.dev", {
       // Ellenőrizd: nálad /ai-proxy vagy teljes URL kell?
       method: "POST",
       headers: { "Content-Type": "application/json" },
