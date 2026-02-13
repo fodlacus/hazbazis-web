@@ -1,5 +1,4 @@
 /* chat-engine.js - Megtartott eredeti struktúra, javított AI logikával */
-console.log("A chat-engine.js.ben vsgyunk");
 
 import {
   query,
@@ -17,6 +16,151 @@ import {
 // EREDETI változónevek megtartása a kompatibilitás miatt
 let belsoFlat = [];
 let aktualisSzuroFeltetelek = {};
+
+// ============================================================
+// INICIALIZÁLÁS (Amikor az oldal betöltődik)
+// ============================================================
+window.addEventListener("DOMContentLoaded", async () => {
+  console.log("🚀 Házbázis Chat Engine indul...");
+
+  // 1. URL PARAMÉTEREK ÉS ELŐZMÉNYEK KEZELÉSE
+  const urlParams = new URLSearchParams(window.location.search);
+  const kezdőKérdés = urlParams.get("query");
+
+  if (kezdőKérdés) {
+    const input = document.getElementById("chat-input");
+    if (input) input.value = kezdőKérdés;
+    inditsChatKeresest();
+  } else {
+    const elozmeny = sessionStorage.getItem("hazbazis_utolso_kereses");
+    if (elozmeny) {
+      const mentettFeltetelek = JSON.parse(elozmeny);
+      setTimeout(() => {
+        if (typeof window.alkalmazSzuroket === "function") {
+          window.alkalmazSzuroket(mentettFeltetelek);
+          hozzaadBuborekot(
+            "Üdv újra! Visszatöltöttem az előző keresésedet.",
+            "ai"
+          );
+        }
+      }, 500);
+    }
+  }
+
+  // 2. MENTÉS MANAGER INDÍTÁSA
+  initMentesManager(async (filterList, mode) => {
+    if (mode === "clear") {
+      belsoFlat = [];
+      hozzaadBuborekot("Minden mentett szűrőt kikapcsoltál.", "ai");
+      megjelenitTalalatokat();
+      return;
+    }
+    if (mode === "merge") {
+      await multiLekeresEsMerge(filterList);
+    }
+  });
+
+  // 3. ESEMÉNYKEZELŐK BEKÖTÉSE (Navigáció és Gombok)
+  document.getElementById("btn-home")?.addEventListener("click", () => {
+    window.location.href = "../../../index.html";
+  });
+
+  document.getElementById("btn-trash")?.addEventListener("click", () => {
+    if (confirm("Biztosan törlöd a beszélgetést és új keresést kezdesz?")) {
+      resetChatEngine();
+    }
+  });
+
+  document
+    .getElementById("send-btn")
+    ?.addEventListener("click", inditsChatKeresest);
+
+  document.getElementById("chat-input")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") inditsChatKeresest();
+  });
+
+  document
+    .getElementById("rendezes-select")
+    ?.addEventListener("change", (e) => {
+      listaRendezese(e.target.value);
+    });
+
+  document.getElementById("btn-save-filter")?.addEventListener("click", () => {
+    saveCurrentSearch(aktualisSzuroFeltetelek);
+  });
+});
+
+// Ez a függvény is kell a gomb működéséhez:
+function resetChatEngine() {
+  belsoFlat = [];
+  aktualisSzuroFeltetelek = {};
+  uncheckAllFilters();
+  const folyam = document.getElementById("chat-folyam");
+  if (folyam) folyam.innerHTML = "";
+  const szamlalo = document.getElementById("talalat-szam");
+  if (szamlalo) szamlalo.innerText = "0 találat";
+  const panel = document.getElementById("eredmenyek-panel");
+  if (panel) panel.innerHTML = "";
+
+  const url = new URL(window.location);
+  url.searchParams.delete("query");
+  window.history.pushState({}, "", url);
+  hozzaadBuborekot("Tiszta lap! Miben segíthetek?", "ai");
+}
+
+// És az indító függvény:
+async function inditsChatKeresest() {
+  const input = document.getElementById("chat-input");
+  const uzenet = input.value.trim();
+  if (!uzenet) return;
+
+  hozzaadBuborekot(uzenet, "user");
+  input.value = "";
+
+  try {
+    const aiValasz = await window.ertelmezdAkeresest(uzenet);
+    if (!aiValasz || Object.keys(aiValasz).length === 0) {
+      hozzaadBuborekot(
+        "Nem értettem pontosan a kérést, próbáld máshogy!",
+        "ai"
+      );
+      return;
+    }
+
+    const standardFeltetelek = normalizaldAFelteteleket(aiValasz);
+    aktualisSzuroFeltetelek = standardFeltetelek;
+    sessionStorage.setItem(
+      "hazbazis_utolso_kereses",
+      JSON.stringify(standardFeltetelek)
+    );
+
+    if (belsoFlat.length === 0) {
+      hozzaadBuborekot("Pillanat, átnézem a kínálatot...", "ai");
+      await elsoLekeresFirebasebol(standardFeltetelek);
+    } else {
+      hozzaadBuborekot("Szűröm a listát az új szempontok alapján...", "ai");
+      szuresMemoriaban(standardFeltetelek);
+    }
+    megjelenitTalalatokat();
+  } catch (error) {
+    console.error("Hiba:", error);
+  }
+}
+
+// Ezt se felejtsd el, mert a normalizálás hivatkozik rá:
+function normalizaldAFelteteleket(f) {
+  return {
+    maxAr: f.max_ar || f.vételár || f.maxAr || null,
+    minSzoba: f.min_szoba || f.szobák || f.minSzoba || null,
+    minTerulet: f.min_terulet || f.alapterület || f.minTerulet || null,
+    maxTerulet: f.max_terulet || f.maxTerulet || null,
+    kerulet: f.kerulet || null,
+    telepules: f.telepules || null,
+    kategoria: f.kategoria || null,
+    tipus: f.tipus || null,
+    kellErkely: f.van_erkely === true || f.kellErkely === true,
+  };
+}
 
 // ============================================================
 // EREDETI FÜGGVÉNYEK - Semmi nem tűnik el, amit más fájl hívhat!
