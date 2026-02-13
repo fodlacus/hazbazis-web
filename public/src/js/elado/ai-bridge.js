@@ -145,14 +145,19 @@ window.ertelmezdAkeresest = async function (szoveg) {
     // 1. Ha a Worker a "reply" kulcsban küldi a választ (ahogy a konzolon látszik)
     if (data && data.reply) {
       try {
-        const args = JSON.parse(data.reply);
-        console.log("✅ AI Szigorú Eredmény (Worker reply-ból):", args);
+        // --- TISZTÍTÁS: Eltávolítjuk a Markdown kódblokkokat ---
+        let tisztaJson = data.reply
+          .replace(/```[a-z]*\n?/gi, "") // Eltávolítja a nyitó ```python vagy ```json részt
+          .replace(/```/g, "") // Eltávolítja a záró ``` részt
+          .trim();
+
+        const args = JSON.parse(tisztaJson);
+        console.log("✅ AI Szigorú Eredmény (Tisztított):", args);
         return args;
       } catch (e) {
         console.error("Hiba a reply JSON parzolásakor:", e);
       }
     }
-
     // 2. Szabványos OpenAI struktúra (ha később változna a Worker)
     if (data && data.choices && data.choices[0] && data.choices[0].message) {
       const message = data.choices[0].message;
