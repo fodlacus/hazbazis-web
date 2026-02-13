@@ -104,10 +104,11 @@ let aktualisLat = null;
 let aktualisLng = null;
 
 window.ertelmezdAkeresest = async function (szoveg) {
-  console.log("AI elemzés indítása:", szoveg);
+  const workerUrl = "https://hazbazis-ai.cardepo.workers.dev";
 
+  console.log("🚀 AI kérés küldése a Workernek:", workerUrl);
   try {
-    const response = await fetch("https://hazbazis-ai.fodlaci.workers.dev", {
+    const response = await fetch(workerUrl, {
       // Ellenőrizd: nálad /ai-proxy vagy teljes URL kell?
       method: "POST",
       headers: { "Content-Type": "application/json" },
