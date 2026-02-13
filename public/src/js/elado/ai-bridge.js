@@ -136,6 +136,11 @@ window.ertelmezdAkeresest = async function (szoveg) {
       }),
     });
 
+    if (!response.ok) {
+      console.error("Szerver hiba:", response.status);
+      return null;
+    }
+
     const data = await response.json();
 
     // Ellenőrzés: kaptunk-e function call-t?
