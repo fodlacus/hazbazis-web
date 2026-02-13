@@ -109,23 +109,18 @@ window.ertelmezdAkeresest = async function (szoveg) {
   console.log("🚀 AI kérés küldése a Workernek:", workerUrl);
   try {
     const response = await fetch(workerUrl, {
-      // Ellenőrizd: nálad /ai-proxy vagy teljes URL kell?
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: [
           {
             role: "system",
-            // ITT A JAVÍTÁS LÉNYEGE:
             content: `Te egy ingatlan-adat kinyerő specialista vagy. 
                 A feladatod a hirdető által megadott szövegből az adatok kinyerése a 'ingatlan_szures' függvény számára.
-
                 SZIGORÚ SZABÁLYOK:
-                1. KATEGÓRIA: Ha a szövegben szerepel a 'kiadó', 'albérlet', 'kiadnám', 'bérbeadó' szó, a kategória legyen: 'kiado'. Minden más esetben (eladó, kínálom) legyen: 'elado'.
-                2. LAKÓPARK: Ha a szövegben konkrét projektnevet látsz (pl. Metrodom, Cordia, Elite Park, City Home), a 'lakopark_e' legyen 'Igen', és a projekt nevét írd a 'lakopark_nev' mezőbe.
-                3. TÍPUS: Ha a szöveg garázst, kocsibeállót vagy tárolót említ, a 'tipus' legyen 'Garázs'.
-                4. ÁR: Az árakat mindig alakítsd tiszta számmá (pl. 50 millió -> 50000000),
-                5. BÉRLETI DÍJ: Ha bérlésről van szó, a megadott összeget a 'vételár' mezőbe írd (ez lesz a havidíj).`,
+                1. KATEGÓRIA: Ha bérlésről van szó (kiadó, albérlet), a kategória 'kiado', egyébként 'elado'.
+                2. ÁR: Az árakat alakítsd számmá (pl. 50 millió -> 50000000).
+                3. BÉRLETI DÍJ: Bérlésnél az összeget a 'vételár' mezőbe írd.`,
           },
           { role: "user", content: szoveg },
         ],
@@ -133,41 +128,45 @@ window.ertelmezdAkeresest = async function (szoveg) {
         tool_choice: {
           type: "function",
           function: { name: "ingatlan_szures" },
-        }, // Kényszerítjük
+        },
       }),
     });
 
-    if (response.status === 405 || !response.ok) {
-      console.error(
-        "❌ A szerver (Cloudflare) nem engedélyezi a POST hívást az /ai-proxy-ra."
-      );
-      return null; // Így nem fut rá a JSON hibára
+    if (!response.ok) {
+      console.error(`❌ Szerver hiba: ${response.status}`);
+      return null;
     }
+
     const data = await response.json();
+    console.log("📥 Nyers AI válasz érkezett:", data);
 
-    // Ellenőrzés: kaptunk-e function call-t?
-    const toolCall = data.choices[0].message.tool_calls?.[0];
-
-    // BIZTONSÁGI ELLENŐRZÉS: Megnézzük, létezik-e a várt struktúra
+    // --- BIZTONSÁGI ELLENŐRZÉS ELEJE ---
     if (data && data.choices && data.choices[0] && data.choices[0].message) {
-      const toolCall = data.choices[0].message.tool_calls?.[0];
+      const message = data.choices[0].message;
 
-      if (toolCall) {
+      // Megnézzük, van-e benne függvényhívás (tool_calls)
+      if (message.tool_calls && message.tool_calls[0]) {
+        const toolCall = message.tool_calls[0];
         const args = JSON.parse(toolCall.function.arguments);
-        console.log("✅ AI Szigorú Eredmény:", args);
+        console.log("✅ AI Szigorú Eredmény (Kinyert adatok):", args);
         return args;
       } else {
-        // Ha nem függvényt hívott, hanem sima szöveget írt
-        console.warn("⚠️ Az AI nem használt függvényt, csak szöveget küldött.");
+        console.warn(
+          "⚠️ Az AI nem használt függvényt, csak szöveget küldött:",
+          message.content
+        );
         return {};
       }
     } else {
-      // Ha a válasz szerkezete teljesen rossz (pl. hibaüzenet az OpenAI-tól)
-      console.error("❌ Váratlan válasz szerkezet az AI-tól:", data);
+      console.error(
+        "❌ Váratlan válasz szerkezet (Hiba az OpenAI-tól?):",
+        data
+      );
       return {};
     }
+    // --- BIZTONSÁGI ELLENŐRZÉS VÉGE ---
   } catch (hiba) {
-    console.error("AI Hiba:", hiba);
+    console.error("AI Hiba a feldolgozás során:", hiba);
     return {};
   }
 };
