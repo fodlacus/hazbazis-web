@@ -38,7 +38,6 @@ async function multiLekeresEsMerge(filterList) {
   try {
     let mergedMap = new Map();
     for (const filter of filterList) {
-      // Meghívjuk a motort minden szűrőre
       const list = await fetchListFromFirebase(filter);
       list.forEach((item) => {
         if (!mergedMap.has(item.id)) mergedMap.set(item.id, item);
@@ -126,49 +125,6 @@ async function elsoLekeresFirebasebol(f) {
   } catch (error) {
     console.error("Hiba:", error);
     hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
-  }
-}
-
-// ============================================================
-// 3. MULTI KERESÉS (ÚJ) - Ezt hívja a MentesManager
-// ============================================================
-async function multiLekeresEsMerge(filterList) {
-  try {
-    let mergedMap = new Map(); // Map-et használunk, hogy ne legyenek duplikációk (azonos ID)
-
-    // Végig megyünk az összes bepipált szűrőn (pl. Zugló + XI. kerület)
-    for (const filter of filterList) {
-      // Minden körben meghívjuk a "motort"
-      const list = await fetchListFromFirebase(filter);
-
-      // Hozzáadjuk a közös kalaphoz
-      list.forEach((item) => {
-        if (!mergedMap.has(item.id)) {
-          mergedMap.set(item.id, item);
-        }
-      });
-    }
-
-    // A Map értékeit visszaalakítjuk tömbbé -> ez lesz az új belsoFlat
-    belsoFlat = Array.from(mergedMap.values());
-
-    // Eredmény kiírása
-    if (belsoFlat.length === 0) {
-      hozzaadBuborekot(
-        "A kiválasztott szűrők alapján sajnos nincs találat.",
-        "ai"
-      );
-    } else {
-      hozzaadBuborekot(
-        `Sikeres egyesítés! Összesen ${belsoFlat.length} ingatlant találtam a mentett kereséseid alapján.`,
-        "ai"
-      );
-    }
-
-    megjelenitTalalatokat();
-  } catch (error) {
-    console.error("Hiba az egyesítésnél:", error);
-    hozzaadBuborekot("Hiba történt a listák összefésülésekor.", "ai");
   }
 }
 
@@ -347,5 +303,3 @@ window.alkalmazSzuroket = async function (mentettSzurok) {
     hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
   }
 };
-
-
