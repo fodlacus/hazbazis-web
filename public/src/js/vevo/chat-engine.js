@@ -219,33 +219,61 @@ async function fetchListFromFirebase(f) {
 }
 
 function megfelelAzIngatlan(ing, f) {
-  // BIZTONSÁG: Itt maradnak az ékezetes mezőnevek (vételár, szobák, stb.)
-  // mert az adatbázisodban így szerepelnek!
-
   let ok = true;
 
-  // Ár szűrés
+  // 1. ÁR SZŰRÉS (vételár - adatszerkezeted szerint)
   if (f.maxAr || f.max_ar) {
-    const limit = f.maxAr || f.max_ar;
-    if (Number(ing.vételár) > Number(limit)) ok = false;
+    const limit = Number(f.maxAr || f.max_ar);
+    if (Number(ing.vételár) > limit) ok = false;
   }
 
-  // Szoba szűrés
+  // 2. SZOBA SZŰRÉS (szobák - adatszerkezeted szerint)
   if (ok && (f.minSzoba || f.min_szoba)) {
-    const limit = f.minSzoba || f.min_szoba;
-    if (Number(ing.szobák) < Number(limit)) ok = false;
+    const limit = Number(f.minSzoba || f.min_szoba);
+    if (Number(ing.szobák) < limit) ok = false;
   }
 
-  // Alapterület
-  if (ok && (f.minTerulet || f.min_terulet)) {
-    const limit = f.minTerulet || f.min_terulet;
-    if (Number(ing.alapterület) < Number(limit)) ok = false;
+  // 3. ALAPTERÜLET SZŰRÉS (alapterület - adatszerkezeted szerint)
+  if (ok) {
+    const ingMeret = Number(ing.alapterület || 0);
+    if (f.minTerulet && ingMeret < Number(f.minTerulet)) ok = false;
+    if (ok && f.maxTerulet && ingMeret > Number(f.maxTerulet)) ok = false;
   }
 
-  // Erkély (Szigorú)
-  if (ok && f.kellErkely) {
-    const erkelyMeret = parseFloat(ing.erkély_terasz || 0);
-    if (erkelyMeret <= 0) ok = false;
+  // 4. EXTRA: KLÍMA (hűtés mező vizsgálata)
+  if (ok && f.kell_klima) {
+    const hutes = (ing.hűtés || "").toLowerCase();
+    // Ha "Nincs" vagy üres, akkor kiesik
+    if (hutes === "" || hutes.includes("nincs") || hutes === "-") ok = false;
+  }
+
+  // 5. EXTRA: PARKOLÁS (parkolas mező vizsgálata)
+  if (ok && f.parkolas_kulcsszo) {
+    const parkolas = (ing.parkolas || "").toLowerCase();
+    const keresett = f.parkolas_kulcsszo.toLowerCase();
+    if (!parkolas.includes(keresett)) ok = false;
+  }
+
+  // 6. EXTRA: FŰTÉS (fűtés mező vizsgálata - házközponti tesztedhez)
+  if (ok && f.futes_tipus) {
+    const futes = (ing.fűtés || "").toLowerCase();
+    if (!futes.includes(f.futes_tipus.toLowerCase())) ok = false;
+  }
+
+  // 7. EXTRA: ÉPÍTÉSI ÉV (epites_eve stringként van nálad, konvertáljuk)
+  if (ok && f.min_epites_eve) {
+    const ev = parseInt(ing.epites_eve || 0);
+    if (ev < Number(f.min_epites_eve)) ok = false;
+  }
+
+  // 8. EXTRA: EMELET (emelet nálad szöveg: "Földszint" vagy "3")
+  if (ok && f.min_emelet !== null && f.min_emelet !== undefined) {
+    let ingEmelet = 0;
+    const nyersEmelet = (ing.emelet || "").toString().toLowerCase();
+    if (!nyersEmelet.includes("földszint")) {
+      ingEmelet = parseInt(nyersEmelet) || 0;
+    }
+    if (ingEmelet < Number(f.min_emelet)) ok = false;
   }
 
   return ok;
