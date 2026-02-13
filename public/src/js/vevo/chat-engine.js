@@ -30,21 +30,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (kezdőKérdés) {
     const input = document.getElementById("chat-input");
     if (input) input.value = kezdőKérdés;
-    inditsChatKeresest();
-  } else {
-    const elozmeny = sessionStorage.getItem("hazbazis_utolso_kereses");
-    if (elozmeny) {
-      const mentettFeltetelek = JSON.parse(elozmeny);
-      setTimeout(() => {
-        if (typeof window.alkalmazSzuroket === "function") {
-          window.alkalmazSzuroket(mentettFeltetelek);
-          hozzaadBuborekot(
-            "Üdv újra! Visszatöltöttem az előző keresésedet.",
-            "ai"
-          );
-        }
-      }, 500);
-    }
+    //  inditsChatKeresest();
   }
 
   // 2. MENTÉS MANAGER INDÍTÁSA
@@ -221,29 +207,28 @@ async function fetchListFromFirebase(f) {
 function megfelelAzIngatlan(ing, f) {
   let ok = true;
 
-  // 1. ÁR SZŰRÉS (vételár - adatszerkezeted szerint)
+  // 1. ÁR SZŰRÉS (vételár - ékezetes mező az adatbázisodban)
   if (f.maxAr || f.max_ar) {
     const limit = Number(f.maxAr || f.max_ar);
     if (Number(ing.vételár) > limit) ok = false;
   }
 
-  // 2. SZOBA SZŰRÉS (szobák - adatszerkezeted szerint)
+  // 2. SZOBA SZŰRÉS (szobák - ékezetes mező)
   if (ok && (f.minSzoba || f.min_szoba)) {
     const limit = Number(f.minSzoba || f.min_szoba);
     if (Number(ing.szobák) < limit) ok = false;
   }
 
-  // 3. ALAPTERÜLET SZŰRÉS (alapterület - adatszerkezeted szerint)
+  // 3. ALAPTERÜLET SZŰRÉS (alapterület - ékezetes mező)
   if (ok) {
     const ingMeret = Number(ing.alapterület || 0);
     if (f.minTerulet && ingMeret < Number(f.minTerulet)) ok = false;
     if (ok && f.maxTerulet && ingMeret > Number(f.maxTerulet)) ok = false;
   }
 
-  // 4. EXTRA: KLÍMA (hűtés mező vizsgálata)
+  // 4. EXTRA: KLÍMA (hűtés mező vizsgálata - Kezeli a "Nincs" szöveget)
   if (ok && f.kell_klima) {
     const hutes = (ing.hűtés || "").toLowerCase();
-    // Ha "Nincs" vagy üres, akkor kiesik
     if (hutes === "" || hutes.includes("nincs") || hutes === "-") ok = false;
   }
 
@@ -254,19 +239,19 @@ function megfelelAzIngatlan(ing, f) {
     if (!parkolas.includes(keresett)) ok = false;
   }
 
-  // 6. EXTRA: FŰTÉS (fűtés mező vizsgálata - házközponti tesztedhez)
+  // 6. EXTRA: FŰTÉS (fűtés mező vizsgálata - Házközponti kereséshez)
   if (ok && f.futes_tipus) {
     const futes = (ing.fűtés || "").toLowerCase();
     if (!futes.includes(f.futes_tipus.toLowerCase())) ok = false;
   }
 
-  // 7. EXTRA: ÉPÍTÉSI ÉV (epites_eve stringként van nálad, konvertáljuk)
+  // 7. EXTRA: ÉPÍTÉSI ÉV (epites_eve)
   if (ok && f.min_epites_eve) {
     const ev = parseInt(ing.epites_eve || 0);
     if (ev < Number(f.min_epites_eve)) ok = false;
   }
 
-  // 8. EXTRA: EMELET (emelet nálad szöveg: "Földszint" vagy "3")
+  // 8. EXTRA: EMELET (Földszint kezelése szövegből)
   if (ok && f.min_emelet !== null && f.min_emelet !== undefined) {
     let ingEmelet = 0;
     const nyersEmelet = (ing.emelet || "").toString().toLowerCase();
