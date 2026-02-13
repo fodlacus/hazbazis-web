@@ -148,12 +148,22 @@ window.ertelmezdAkeresest = async function (szoveg) {
     // Ellenőrzés: kaptunk-e function call-t?
     const toolCall = data.choices[0].message.tool_calls?.[0];
 
-    if (toolCall) {
-      const args = JSON.parse(toolCall.function.arguments);
-      console.log("✅ AI Szigorú Eredmény:", args);
-      return args;
+    // BIZTONSÁGI ELLENŐRZÉS: Megnézzük, létezik-e a várt struktúra
+    if (data && data.choices && data.choices[0] && data.choices[0].message) {
+      const toolCall = data.choices[0].message.tool_calls?.[0];
+
+      if (toolCall) {
+        const args = JSON.parse(toolCall.function.arguments);
+        console.log("✅ AI Szigorú Eredmény:", args);
+        return args;
+      } else {
+        // Ha nem függvényt hívott, hanem sima szöveget írt
+        console.warn("⚠️ Az AI nem használt függvényt, csak szöveget küldött.");
+        return {};
+      }
     } else {
-      console.warn("⚠️ Az AI nem használta a függvényt:", data);
+      // Ha a válasz szerkezete teljesen rossz (pl. hibaüzenet az OpenAI-tól)
+      console.error("❌ Váratlan válasz szerkezet az AI-tól:", data);
       return {};
     }
   } catch (hiba) {
