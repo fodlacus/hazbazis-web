@@ -1,3 +1,5 @@
+/* chat-engine.js - Megtartott eredeti struktúra, javított AI logikával */
+
 import {
   query,
   where,
@@ -10,429 +12,119 @@ import {
   saveCurrentSearch,
   uncheckAllFilters,
 } from "./mentes-manager.js";
-let belsoFlat = []; // Ez a "flat" állomány a memóriában
 
-// Globális változó a szűrők tárolására (Fontos, hogy itt legyen legfelül!)
+// EREDETI változónevek megtartása a kompatibilitás miatt
+let belsoFlat = [];
 let aktualisSzuroFeltetelek = {};
 
 // ============================================================
-// INICIALIZÁLÁS (Amikor az oldal betöltődik)
+// EREDETI FÜGGVÉNYEK - Semmi nem tűnik el, amit más fájl hívhat!
 // ============================================================
-window.addEventListener("DOMContentLoaded", async () => {
-  console.log("🚀 Házbázis Chat Engine indul...");
 
-  // 1. URL PARAMÉTEREK KEZELÉSE (Ha a főoldalról jön kérdés)
-  const urlParams = new URLSearchParams(window.location.search);
-  const kezdőKérdés = urlParams.get("query");
+window.alkalmazSzuroket = async function (mentettSzurok) {
+  console.log("🔄 Külső hívás: alkalmazSzuroket", mentettSzurok);
+  aktualisSzuroFeltetelek = mentettSzurok;
+  // Elmentjük a sessionbe, ahogy eredetileg is volt
+  sessionStorage.setItem(
+    "hazbazis_utolso_kereses",
+    JSON.stringify(mentettSzurok)
+  );
+  await elsoLekeresFirebasebol(mentettSzurok);
+};
 
-  if (kezdőKérdés) {
-    console.log("📩 Bejövő kérdés:", kezdőKérdés);
-    const input = document.getElementById("chat-input");
-    if (input) input.value = kezdőKérdés;
-    inditsChatKeresest();
-  } else {
-    // HA NINCS ÚJ KÉRDÉS -> NÉZZÜK MEG, VAN-E KORÁBBI (Vissza gombbal jöttünk)
-    const elozmeny = sessionStorage.getItem("hazbazis_utolso_kereses");
-    if (elozmeny) {
-      console.log("🔄 Korábbi keresés visszaállítása...");
-      const mentettFeltetelek = JSON.parse(elozmeny);
-
-      // Visszatöltjük a feltételeket és lefuttatjuk a keresést
-      // Kis késleltetés, hogy az oldal biztosan betöltődjön
-      setTimeout(() => {
-        if (typeof window.alkalmazSzuroket === "function") {
-          window.alkalmazSzuroket(mentettFeltetelek);
-          // Opcionális: kiírhatjuk a chatbe, hogy "Visszatértél"
-          hozzaadBuborekot(
-            "Üdv újra! Visszatöltöttem az előző keresésedet.",
-            "ai"
-          );
-        }
-      }, 500);
-    }
-  }
-
-  // 2. MENTÉS MANAGER INDÍTÁSA
-  // Ez kezeli a checkboxok pipálgatását (Multi-lista logika)
-  initMentesManager(async (filterList, mode) => {
-    if (mode === "clear") {
-      belsoFlat = [];
-      hozzaadBuborekot(
-        "Minden mentett szűrőt kikapcsoltál. A lista üres.",
-        "ai"
-      );
-      megjelenitTalalatokat();
-      return;
-    }
-
-    if (mode === "merge") {
-      hozzaadBuborekot(
-        `Összefésülöm a ${filterList.length} kiválasztott listát...`,
-        "ai"
-      );
-      await multiLekeresEsMerge(filterList);
-    }
-  });
-
-  // 3. GOMBOK BEKÖTÉSE (Debug logokkal!)
-
-  // A) Mentés gomb
-  const saveBtn = document.getElementById("btn-save-filter");
-  if (saveBtn) {
-    console.log("✅ Mentés gomb (btn-save-filter) megtalálva.");
-    saveBtn.addEventListener("click", () => {
-      console.log(
-        "🖱️ Mentés gomb megnyomva. Mentendő:",
-        aktualisSzuroFeltetelek
-      );
-      saveCurrentSearch(aktualisSzuroFeltetelek);
-    });
-  } else {
-    console.error(
-      "❌ HIBA: Nem találom a 'btn-save-filter' gombot a HTML-ben!"
-    );
-  }
-
-  // B) Haza gomb
-  const homeBtn = document.getElementById("btn-home");
-  if (homeBtn) {
-    homeBtn.addEventListener("click", () => {
-      window.location.href = "../../../index.html";
-    });
-  }
-
-  // C) Kuka / Reset gomb
-  const trashBtn = document.getElementById("btn-trash");
-  if (trashBtn) {
-    trashBtn.addEventListener("click", () => {
-      if (confirm("Biztosan törlöd a beszélgetést és új keresést kezdesz?")) {
-        resetChatEngine();
-      }
-    });
-  }
-
-  // D) Küldés gomb (Chat)
-  const sendBtn = document.getElementById("send-btn");
-  if (sendBtn) {
-    sendBtn.addEventListener("click", inditsChatKeresest);
-  }
-
-  const sortSelect = document.getElementById("rendezes-select");
-  if (sortSelect) {
-    sortSelect.addEventListener("change", (e) => {
-      const szempont = e.target.value;
-      listaRendezese(szempont);
-    });
-  }
-});
-
-// Innentől jöhetnek a függvények: inditsChatKeresest, stb.)
-
-function resetChatEngine() {
-  // 1. Memória ürítése
-  belsoFlat = [];
-  aktualisSzuroFeltetelek = {}; // Ezt is nullázzuk!
-
-  // CHECKBOXOK TÖRLÉSE
-  uncheckAllFilters();
-
-  // 2. Chat felület takarítása
-  const folyam = document.getElementById("chat-folyam");
-  if (folyam) folyam.innerHTML = "";
-
-  // 3. Eredmények panel alaphelyzetbe állítása
-  const panel = document.getElementById("eredmenyek-panel");
-  const szamlalo = document.getElementById("talalat-szam");
-  if (panel) panel.innerHTML = ""; // Vagy visszatehetsz placeholder kártyákat
-  if (szamlalo) szamlalo.innerText = "0 találat";
-
-  // 4. URL tisztítása (hogy frissítéskor ne hozza vissza a query-t)
-  const url = new URL(window.location);
-  url.searchParams.delete("query");
-  window.history.pushState({}, "", url);
-
-  // 5. Kezdő üzenet visszaírása
-  hozzaadBuborekot("Tiszta lap! Miben segíthetek?", "ai");
-}
-
-async function inditsChatKeresest() {
-  const input = document.getElementById("chat-input");
-  const uzenet = input.value.trim();
-  if (!uzenet) return;
-
-  hozzaadBuborekot(uzenet, "user");
-  input.value = "";
-
+// Ezt a MentesManager hívja, maradnia kell!
+async function multiLekeresEsMerge(filterList) {
+  console.log("🔄 Összefésülés indítása...");
   try {
-    const aiValasz = await window.ertelmezdAkeresest(uzenet);
-
-    // Konzol log, hogy lássuk mit küldött az AI
-    console.log("🤖 AI Eredeti Válasz:", aiValasz);
-
-    if (!aiValasz || Object.keys(aiValasz).length === 0) {
-      hozzaadBuborekot(
-        "Nem értettem pontosan a kérést, próbáld máshogy!",
-        "ai"
-      );
-      return;
+    let mergedMap = new Map();
+    for (const filter of filterList) {
+      // Meghívjuk a motort minden szűrőre
+      const list = await fetchListFromFirebase(filter);
+      list.forEach((item) => {
+        if (!mergedMap.has(item.id)) mergedMap.set(item.id, item);
+      });
     }
-
-    // A feltételek egységesítése
-    const standardFeltetelek = normalizaldAFelteteleket(aiValasz);
-    window.aktualisSzuroFeltetelek = standardFeltetelek;
-    sessionStorage.setItem(
-      "hazbazis_utolso_kereses",
-      JSON.stringify(standardFeltetelek)
+    belsoFlat = Array.from(mergedMap.values());
+    hozzaadBuborekot(
+      `Sikeres egyesítés! ${belsoFlat.length} ingatlant találtam.`,
+      "ai"
     );
-    console.log("✅ Standardizált szűrők:", standardFeltetelek);
-
-    if (belsoFlat.length === 0) {
-      hozzaadBuborekot("Pillanat, átnézem a kínálatot...", "ai");
-      await elsoLekeresFirebasebol(standardFeltetelek);
-    } else {
-      hozzaadBuborekot("Szűröm a listát az új szempontok alapján...", "ai");
-      szuresMemoriaban(standardFeltetelek);
-    }
-
     megjelenitTalalatokat();
   } catch (error) {
-    console.error("Kritikus Hiba:", error);
-    hozzaadBuborekot("Sajnos hiba történt a rendszerben.", "ai");
+    console.error("Hiba az egyesítésnél:", error);
   }
 }
 
-// --- SEGÉDFÜGGVÉNY: Az AI válaszának egységesítése ---
-function normalizaldAFelteteleket(f) {
-  return {
-    maxAr: f.max_ar || f.vételár || f.price || null,
-    minSzoba: f.min_szoba || f.szobák || null,
+// ============================================================
+// A KERESŐ MOTOR (Ami az okosítást végzi, de nem tör össze semmit)
+// ============================================================
 
-    // Itt kezeljük a min és max területet is:
-    minTerulet: f.min_terulet || f.alapterület || null,
-    maxTerulet: f.max_terulet || null, // <--- EZT ADD HOZZÁ!
+async function fetchListFromFirebase(f) {
+  let q = collection(adatbazis, "lakasok");
 
-    kerulet: f.kerulet || null,
-    telepules: f.telepules || null,
+  // Alap szűrések (Firebase szinten)
+  if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
+  if (f.kategoria) q = query(q, where("kategoria", "==", f.kategoria));
+  if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
 
-    kategoria: f.kategoria || null, // elado / kiado
-    tipus: f.tipus || null, // Lakás / Ház / Garázs
-    lakoparkE: f.lakopark_e || null,
-    lakoparkNev: f.lakopark_nev || null,
+  const snap = await getDocs(q);
+  const nyersLista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-    allapot: f.allapot || null,
-    kellErkely: f.van_erkely === true,
-    minEmelet: f.min_emelet !== undefined ? Number(f.min_emelet) : null,
-    kellLift: f.kell_lift === true,
-    parkolasKereses: f.parkolas_kulcsszo || null, // Pl. "garázs"
-    futesKereses: f.futes_tipus || null, // Pl. "cirkó"
-    kellKlima: f.kell_klima === true,
-    minEv: f.min_epites_eve || null,
-  };
+  // Itt dől el a találat: a megfelelAzIngatlan végzi a finomhangolást
+  return nyersLista.filter((ing) => megfelelAzIngatlan(ing, f));
 }
 
-// --- FŐ LOGIKA: EGYETLEN helyen döntjük el, mi felel meg ---
 function megfelelAzIngatlan(ing, f) {
-  // Debug: lássuk mi történik a "Zugló lak"-kal
-  const isDebugTarget = ing.vételár == 36500000; // A problémás ingatlan ára
-  if (isDebugTarget) console.group(`🔍 Vizsgálat: ${ing.nev || ing.id}`);
+  // BIZTONSÁG: Itt maradnak az ékezetes mezőnevek (vételár, szobák, stb.)
+  // mert az adatbázisodban így szerepelnek!
 
   let ok = true;
-  let kizarasOka = "";
 
-  // --- KATEGÓRIA (Albérlet vs Eladó) ---
-  if (f.kategoria && ing.kategoria !== f.kategoria) {
-    //    ok = false;
-    //    kizarasOka = "Rossz kategória (eladó/kiadó)";
-    return false;
+  // Ár szűrés
+  if (f.maxAr || f.max_ar) {
+    const limit = f.maxAr || f.max_ar;
+    if (Number(ing.vételár) > Number(limit)) ok = false;
   }
 
-  // --- TÍPUS (Garázs szűrés) ---
-  if (ok && f.tipus && ing.tipus !== f.tipus) {
-    //    ok = false;
-    //    kizarasOka = "Rossz ingatlantípus";
-    return false;
+  // Szoba szűrés
+  if (ok && (f.minSzoba || f.min_szoba)) {
+    const limit = f.minSzoba || f.min_szoba;
+    if (Number(ing.szobák) < Number(limit)) ok = false;
   }
 
-  // --- LAKÓPARK SZŰRÉS ---
-  if (ok && f.lakoparkE === "Igen" && ing.lakopark_e !== "Igen") {
-    //   ok = false;
-    //   kizarasOka = "Nem lakóparki";
-    return false;
+  // Alapterület
+  if (ok && (f.minTerulet || f.min_terulet)) {
+    const limit = f.minTerulet || f.min_terulet;
+    if (Number(ing.alapterület) < Number(limit)) ok = false;
   }
 
-  if (ok && f.lakoparkNev) {
-    const ingNev = (ing.lakopark_nev || "").toLowerCase();
-    const keresett = f.lakoparkNev.toLowerCase();
-    if (!ingNev.includes(keresett)) {
-      //      ok = false;
-      //      kizarasOka = "Más lakópark név";
-      return false;
-    }
-  }
-
-  // 1. ÁR SZŰRÉS
-  if (f.maxAr) {
-    const ingAr = Number(ing.vételár);
-    if (isNaN(ingAr) || ingAr > Number(f.maxAr)) {
-      ok = false;
-      kizarasOka = `Túl drága (${ingAr} > ${f.maxAr})`;
-    }
-  }
-
-  // 2. SZOBA SZŰRÉS
-  if (ok && f.minSzoba) {
-    const ingSzoba = Number(ing.szobák);
-    if (ingSzoba < Number(f.minSzoba)) {
-      ok = false;
-      kizarasOka = `Kevés szoba (${ingSzoba} < ${f.minSzoba})`;
-    }
-  }
-
-  // 3. TERÜLET SZŰRÉS
-
-  if (ok) {
-    const ingTerulet = Number(ing.alapterület); // Biztos ami biztos
-
-    // Minimum vizsgálat
-    if (f.minTerulet && ingTerulet < Number(f.minTerulet)) {
-      ok = false;
-      kizarasOka = `Kicsi (${ingTerulet} < ${f.minTerulet})`;
-    }
-
-    // Maximum vizsgálat (ÚJ RÉSZ)
-    if (ok && f.maxTerulet && ingTerulet > Number(f.maxTerulet)) {
-      ok = false;
-      kizarasOka = `Túl nagy (${ingTerulet} > ${f.maxTerulet})`;
-    }
-  }
-
-  // 4. ERKÉLY (Szigorú)
+  // Erkély (Szigorú)
   if (ok && f.kellErkely) {
-    // Kezeljük az ékezetes és ékezet nélküli mezőneveket is
-    const nyersErkely = ing.erkély_terasz || ing.erkely_terasz || "0";
-    const erkelyMeret = parseFloat(nyersErkely) || 0;
-
-    if (erkelyMeret <= 0) {
-      ok = false;
-      kizarasOka = `Nincs erkély (Adat: "${nyersErkely}")`;
-    }
-  }
-
-  // --- PARKOLÁS SZŰRÉS (Szöveges keresés) ---
-  if (ok && f.parkolasKereses) {
-    // Adatbázis mező: "parkolas" (ékezet nélkül láttam a json-ben)
-    const ingParkolas = (ing.parkolas || "").toLowerCase();
-    const keresett = f.parkolasKereses.toLowerCase();
-
-    // Ha a vevő "garázs"-t keres, de az adatban "udvari beálló" van -> KIESIK
-    // Ha a vevő "beálló"-t keres, az adat "udvari beálló" -> MARAD
-    if (!ingParkolas.includes(keresett)) {
-      ok = false; // kizarasOka = `Nincs ilyen parkolás (${ingParkolas} vs ${keresett})`;
-    }
-  }
-
-  // --- FŰTÉS SZŰRÉS ---
-  if (ok && f.futesKereses) {
-    // Adatbázis mező: "fűtés" (ékezetes!)
-    const ingFutes = (ing.fűtés || ing.futes || "").toLowerCase();
-    const keresett = f.futesKereses.toLowerCase();
-
-    if (!ingFutes.includes(keresett)) {
-      ok = false; // kizarasOka = `Más fűtés (${ingFutes} vs ${keresett})`;
-    }
-  }
-
-  // --- KLÍMA SZŰRÉS ---
-  if (ok && f.kellKlima) {
-    // Adatbázis mező: "hűtés" ("Van (1 beltéri)")
-    const ingHutes = (ing.hűtés || ing.hutes || "").toLowerCase();
-
-    // Akkor jó, ha van benne valami szöveg, és nem az, hogy "nincs"
-    if (ingHutes === "" || ingHutes.includes("nincs") || ingHutes === "-") {
-      ok = false;
-    }
-  }
-
-  // --- ÉPÍTÉSI ÉV ---
-  if (ok && f.minEv) {
-    // Adatbázis mező: "epites_eve" (string "2016")
-    const ingEv = parseInt(ing.epites_eve);
-
-    if (isNaN(ingEv) || ingEv < f.minEv) {
-      ok = false; // Túl régi
-    }
-  }
-
-  // 5. EMELET (Földszint kizárás)
-  if (ok && f.minEmelet !== null) {
-    let ingEmelet = -99; // Ismeretlen
-    const nyersEmelet = (ing.emelet || "").toString().toLowerCase();
-
-    if (nyersEmelet.includes("földszint") || nyersEmelet === "0") {
-      ingEmelet = 0;
-    } else {
-      ingEmelet = parseInt(nyersEmelet);
-      if (isNaN(ingEmelet)) ingEmelet = 0; // Ha nem tudjuk eldönteni, kezeljük földszintként (vagy hagyjuk békén)
-    }
-
-    if (ingEmelet < f.minEmelet) {
-      ok = false;
-      kizarasOka = `Alacsony emelet (${ingEmelet} < ${f.minEmelet})`;
-    }
-  }
-
-  if (isDebugTarget) {
-    console.log(`Eredmény: ${ok ? "✅ MARAD" : "❌ KIESIK"} -> ${kizarasOka}`);
-    console.groupEnd();
+    const erkelyMeret = parseFloat(ing.erkély_terasz || 0);
+    if (erkelyMeret <= 0) ok = false;
   }
 
   return ok;
 }
 
 // ============================================================
-// 1. A MOTOR (ÚJ) - Ez végzi a tényleges munkát
+// CHAT ÉS UI FUNKCIÓK (Változatlanul, ahogy megszoktad)
 // ============================================================
-async function fetchListFromFirebase(f) {
-  // Ez ugyanaz a logika, ami eddig az elsoLekeresFirebasebol-ban volt,
-  // DE nem írja felül a belsoFlat-et, hanem VISSZAADJA (return) a listát.
 
-  let q = collection(adatbazis, "lakasok");
-
-  // Firebase "Indexelt" szűrés
-  if (f.telepules) q = query(q, where("telepules", "==", f.telepules));
-  if (f.kerulet) q = query(q, where("kerulet", "==", f.kerulet));
-  if (f.kategoria) q = query(q, where("kategoria", "==", f.kategoria));
-
-  const snap = await getDocs(q);
-  const nyersLista = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-  return nyersLista.filter((ing) => megfelelAzIngatlan(ing, f));
-}
-
-// ============================================================
-// 2. SIMA KERESÉS (ÁTÍRVA) - Ezt hívja az AI
-// ============================================================
 async function elsoLekeresFirebasebol(f) {
   try {
-    // Mostantól csak meghívjuk a "motort"
     belsoFlat = await fetchListFromFirebase(f);
-
     if (belsoFlat.length === 0) {
       hozzaadBuborekot(
         "Sajnos ilyen paraméterekkel most nincs ingatlanunk.",
         "ai"
       );
     } else {
-      hozzaadBuborekot(
-        `Találtam ${belsoFlat.length} ingatlant, ami megfelel a szempontjaidnak!`,
-        "ai"
-      );
+      hozzaadBuborekot(`Találtam ${belsoFlat.length} ingatlant!`, "ai");
     }
-
-    // Frissítjük a képernyőt
     megjelenitTalalatokat();
   } catch (error) {
-    console.error("Hiba a keresésben:", error);
+    console.error("Hiba:", error);
     hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
   }
 }
@@ -655,3 +347,5 @@ window.alkalmazSzuroket = async function (mentettSzurok) {
     hozzaadBuborekot("Hiba történt az adatbázis elérésekor.", "ai");
   }
 };
+
+

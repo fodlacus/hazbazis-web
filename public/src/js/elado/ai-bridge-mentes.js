@@ -12,89 +12,82 @@ const ingatlanTools = [
       parameters: {
         type: "object",
         properties: {
+          // --- Alap mezők ---
           telepules: { type: "string" },
           kerulet: { type: "string", description: "Római szám, pl. XIV." },
-
-          // Az eladó oldal (hirdetésfeladás) miatt kellenek ezek az ID-k:
-          vételár: {
-            type: "number",
-            description: "Vételár vagy bérleti díj összege forintban.",
-          },
-          szobák: { type: "number", description: "Szobák száma (egész szám)." },
-          alapterület: {
-            type: "number",
-            description: "Az ingatlan mérete m2-ben.",
-          },
-
-          // A vevő oldal (keresés) finomhangolása miatt maradhatnak ezek is,
-          // de a chat-engine.js-ben lévő normalizáló összefésüli őket:
-          max_ar: {
-            type: "number",
-            description: "Maximális ár forintban (kereséskor).",
-          },
-          min_szoba: { type: "number", description: "Minimum szobaszám." },
+          max_ar: { type: "number", description: "A maximális ár forintban." },
+          min_szoba: { type: "number" },
           min_terulet: {
             type: "number",
-            description: "Minimum alapterület m2-ben.",
+            description: "Minimum méret (pl. '50 m2 felett').",
           },
           max_terulet: {
             type: "number",
-            description: "Maximum alapterület m2-ben.",
+            description: "Maximum méret (pl. '60 m2 alatt', 'kicsi lakás').",
           },
-
           kategoria: {
             type: "string",
             enum: ["elado", "kiado"],
-            description: "Bérlésnél 'kiado', vásárlásnál 'elado'.",
+            description:
+              "Ha bérlésről, albérletről van szó, akkor 'kiado', ha eladásról, akkor 'elado'.",
           },
           tipus: {
             type: "string",
             enum: ["Lakás", "Ház", "Garázs"],
             description:
-              "Az ingatlan típusa. Ha garázs vagy beálló, válaszd a 'Garázs'-t.",
+              "Az ingatlan típusa. Ha gépkocsitároló vagy beálló, akkor 'Garázs'.",
           },
           allapot: {
             type: "string",
             enum: ["Felújított", "Újszerű", "Felújítandó", "Jó állapotú"],
           },
+          tipus: { type: "string", enum: ["Lakás", "Ház"] },
 
-          // --- EXTRA MEZŐK ---
+          // --- ÚJ "EXTRA" MEZŐK ---
           van_erkely: {
             type: "boolean",
-            description: "True, ha van vagy kell erkély/terasz.",
+            description:
+              "True, ha a felhasználó kifejezetten erkélyt/teraszt/loggiát kér.",
           },
           min_emelet: {
             type: "number",
-            description: "Minimum emelet. Földszint = 0.",
+            description:
+              "A legalacsonyabb emelet. Földszint = 0. Ha azt kérik 'ne földszint', akkor ez legyen 1.",
           },
           kell_lift: {
             type: "boolean",
-            description: "True, ha szükséges a lift.",
+            description: "True, ha a felhasználó liftet igényel.",
           },
           parkolas_kulcsszo: {
             type: "string",
-            description: "Pl: 'garázs', 'udvari beálló'.",
+            description:
+              "Ha a felhasználó parkolást említ. Pl: 'garázs', 'beálló', 'udvar'.",
           },
           futes_tipus: {
             type: "string",
-            description: "Pl: 'cirkó', 'hőszivattyú'.",
+            description:
+              "Fűtés típusa kulcsszóként. Pl: 'gáz', 'cirkó', 'padlófűtés', 'távfűtés'.",
           },
           kell_klima: {
             type: "boolean",
-            description: "True, ha van vagy kell klíma.",
+            description: "True, ha a felhasználó klímát/légkondit kér.",
           },
           min_epites_eve: {
             type: "number",
-            description: "Építési év korlát (pl. 2010).",
+            description:
+              "Melyik év után épült? Pl. 'új építésű' = 2020, '2010 utáni' = 2010.",
           },
-          lakopark_e: { type: "string", enum: ["Nem", "Igen"] },
+          lakopark_e: {
+            type: "string",
+            enum: ["Nem", "Igen"],
+            description: "Igen, ha a szövegben lakópark szerepel.",
+          },
           lakopark_nev: {
             type: "string",
-            description: "Projekt neve (pl. Metrodom).",
+            description: "A lakópark neve (pl. Metrodom).",
           },
         },
-        // A kötelező mezőt vedd ki vagy módosítsd, ha a keresésnél nem mindig tudjuk az árat!
-        required: ["kategoria"],
+        required: ["max_ar"],
       },
     },
   },
@@ -155,6 +148,8 @@ window.ertelmezdAkeresest = async function (szoveg) {
   }
 };
 
+// --- Eredeti funkciók megtartása és javítása ---
+
 window.aiAdatKeres = async function () {
   const inputMezo = document.getElementById("ai-azonosito");
   const forrasSzoveg = inputMezo?.value.trim();
@@ -198,6 +193,76 @@ window.urlapUrites = function () {
   }
 };
 
+// Cím ellenőrzés Nominatim-mal
+
+// src/js/util/ai-bridge.js
+
+/* 
+window.automataCimEllenorzes = async function () {
+  const irsz = document.getElementById("iranyitoszam")?.value;
+  const varos = document.getElementById("telepules")?.value;
+  const utca = document.getElementById("utca")?.value;
+  const hazszam = document.getElementById("hazszam")?.value;
+  const mentesGomb = document.getElementById("hirdetes-bekuldes");
+
+  // Csak akkor indulunk el, ha az alap adatok megvannak
+  if (irsz?.length >= 4 && varos?.length >= 2 && utca?.length >= 3) {
+    const teljesCim = `${irsz} ${varos}, ${utca} ${hazszam || ""}`;
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          teljesCim
+        )}&addressdetails=1&countrycodes=hu`
+      );
+      let adatok = await response.json();
+
+      // HA NINCS TALÁLAT A HÁZSZÁMMAL, próbáljuk meg csak az utcával
+      if (adatok.length === 0 && hazszam) {
+        const utcaCim = `${irsz} ${varos}, ${utca}`;
+        const resp2 = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            utcaCim
+          )}&countrycodes=hu`
+        );
+        adatok = await resp2.json();
+      }
+
+      if (adatok && adatok.length > 0) {
+        window.aktualisLat = parseFloat(adatok[0].lat);
+        window.aktualisLng = parseFloat(adatok[0].lon);
+
+        console.log(
+          "📍 Koordináták rögzítve:",
+          window.aktualisLat,
+          window.aktualisLng
+        );
+
+        // Vizuális visszajelzés: Lime border
+        ["iranyitoszam", "telepules", "utca"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.style.border = "2px solid #A3E635";
+        });
+
+        if (mentesGomb) {
+          mentesGomb.disabled = false;
+          mentesGomb.style.opacity = "1";
+          mentesGomb.style.cursor = "pointer";
+        }
+      } else {
+        // NINCS TALÁLAT
+        window.aktualisLat = null;
+        window.aktualisLng = null;
+        console.warn("⚠️ A címet nem sikerült beazonosítani.");
+      }
+    } catch (e) {
+      console.error("Cím ellenőrzési hiba", e);
+    }
+  }
+};
+
+ */
+// FIGYELŐK FELRAKÁSA: Hogy gépelés közben magától frissüljön
 document.addEventListener("DOMContentLoaded", () => {
   const mezok = ["iranyitoszam", "telepules", "utca", "hazszam"];
   mezok.forEach((id) => {
