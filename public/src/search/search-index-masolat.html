@@ -34,13 +34,6 @@
                   background-position: right 0.5rem center;
                   background-size: 1em;
             }
-
-            /* Aktív gomb stílus */
-            .feature-btn.active {
-                  background-color: #E2F1B0;
-                  color: black;
-                  border-color: #E2F1B0;
-            }
       </style>
 </head>
 
@@ -70,31 +63,13 @@
                         class="fa-solid fa-arrow-right"></i></button>
       </div>
 
-      <div class="flex flex-wrap gap-2 mb-4 justify-center w-full max-w-3xl px-4 relative z-40">
-            <button onclick="toggleFeature('erkely')" id="btn-erkely"
-                  class="feature-btn bg-[#1a1a1a] hover:bg-white/10 text-white/80 px-4 py-2 rounded-full text-xs font-bold transition border border-white/10 flex items-center gap-2">
-                  <i class="fa-regular fa-sun"></i> Erkélyes
-            </button>
-            <button onclick="toggleFeature('uj')" id="btn-uj"
-                  class="feature-btn bg-[#1a1a1a] hover:bg-white/10 text-white/80 px-4 py-2 rounded-full text-xs font-bold transition border border-white/10 flex items-center gap-2">
-                  <i class="fa-solid fa-hammer"></i> Új építésű
-            </button>
-            <button onclick="toggleFeature('tegla')" id="btn-tegla"
-                  class="feature-btn bg-[#1a1a1a] hover:bg-white/10 text-white/80 px-4 py-2 rounded-full text-xs font-bold transition border border-white/10 flex items-center gap-2">
-                  <i class="fa-solid fa-cube"></i> Tégla
-            </button>
-            <button onclick="toggleFeature('lift')" id="btn-lift"
-                  class="feature-btn bg-[#1a1a1a] hover:bg-white/10 text-white/80 px-4 py-2 rounded-full text-xs font-bold transition border border-white/10 flex items-center gap-2">
-                  <i class="fa-solid fa-elevator"></i> Lift
-            </button>
-      </div>
+      <div id="backdrop" onclick="osszesMenuZarasa()" class="hidden fixed inset-0 z-30 cursor-default"></div>
 
-      <div class="flex flex-wrap gap-3 mb-6 justify-center w-full max-w-3xl px-4 relative z-30">
+      <div class="flex flex-wrap gap-3 mb-6 justify-center w-full max-w-3xl px-4 relative z-40">
             <div class="relative">
                   <button onclick="toggleMenu('metro-menu')"
-                        class="bg-[#1a1a1a] hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 border border-white/20">
-                        <i class="fa-solid fa-train-subway text-blue-400"></i> Metró
-                  </button>
+                        class="bg-[#1a1a1a] hover:bg-white/10 text-white px-5 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 border border-white/20"><i
+                              class="fa-solid fa-train-subway text-blue-400"></i> Metró</button>
                   <div id="metro-menu"
                         class="hidden absolute top-12 left-0 bg-[#222] border border-white/10 rounded-xl p-4 w-72 shadow-2xl z-50">
                         <h4 class="text-white/50 text-xs uppercase mb-3">Válassz állomásokat:</h4>
@@ -115,21 +90,18 @@
                                     <summary class="cursor-pointer text-[#69f0ae] font-bold p-1">M4</summary>
                                     <div id="m4-list" class="pl-4 mt-1 space-y-2"></div>
                               </details>
-                        </div>
-                        <button onclick="metroKeresesInditasa()"
-                              class="w-full bg-[#E2F1B0] text-black font-bold py-2 rounded hover:bg-[#d4e69e]">Keresés</button>
+                        </div><button onclick="metroKeresesInditasa()"
+                              class="w-full bg-[#E2F1B0] text-black font-bold py-2 rounded">Keresés</button>
                   </div>
             </div>
-
             <div class="relative">
                   <button onclick="toggleMenu('lakopark-menu')"
-                        class="bg-[#1a1a1a] hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 border border-white/20">
-                        <i class="fa-solid fa-city text-purple-400"></i> Lakópark
-                  </button>
+                        class="bg-[#1a1a1a] hover:bg-white/10 text-white px-5 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 border border-white/20"><i
+                              class="fa-solid fa-city text-purple-400"></i> Lakóparkok</button>
                   <div id="lakopark-menu"
                         class="hidden absolute top-12 left-0 bg-[#222] border border-white/10 rounded-xl p-4 w-72 shadow-2xl z-50">
                         <button onclick="gyorsKereses({lakopark: true}); osszesMenuZarasa();"
-                              class="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded mb-3 text-sm font-bold">Összes
+                              class="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded mb-3 text-sm font-bold">Minden
                               Lakópark</button>
                         <div class="relative"><input type="text" id="lp-nev-input" placeholder="Név szerint..."
                                     class="w-full bg-black/40 border border-white/20 rounded p-2 text-sm text-white"><button
@@ -138,12 +110,10 @@
                                           class="fa-solid fa-search"></i></button></div>
                   </div>
             </div>
-
             <div class="relative">
                   <button onclick="toggleMenu('kerulet-menu')"
-                        class="bg-[#1a1a1a] hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 border border-white/20">
-                        <i class="fa-solid fa-map-location-dot text-red-400"></i> Kerület
-                  </button>
+                        class="bg-[#1a1a1a] hover:bg-white/10 text-white px-5 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 border border-white/20"><i
+                              class="fa-solid fa-map-location-dot text-red-400"></i> Kerületek</button>
                   <div id="kerulet-menu"
                         class="hidden absolute top-12 right-0 md:left-0 bg-[#222] border border-white/10 rounded-xl p-4 w-[320px] shadow-2xl grid grid-cols-4 gap-2 max-h-64 overflow-y-auto custom-scroll z-50">
                   </div>
@@ -163,6 +133,7 @@
                   <span class="text-[#E2F1B0] font-bold text-lg" id="talalat-szamlalo">0 db</span>
                   <span class="text-white/50 text-sm">találat</span>
             </div>
+
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 w-full md:w-auto">
                   <select id="filter-allapot" onchange="belsoSzures()"
                         class="bg-white/5 border border-white/10 text-white text-xs rounded-lg px-3 py-2 cursor-pointer focus:border-[#E2F1B0] outline-none">
@@ -205,7 +176,7 @@
                         <h3 class="text-[#E2F1B0] font-bold text-lg"><i class="fa-solid fa-envelope-open-text"></i>
                               Érdekelnek ezek az ingatlanok?</h3>
                         <p class="text-white/60 text-xs">Kérj ajánlatot vagy visszahívást a listában szereplő
-                              ingatlanokkal kapcsolatban!</p>
+                              ingatlanokkal kapcsolatban egy kattintással!</p>
                   </div>
                   <button onclick="ajanlatModalNyitasa()"
                         class="bg-[#E2F1B0] hover:bg-[#cde088] text-black font-bold py-2 px-6 rounded-xl shadow-lg shadow-lime-900/20 transition transform hover:scale-105">
@@ -215,6 +186,7 @@
       </div>
 
       <div class="flex w-full max-w-6xl px-4 gap-6 items-start">
+
             <div id="saved-filters-sidebar"
                   class="hidden md:block w-72 flex-shrink-0 bg-[#1a1a1a] rounded-2xl border border-white/10 p-4 min-h-[200px]">
                   <h3 class="text-[#E2F1B0] text-sm font-bold mb-4 flex items-center gap-2"><i
@@ -223,9 +195,12 @@
                         <p class="text-white/30 text-xs italic">Betöltés...</p>
                   </div>
                   <button onclick="kombinaltKereses()"
-                        class="w-full bg-[#E2F1B0] hover:bg-[#cde088] text-black font-bold py-3 rounded-xl text-sm transition shadow-lg flex items-center justify-center gap-2"><i
-                              class="fa-solid fa-layer-group"></i> Kombinált lista</button>
+                        class="w-full bg-[#E2F1B0] hover:bg-[#cde088] text-black font-bold py-3 rounded-xl text-sm transition shadow-lg shadow-lime-900/20 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-layer-group"></i> Kombinált lista
+                  </button>
+                  <p class="text-white/30 text-[10px] text-center mt-2">Jelölj ki többet a fenti listából!</p>
             </div>
+
             <div id="eredmenyek" class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                   <p class="text-center text-white/30 col-span-full italic py-10">Kezdj gépelni vagy válassz a gombok
                         közül...</p>
@@ -234,159 +209,204 @@
 
       <div id="ajanlat-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4">
             <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="ajanlatModalZarasa()"></div>
+
             <div class="bg-[#1a1a1a] border border-white/10 rounded-2xl p-8 w-full max-w-md relative z-10 shadow-2xl">
                   <button onclick="ajanlatModalZarasa()"
                         class="absolute top-4 right-4 text-white/30 hover:text-white"><i
                               class="fa-solid fa-xmark text-xl"></i></button>
+
                   <h2 class="text-2xl font-bold text-[#E2F1B0] mb-2">Ajánlatkérés</h2>
+                  <p class="text-white/50 text-sm mb-6">Add meg adataidat, és kollégánk hamarosan keresni fog a
+                        kiválasztott ingatlanokkal kapcsolatban.</p>
+
                   <form onsubmit="ajanlatKuldese(event)" class="space-y-4">
-                        <div><label class="block text-xs text-white/70 mb-1 uppercase font-bold">Név</label><input
-                                    type="text" id="aj-nev" required
+                        <div>
+                              <label class="block text-xs text-white/70 mb-1 uppercase font-bold">Név</label>
+                              <input type="text" id="aj-nev" required
                                     class="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
                         </div>
-                        <div><label class="block text-xs text-white/70 mb-1 uppercase font-bold">Email</label><input
-                                    type="email" id="aj-email" required
+                        <div>
+                              <label class="block text-xs text-white/70 mb-1 uppercase font-bold">Email cím</label>
+                              <input type="email" id="aj-email" required
                                     class="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
                         </div>
-                        <div><label class="block text-xs text-white/70 mb-1 uppercase font-bold">Telefon</label><input
-                                    type="tel" id="aj-tel" required
+                        <div>
+                              <label class="block text-xs text-white/70 mb-1 uppercase font-bold">Telefonszám</label>
+                              <input type="tel" id="aj-tel" required
                                     class="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
                         </div>
-                        <div><label
-                                    class="block text-xs text-white/70 mb-1 uppercase font-bold">Megjegyzés</label><textarea
-                                    id="aj-uzenet" rows="3"
+                        <div>
+                              <label class="block text-xs text-white/70 mb-1 uppercase font-bold">Megjegyzés
+                                    (Opcionális)</label>
+                              <textarea id="aj-uzenet" rows="3"
                                     class="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none"></textarea>
                         </div>
+
                         <button type="submit"
-                              class="w-full bg-[#E2F1B0] hover:bg-[#cde088] text-black font-bold py-3 rounded-xl transition shadow-lg mt-2">Küldés</button>
+                              class="w-full bg-[#E2F1B0] hover:bg-[#cde088] text-black font-bold py-3 rounded-xl transition shadow-lg mt-2">
+                              Kérés elküldése <i class="fa-solid fa-paper-plane ml-2"></i>
+                        </button>
                   </form>
             </div>
       </div>
 
-      <div id="backdrop" onclick="osszesMenuZarasa()" class="hidden fixed inset-0 z-30 cursor-default"></div>
-
       <script type="module">
             import { engine } from "./engine.js";
             import { METRO_ALLOMASOK } from "./metro_adatok.js";
+            //            import { adatbazis, auth } from "./firebase-config.js";
             import { adatbazis, auth } from "../../js/util/firebase-config.js";
             import { collection, addDoc, getDocs, deleteDoc, doc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
             import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            // GLOBAL SCOPE EXPORTS
-            window.aktualisTalalatok = [];
+            let aktualisTalalatok = [];
             let aktualisFilterObj = null;
             let currentUser = null;
             let betoltottSzurokCache = {};
-            let aktivFeatures = { erkely: false, uj: false, tegla: false, lift: false };
 
-            onAuthStateChanged(auth, (user) => { currentUser = user; if (user) { mentettSzurokBetoltese(); if (user.displayName) document.getElementById('aj-nev').value = user.displayName; if (user.email) document.getElementById('aj-email').value = user.email; } else { document.getElementById('saved-filters-sidebar').classList.add('hidden'); } });
-
-            // --- FEATURE GOMBOK (Erkély, Tégla, Lift, Új) ---
-            window.toggleFeature = function (feat) {
-                  aktivFeatures[feat] = !aktivFeatures[feat];
-                  const btn = document.getElementById(`btn-${feat}`);
-                  if (aktivFeatures[feat]) btn.classList.add('active');
-                  else btn.classList.remove('active');
-                  if (window.aktualisTalalatok.length > 0) belsoSzures();
-            }
-
-            // --- INIT: URL PARAMÉTEREK FIGYELÉSE ---
-            window.addEventListener('DOMContentLoaded', () => {
-                  metroListaEpites(); keruletListaEpites();
-                  const urlParams = new URLSearchParams(window.location.search);
-                  const q = urlParams.get('q');
-                  const menu = urlParams.get('menu');
-
-                  if (q) {
-                        document.getElementById('ai-input').value = q;
-                        setTimeout(() => gyorsKereses({}, q), 100);
-                  } else if (menu) {
-                        setTimeout(() => toggleMenu(`${menu}-menu`), 100);
+            onAuthStateChanged(auth, (user) => {
+                  currentUser = user;
+                  if (user) {
+                        mentettSzurokBetoltese();
+                        // Ha be van lépve, előtöltjük az adatait
+                        if (user.displayName) document.getElementById('aj-nev').value = user.displayName;
+                        if (user.email) document.getElementById('aj-email').value = user.email;
                   } else {
-                        document.getElementById('ai-input').focus();
+                        document.getElementById('saved-filters-sidebar').classList.add('hidden');
                   }
-
-                  document.getElementById('ai-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') keresesInditasa(); });
-                  document.getElementById('lp-nev-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') lakoparkNevKereses(); });
             });
 
-            // --- FÜGGVÉNYEK A WINDOW-HOZ CSATOLVA ---
+            // --- AJÁNLATKÉRÉS LOGIKA (ÚJ) ---
+
+            window.ajanlatModalNyitasa = function () {
+                  document.getElementById('ajanlat-modal').classList.remove('hidden');
+            }
+
+            window.ajanlatModalZarasa = function () {
+                  document.getElementById('ajanlat-modal').classList.add('hidden');
+            }
+
+            window.ajanlatKuldese = async function (e) {
+                  e.preventDefault();
+
+                  const nev = document.getElementById('aj-nev').value;
+                  const email = document.getElementById('aj-email').value;
+                  const tel = document.getElementById('aj-tel').value;
+                  const uzenet = document.getElementById('aj-uzenet').value;
+
+                  // Kigyűjtjük az ingatlan ID-kat és Címeket
+                  const ingatlanLista = aktualisTalalatok.map(ing => ({
+                        id: ing.id,
+                        cim: `${ing.telepules}, ${ing.utca || ''}`,
+                        ar: ing._ar,
+                        azon: ing.azon || "Nincs ID"
+                  }));
+
+                  try {
+                        // MENTÉS AZ ADATBÁZISBA
+                        await addDoc(collection(adatbazis, "ajanlatkeresek"), {
+                              ugyfel_nev: nev,
+                              ugyfel_email: email,
+                              ugyfel_tel: tel,
+                              megjegyzes: uzenet,
+                              ingatlanok: ingatlanLista, // A teljes lista
+                              ingatlan_db: ingatlanLista.length,
+                              datum: new Date().toISOString(),
+                              statusz: "uj", // Admin számára jelző
+                              uid: currentUser ? currentUser.uid : null // Ha be van lépve
+                        });
+
+                        alert("Köszönjük! Az ajánlatkérést sikeresen rögzítettük. Hamarosan keresünk! ✅");
+                        ajanlatModalZarasa();
+
+                  } catch (error) {
+                        console.error("Hiba:", error);
+                        alert("Hiba történt a küldéskor. Kérlek próbáld újra.");
+                  }
+            }
+
+            // --- MENTETT SZŰRŐK ---
+
+            function mentettSzurokBetoltese() {
+                  const listaDiv = document.getElementById('mentett-szurok-lista');
+                  if (!currentUser) return;
+                  const q = query(collection(adatbazis, "mentett_szurok"), where("uid", "==", currentUser.uid));
+                  onSnapshot(q, (snapshot) => {
+                        listaDiv.innerHTML = "";
+                        betoltottSzurokCache = {};
+                        if (snapshot.empty) { listaDiv.innerHTML = '<p class="text-white/30 text-xs">Nincs mentett szűrőd.</p>'; return; }
+                        snapshot.forEach(docSnap => {
+                              const data = docSnap.data();
+                              betoltottSzurokCache[docSnap.id] = data.filter;
+                              const elem = document.createElement('div');
+                              elem.className = "flex items-start gap-3 bg-white/5 p-3 rounded-lg border border-transparent hover:border-[#E2F1B0]/30 transition";
+                              elem.innerHTML = `
+                        <div class="pt-1"><input type="checkbox" id="cb-${docSnap.id}" value="${docSnap.id}" class="szuro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0] cursor-pointer"></div>
+                        <div class="flex-1 overflow-hidden"><div class="flex justify-between items-start"><span class="text-white text-sm font-medium truncate cursor-pointer hover:text-[#E2F1B0]" onclick="betoltEgySzurot('${docSnap.id}', '${data.nev}')">${data.nev}</span><button onclick="szuroTorles('${docSnap.id}')" class="text-white/20 hover:text-red-400 ml-1"><i class="fa-solid fa-trash text-xs"></i></button></div><p class="text-[10px] text-white/40 mt-1 truncate">${formatFilterSummary(data.filter)}</p></div>
+                    `;
+                              listaDiv.appendChild(elem);
+                        });
+                  });
+            }
+            window.betoltEgySzurot = function (id, nev) {
+                  const filter = betoltottSzurokCache[id];
+                  if (filter) { document.getElementById('ai-input').value = nev; gyorsKereses(filter, ""); }
+            }
+            window.kombinaltKereses = async function () {
+                  const checkboxes = document.querySelectorAll('.szuro-cb:checked');
+                  if (checkboxes.length === 0) { alert("Jelölj ki legalább egy mentett szűrőt!"); return; }
+                  const kontener = document.getElementById('eredmenyek');
+                  kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i><p class="mt-4 text-white/50 text-sm">Kombinált lista építése...</p></div>';
+                  let osszesTalalat = [];
+                  let latottIdk = new Set();
+                  for (const cb of checkboxes) {
+                        const id = cb.value;
+                        const filter = betoltottSzurokCache[id];
+                        if (filter) {
+                              const eredmeny = await engine.keresesVegrehajtasa("", filter);
+                              if (!eredmeny.hiba && eredmeny.talalatok) {
+                                    eredmeny.talalatok.forEach(ingatlan => { if (!latottIdk.has(ingatlan.id)) { latottIdk.add(ingatlan.id); osszesTalalat.push(ingatlan); } });
+                              }
+                        }
+                  }
+                  aktualisTalalatok = osszesTalalat;
+                  document.getElementById('ai-input').value = `Kombinált lista (${checkboxes.length} szűrőből)`;
+                  document.getElementById('szuro-mentes-sav').classList.add('hidden');
+
+                  // UI: Megjelenítjük az ajánlatkérő sávot, mert ez egy "lista"
+                  document.getElementById('ajanlatkeres-sav').classList.remove('hidden');
+
+                  megjelenites(aktualisTalalatok);
+            }
+            window.szuroMentese = async function () {
+                  if (!currentUser) { alert("Jelentkezz be!"); return; }
+                  if (!aktualisFilterObj) { alert("Nincs aktív keresés!"); return; }
+                  const nev = prompt("Név:", "Keresés " + new Date().toLocaleDateString());
+                  if (!nev) return;
+                  try { await addDoc(collection(adatbazis, "mentett_szurok"), { uid: currentUser.uid, nev: nev, filter: aktualisFilterObj, datum: new Date().toISOString() }); alert("Sikeres mentés! ✅"); } catch (error) { console.error(error); alert("Hiba."); }
+            }
+            window.szuroTorles = async function (id) { if (!confirm("Törlöd?")) return; await deleteDoc(doc(adatbazis, "mentett_szurok", id)); }
+            function formatFilterSummary(f) {
+                  let s = [];
+                  if (f.telepules) s.push(f.telepules);
+                  if (f.arMax) s.push("<" + f.arMax / 1000000 + "M");
+                  if (f.arMin) s.push(">" + f.arMin / 1000000 + "M");
+                  if (f.szobaMin) s.push(f.szobaMin + "+ szoba");
+                  if (f.lakoparkNev) s.push(f.lakoparkNev);
+                  if (f.metroIds && f.metroIds.length > 0) s.push("Metró");
+                  return s.join(", ");
+            }
+
+            // --- ALAP FÜGGVÉNYEK ---
             window.teljesTorles = function () {
                   document.getElementById('ai-input').value = "";
                   document.getElementById('eredmenyek').innerHTML = '<p class="text-center text-white/30 col-span-full italic py-10">Kezdj gépelni vagy válassz a gombok közül...</p>';
                   document.getElementById('belso-szuro-container').classList.add('hidden');
                   document.getElementById('szuro-mentes-sav').classList.add('hidden');
-                  document.getElementById('ajanlatkeres-sav').classList.add('hidden');
+                  document.getElementById('ajanlatkeres-sav').classList.add('hidden'); // Ezt is rejtjük
                   document.querySelectorAll('select').forEach(s => s.value = "");
                   document.querySelectorAll('.szuro-cb').forEach(cb => cb.checked = false);
-                  aktivFeatures = { erkely: false, uj: false, tegla: false, lift: false };
-                  document.querySelectorAll('.feature-btn').forEach(btn => btn.classList.remove('active'));
                   document.getElementById('ai-input').focus();
             }
-
-            window.belsoSzures = function () {
-                  const allapot = document.getElementById('filter-allapot').value;
-                  const futes = document.getElementById('filter-futes').value;
-                  const parkolas = document.getElementById('filter-parkolas').value;
-                  const furdo = document.getElementById('filter-furdo').value;
-
-                  const szurtLista = window.aktualisTalalatok.filter(ingatlan => {
-                        if (allapot && !ingatlan._allapot.includes(allapot)) return false;
-                        if (futes && !ingatlan._futes.includes(futes)) return false;
-                        if (parkolas && !ingatlan._parkolas.includes(parkolas)) return false;
-                        if (furdo && !ingatlan._furdo.includes(furdo)) return false;
-
-                        if (aktivFeatures.erkely) { if (!ingatlan._erkely || ingatlan._erkely < 1) return false; }
-                        if (aktivFeatures.lift) { if (!ingatlan._lift || ingatlan._lift === "Nincs" || ingatlan._lift === "nincs") return false; }
-                        if (aktivFeatures.uj) { if (!ingatlan._allapot.toLowerCase().includes('új')) return false; }
-
-                        return true;
-                  });
-                  megjelenites(szurtLista);
-            }
-
-            window.ajanlatModalNyitasa = function () { document.getElementById('ajanlat-modal').classList.remove('hidden'); }
-            window.ajanlatModalZarasa = function () { document.getElementById('ajanlat-modal').classList.add('hidden'); }
-
-            window.ajanlatKuldese = async function (e) {
-                  e.preventDefault();
-                  const nev = document.getElementById('aj-nev').value;
-                  const email = document.getElementById('aj-email').value;
-                  const tel = document.getElementById('aj-tel').value;
-                  const uzenet = document.getElementById('aj-uzenet').value;
-                  const ingatlanLista = window.aktualisTalalatok.map(ing => ({ id: ing.id, cim: `${ing.telepules}, ${ing.utca || ''}`, ar: ing._ar, azon: ing.azon || "Nincs ID" }));
-                  try {
-                        await addDoc(collection(adatbazis, "ajanlatkeresek"), { ugyfel_nev: nev, ugyfel_email: email, ugyfel_tel: tel, megjegyzes: uzenet, ingatlanok: ingatlanLista, ingatlan_db: ingatlanLista.length, datum: new Date().toISOString(), statusz: "uj", uid: currentUser ? currentUser.uid : null });
-                        alert("Sikeres ajánlatkérés! ✅"); ajanlatModalZarasa();
-                  } catch (error) { console.error("Hiba:", error); alert("Hiba."); }
-            }
-
-            function mentettSzurokBetoltese() {
-                  const listaDiv = document.getElementById('mentett-szurok-lista'); if (!currentUser) return;
-                  const q = query(collection(adatbazis, "mentett_szurok"), where("uid", "==", currentUser.uid));
-                  onSnapshot(q, (snapshot) => {
-                        listaDiv.innerHTML = ""; betoltottSzurokCache = {};
-                        if (snapshot.empty) { listaDiv.innerHTML = '<p class="text-white/30 text-xs">Nincs mentett szűrőd.</p>'; return; }
-                        snapshot.forEach(docSnap => {
-                              const data = docSnap.data(); betoltottSzurokCache[docSnap.id] = data.filter;
-                              const elem = document.createElement('div'); elem.className = "flex items-start gap-3 bg-white/5 p-3 rounded-lg border border-transparent hover:border-[#E2F1B0]/30 transition";
-                              elem.innerHTML = `<div class="pt-1"><input type="checkbox" id="cb-${docSnap.id}" value="${docSnap.id}" class="szuro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0] cursor-pointer"></div><div class="flex-1 overflow-hidden"><div class="flex justify-between items-start"><span class="text-white text-sm font-medium truncate cursor-pointer hover:text-[#E2F1B0]" onclick="betoltEgySzurot('${docSnap.id}', '${data.nev}')">${data.nev}</span><button onclick="szuroTorles('${docSnap.id}')" class="text-white/20 hover:text-red-400 ml-1"><i class="fa-solid fa-trash text-xs"></i></button></div><p class="text-[10px] text-white/40 mt-1 truncate">${formatFilterSummary(data.filter)}</p></div>`;
-                              listaDiv.appendChild(elem);
-                        });
-                  });
-            }
-            window.betoltEgySzurot = function (id, nev) { const filter = betoltottSzurokCache[id]; if (filter) { document.getElementById('ai-input').value = nev; gyorsKereses(filter, ""); } }
-            window.kombinaltKereses = async function () {
-                  const checkboxes = document.querySelectorAll('.szuro-cb:checked'); if (checkboxes.length === 0) { alert("Jelölj ki legalább egyet!"); return; }
-                  const kontener = document.getElementById('eredmenyek'); kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i></div>';
-                  let osszesTalalat = []; let latottIdk = new Set();
-                  for (const cb of checkboxes) { const id = cb.value; const filter = betoltottSzurokCache[id]; if (filter) { const eredmeny = await engine.keresesVegrehajtasa("", filter); if (!eredmeny.hiba && eredmeny.talalatok) { eredmeny.talalatok.forEach(ingatlan => { if (!latottIdk.has(ingatlan.id)) { latottIdk.add(ingatlan.id); osszesTalalat.push(ingatlan); } }); } } }
-                  window.aktualisTalalatok = osszesTalalat; document.getElementById('ai-input').value = `Kombinált lista (${checkboxes.length})`; document.getElementById('szuro-mentes-sav').classList.add('hidden'); document.getElementById('ajanlatkeres-sav').classList.remove('hidden'); megjelenites(window.aktualisTalalatok);
-            }
-            window.szuroMentese = async function () { if (!currentUser) { alert("Jelentkezz be!"); return; } if (!aktualisFilterObj) { alert("Nincs aktív keresés!"); return; } const nev = prompt("Név:", "Keresés " + new Date().toLocaleDateString()); if (!nev) return; try { await addDoc(collection(adatbazis, "mentett_szurok"), { uid: currentUser.uid, nev: nev, filter: aktualisFilterObj, datum: new Date().toISOString() }); alert("Sikeres mentés! ✅"); } catch (error) { console.error(error); alert("Hiba."); } }
-            window.szuroTorles = async function (id) { if (!confirm("Törlöd?")) return; await deleteDoc(doc(adatbazis, "mentett_szurok", id)); }
-            function formatFilterSummary(f) { let s = []; if (f.telepules) s.push(f.telepules); if (f.arMax) s.push("<" + f.arMax / 1000000 + "M"); if (f.szobaMin) s.push(f.szobaMin + "+ szoba"); return s.join(", "); }
-
             window.toggleMenu = function (id) { const menu = document.getElementById(id); const isHidden = menu.classList.contains('hidden'); osszesMenuZarasa(); if (isHidden) { menu.classList.remove('hidden'); document.getElementById('backdrop').classList.remove('hidden'); } }
             window.osszesMenuZarasa = function () { ['metro-menu', 'lakopark-menu', 'kerulet-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('backdrop').classList.add('hidden'); }
             function metroListaEpites() { ['M1', 'M2', 'M3', 'M4'].forEach(vonal => { const container = document.getElementById(`${vonal.toLowerCase()}-list`); if (!container) return; METRO_ALLOMASOK[vonal].forEach(allomas => { const div = document.createElement('div'); div.className = "flex items-center gap-2"; div.innerHTML = `<input type="checkbox" id="${allomas.id}" value="${allomas.id}" class="metro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0]"><label for="${allomas.id}" class="text-white/70 text-sm cursor-pointer hover:text-white select-none">${allomas.nev}</label>`; container.appendChild(div); }); }); }
@@ -395,17 +415,42 @@
             window.lakoparkNevKereses = function () { const nev = document.getElementById('lp-nev-input').value; if (nev) { document.getElementById('ai-input').value = `Lakópark: ${nev}`; gyorsKereses({ lakoparkNev: nev }); osszesMenuZarasa(); } }
             window.keresesInditasa = async function () { gyorsKereses({}, document.getElementById('ai-input').value); }
             window.gyorsKereses = async function (extraFilterek, szovegBemenet = "") {
-                  const kontener = document.getElementById('eredmenyek'); kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i></div>'; document.getElementById('belso-szuro-container').classList.add('hidden'); document.getElementById('ajanlatkeres-sav').classList.add('hidden');
+                  const kontener = document.getElementById('eredmenyek');
+                  kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i></div>';
+                  document.getElementById('belso-szuro-container').classList.add('hidden');
+                  document.getElementById('ajanlatkeres-sav').classList.add('hidden');
                   const bemenet = szovegBemenet !== "" ? szovegBemenet : (extraFilterek.bemenet || document.getElementById('ai-input').value);
                   const eredmeny = await engine.keresesVegrehajtasa(bemenet, extraFilterek);
                   if (eredmeny.hiba) { kontener.innerHTML = `<div class="col-span-full max-w-md mx-auto bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-center mt-10"><p class="text-red-400 font-bold mb-1">Hoppá!</p><p class="text-white/60 text-sm">${eredmeny.uzenet}</p></div>`; return; }
-                  window.aktualisTalalatok = eredmeny.talalatok; aktualisFilterObj = eredmeny.filterObj;
-                  document.querySelectorAll('select').forEach(s => s.value = ""); document.getElementById('szuro-mentes-sav').classList.remove('hidden'); if (window.aktualisTalalatok.length > 0) document.getElementById('ajanlatkeres-sav').classList.remove('hidden');
-                  megjelenites(window.aktualisTalalatok);
+                  aktualisTalalatok = eredmeny.talalatok;
+                  aktualisFilterObj = eredmeny.filterObj;
+                  document.querySelectorAll('select').forEach(s => s.value = "");
+                  document.getElementById('szuro-mentes-sav').classList.remove('hidden');
+                  // Ha van találat, mutatjuk az ajánlatkérő sávot is
+                  if (aktualisTalalatok.length > 0) document.getElementById('ajanlatkeres-sav').classList.remove('hidden');
+                  megjelenites(aktualisTalalatok);
+            }
+            window.belsoSzures = function () {
+                  const allapot = document.getElementById('filter-allapot').value;
+                  const futes = document.getElementById('filter-futes').value;
+                  const parkolas = document.getElementById('filter-parkolas').value;
+                  const furdo = document.getElementById('filter-furdo').value;
+                  const szurtLista = aktualisTalalatok.filter(ingatlan => {
+                        if (allapot && !ingatlan._allapot.includes(allapot)) return false;
+                        if (futes && !ingatlan._futes.includes(futes)) return false;
+                        if (parkolas && !ingatlan._parkolas.includes(parkolas)) return false;
+                        if (furdo && !ingatlan._furdo.includes(furdo)) return false;
+                        return true;
+                  });
+                  megjelenites(szurtLista);
             }
             function megjelenites(lista) {
-                  const kontener = document.getElementById('eredmenyek'); const szamlaloDiv = document.getElementById('belso-szuro-container'); const szamlaloText = document.getElementById('talalat-szamlalo');
-                  kontener.innerHTML = ""; szamlaloDiv.classList.remove('hidden'); szamlaloText.innerText = `${lista.length} db`;
+                  const kontener = document.getElementById('eredmenyek');
+                  const szamlaloDiv = document.getElementById('belso-szuro-container');
+                  const szamlaloText = document.getElementById('talalat-szamlalo');
+                  kontener.innerHTML = "";
+                  szamlaloDiv.classList.remove('hidden');
+                  szamlaloText.innerText = `${lista.length} db`;
                   if (lista.length === 0) { kontener.innerHTML = `<div class="col-span-full text-center py-20 bg-white/5 rounded-2xl border border-white/5 border-dashed"><i class="fa-regular fa-face-frown text-5xl text-white/20 mb-4"></i><p class="text-white/60 text-lg">Sajnos nincs találat.</p></div>`; return; }
                   lista.forEach(ingatlan => {
                         const ar = new Intl.NumberFormat('hu-HU').format(ingatlan._ar);
@@ -415,10 +460,31 @@
                         const azon = ingatlan.azon || ingatlan.id || "Nincs ID";
                         const kartya = document.createElement('div');
                         kartya.className = "bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden hover:border-[#E2F1B0]/30 hover:shadow-2xl hover:shadow-[#E2F1B0]/5 transition-all duration-300 flex flex-col h-full";
-                        kartya.innerHTML = `<div class="h-56 relative overflow-hidden group"><img src="${kepUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700"><span class="absolute bottom-3 right-3 bg-black/80 text-[#E2F1B0] px-3 py-1 rounded-lg text-sm font-bold border border-[#E2F1B0]/20 shadow-lg backdrop-blur-md">${ar} Ft</span>${ingatlan._kategoria === 'kiado' ? '<span class="absolute top-3 left-3 bg-blue-500/90 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">KIADÓ</span>' : '<span class="absolute top-3 left-3 bg-[#E2F1B0]/90 text-black px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">ELADÓ</span>'}</div><div class="p-5 flex-1 flex flex-col justify-between"><div><div class="flex justify-between items-start mb-1"><span class="text-yellow-500/80 text-[10px] font-bold uppercase tracking-widest border border-yellow-500/20 px-1.5 py-0.5 rounded bg-yellow-500/5">${azon}</span></div><h3 class="font-bold text-white text-lg leading-tight truncate w-full mb-1" title="${ingatlan.telepules}, ${ingatlan.utca || ''}">${ingatlan.telepules}, <span class="text-white/70 font-normal">${ingatlan.utca || 'Központ'}</span></h3><p class="text-xs text-white/40 mb-4 flex items-center gap-1"><i class="fa-solid fa-map-pin text-red-400/70"></i> ${ingatlan._kerulet ? ingatlan._kerulet + " ker." : "Környék"} ${ingatlan._lakoparkNev ? ` <span class="text-purple-400/70 ml-2"><i class="fa-solid fa-city"></i> ${ingatlan._lakoparkNev}</span>` : ""}</p></div><div><div class="grid grid-cols-2 gap-3 pb-4 border-b border-white/5"><div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-vector-square text-[#E2F1B0]/70"></i><span>${ingatlan._alapterulet} m²</span></div><div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-bed text-[#E2F1B0]/70"></i><span>${ingatlan._szobak} szoba</span></div></div><button onclick="window.location.href='../../html/vevo/adatlap.html?id=${ingatlan.id}'" class="w-full mt-4 bg-[#E2F1B0]/10 text-[#E2F1B0] hover:bg-[#E2F1B0] hover:text-black py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Adatlap megtekintése</button></div></div>`;
+                        kartya.innerHTML = `
+                    <div class="h-56 relative overflow-hidden group">
+                        <img src="${kepUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                        <span class="absolute bottom-3 right-3 bg-black/80 text-[#E2F1B0] px-3 py-1 rounded-lg text-sm font-bold border border-[#E2F1B0]/20 shadow-lg backdrop-blur-md">${ar} Ft</span>
+                        ${ingatlan._kategoria === 'kiado' ? '<span class="absolute top-3 left-3 bg-blue-500/90 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">KIADÓ</span>' : '<span class="absolute top-3 left-3 bg-[#E2F1B0]/90 text-black px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">ELADÓ</span>'}
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-1"><span class="text-yellow-500/80 text-[10px] font-bold uppercase tracking-widest border border-yellow-500/20 px-1.5 py-0.5 rounded bg-yellow-500/5">${azon}</span></div>
+                            <h3 class="font-bold text-white text-lg leading-tight truncate w-full mb-1" title="${ingatlan.telepules}, ${ingatlan.utca || ''}">${ingatlan.telepules}, <span class="text-white/70 font-normal">${ingatlan.utca || 'Központ'}</span></h3>
+                            <p class="text-xs text-white/40 mb-4 flex items-center gap-1"><i class="fa-solid fa-map-pin text-red-400/70"></i> ${ingatlan._kerulet ? ingatlan._kerulet + " ker." : "Környék"} ${ingatlan._lakoparkNev ? ` <span class="text-purple-400/70 ml-2"><i class="fa-solid fa-city"></i> ${ingatlan._lakoparkNev}</span>` : ""}</p>
+                        </div>
+                        <div>
+                            <div class="grid grid-cols-2 gap-3 pb-4 border-b border-white/5">
+                                <div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-vector-square text-[#E2F1B0]/70"></i><span>${ingatlan._alapterulet} m²</span></div>
+                                <div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-bed text-[#E2F1B0]/70"></i><span>${ingatlan._szobak} szoba</span></div>
+                            </div>
+                            <button onclick="window.location.href='../../html/src/vevo/adatlap.html?id=${ingatlan.id}'" class="w-full mt-4 bg-[#E2F1B0]/10 text-[#E2F1B0] hover:bg-[#E2F1B0] hover:text-black py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Adatlap megtekintése</button>
+                        </div>
+                    </div>
+                `;
                         kontener.appendChild(kartya);
                   });
             }
+            window.addEventListener('DOMContentLoaded', () => { metroListaEpites(); keruletListaEpites(); document.getElementById('ai-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') keresesInditasa(); }); document.getElementById('lp-nev-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') lakoparkNevKereses(); }); });
       </script>
 </body>
 
