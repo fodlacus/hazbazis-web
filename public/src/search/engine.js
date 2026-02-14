@@ -1,5 +1,5 @@
-//import { adatbazis } from "./firebase-config.js";
-import { adatbazis } from "../../js/util/firebase-config.js";
+import { adatbazis } from "./firebase-config.js";
+//import { adatbazis } from "../../js/util/firebase-config.js";
 import {
   collection,
   getDocs,
