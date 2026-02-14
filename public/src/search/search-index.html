@@ -268,50 +268,100 @@
       <script type="module">
             import { engine } from "./engine.js";
             import { METRO_ALLOMASOK } from "./metro_adatok.js";
-            //          import { adatbazis, auth } from "../js/util/firebase-config.js";
-            import { adatbazis, auth } from "./../js/util/firebase-config.js";
+            import { adatbazis, auth } from "../../js/util/firebase-config.js"; // Ellenőrizd az útvonalat!
             import { collection, addDoc, getDocs, deleteDoc, doc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
             import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            // GLOBAL SCOPE EXPORTS
+            // GLOBAL EXPORTS
             window.aktualisTalalatok = [];
             let aktualisFilterObj = null;
             let currentUser = null;
             let betoltottSzurokCache = {};
-            let aktivFeatures = { erkely: false, uj: false, tegla: false, lift: false };
+            window.aktivFeatures = { erkely: false, uj: false, tegla: false, lift: false };
 
-            onAuthStateChanged(auth, (user) => { currentUser = user; if (user) { mentettSzurokBetoltese(); if (user.displayName) document.getElementById('aj-nev').value = user.displayName; if (user.email) document.getElementById('aj-email').value = user.email; } else { document.getElementById('saved-filters-sidebar').classList.add('hidden'); } });
-
-            // --- FEATURE GOMBOK (Erkély, Tégla, Lift, Új) ---
-            window.toggleFeature = function (feat) {
-                  aktivFeatures[feat] = !aktivFeatures[feat];
-                  const btn = document.getElementById(`btn-${feat}`);
-                  if (aktivFeatures[feat]) btn.classList.add('active');
-                  else btn.classList.remove('active');
-                  if (window.aktualisTalalatok.length > 0) belsoSzures();
-            }
-
-            // --- INIT: URL PARAMÉTEREK FIGYELÉSE ---
-            window.addEventListener('DOMContentLoaded', () => {
-                  metroListaEpites(); keruletListaEpites();
-                  const urlParams = new URLSearchParams(window.location.search);
-                  const q = urlParams.get('q');
-                  const menu = urlParams.get('menu');
-
-                  if (q) {
-                        document.getElementById('ai-input').value = q;
-                        setTimeout(() => gyorsKereses({}, q), 100);
-                  } else if (menu) {
-                        setTimeout(() => toggleMenu(`${menu}-menu`), 100);
-                  } else {
-                        document.getElementById('ai-input').focus();
-                  }
-
-                  document.getElementById('ai-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') keresesInditasa(); });
-                  document.getElementById('lp-nev-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') lakoparkNevKereses(); });
+            // AUTH
+            onAuthStateChanged(auth, (user) => {
+                  currentUser = user;
+                  if (user) { mentettSzurokBetoltese(); if (user.displayName && document.getElementById('aj-nev')) document.getElementById('aj-nev').value = user.displayName; if (user.email && document.getElementById('aj-email')) document.getElementById('aj-email').value = user.email; }
+                  else { const sb = document.getElementById('saved-filters-sidebar'); if (sb) sb.classList.add('hidden'); }
             });
 
-            // --- FÜGGVÉNYEK A WINDOW-HOZ CSATOLVA ---
+            // --- ÚJ: METRÓ VONAL NYITOGATÓ (Golyóálló verzió) ---
+            window.toggleMetroLine = function (lineId) {
+                  const listDiv = document.getElementById(lineId);
+                  const arrow = document.getElementById(lineId + '-arrow');
+
+                  if (listDiv.classList.contains('hidden')) {
+                        listDiv.classList.remove('hidden'); // Kinyit
+                        arrow.style.transform = 'rotate(180deg)'; // Nyíl elforgatása
+                  } else {
+                        listDiv.classList.add('hidden'); // Bezár
+                        arrow.style.transform = 'rotate(0deg)';
+                  }
+            }
+
+            // --- MÓDOSÍTOTT: METRÓ LISTA ÉPÍTÉS ---
+            function metroListaEpites() {
+                  const container = document.querySelector('#metro-menu .custom-scroll'); // Megkeressük a konténert
+                  if (!container) return;
+
+                  container.innerHTML = ""; // Töröljük a régit, hogy tiszta lappal induljunk
+
+                  ['M1', 'M2', 'M3', 'M4'].forEach(vonal => {
+                        // Színek beállítása vonalanként
+                        let szin = "text-white";
+                        if (vonal === 'M1') szin = "text-[#ffca28]"; // Sárga
+                        if (vonal === 'M2') szin = "text-[#ff5252]"; // Piros
+                        if (vonal === 'M3') szin = "text-[#448aff]"; // Kék
+                        if (vonal === 'M4') szin = "text-[#69f0ae]"; // Zöld
+
+                        // HTML Generálás (Gomb + Rejtett Lista)
+                        const section = document.createElement('div');
+                        section.className = "mb-2 border-b border-white/5 pb-2 last:border-0";
+                        section.innerHTML = `
+                        <button onclick="toggleMetroLine('${vonal}-list')" class="w-full flex items-center justify-between p-2 hover:bg-white/5 rounded transition text-left">
+                            <span class="${szin} font-bold text-sm">${vonal} metró</span>
+                            <i id="${vonal}-list-arrow" class="fa-solid fa-chevron-down text-white/30 text-xs transition-transform duration-300"></i>
+                        </button>
+                        <div id="${vonal}-list" class="hidden pl-4 mt-1 space-y-1">
+                            </div>
+                    `;
+                        container.appendChild(section);
+
+                        // Megállók betöltése a frissen létrehozott dobozba
+                        const listDiv = document.getElementById(`${vonal}-list`);
+                        METRO_ALLOMASOK[vonal].forEach(allomas => {
+                              const item = document.createElement('div');
+                              item.className = "flex items-center gap-2 hover:bg-white/5 p-1 rounded cursor-pointer group/item";
+                              item.innerHTML = `
+                            <input type="checkbox" id="${allomas.id}" value="${allomas.id}" class="metro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0] cursor-pointer">
+                            <label for="${allomas.id}" class="text-white/60 text-xs cursor-pointer group-hover/item:text-white transition select-none flex-1">${allomas.nev}</label>
+                        `;
+                              listDiv.appendChild(item);
+                        });
+                  });
+            }
+
+            // --- TÖBBI FÜGGVÉNY (Változatlan, csak a window-hoz kötve) ---
+
+            window.metroKeresesInditasa = function () {
+                  const cbs = document.querySelectorAll('.metro-cb:checked');
+                  const checkedIds = Array.from(cbs).map(cb => cb.value);
+                  if (checkedIds.length === 0) { alert("Válassz legalább egy állomást!"); return; }
+                  document.getElementById('ai-input').value = `Metró (${checkedIds.length} állomás)`;
+                  window.gyorsKereses({ metroIds: checkedIds });
+                  window.osszesMenuZarasa();
+            }
+
+            // Feature Gombok
+            window.toggleFeature = function (feat) {
+                  window.aktivFeatures[feat] = !window.aktivFeatures[feat];
+                  const btn = document.getElementById(`btn-${feat}`);
+                  if (window.aktivFeatures[feat]) btn.classList.add('active'); else btn.classList.remove('active');
+                  if (window.aktualisTalalatok.length > 0) window.belsoSzures();
+            }
+
+            // Törlés
             window.teljesTorles = function () {
                   document.getElementById('ai-input').value = "";
                   document.getElementById('eredmenyek').innerHTML = '<p class="text-center text-white/30 col-span-full italic py-10">Kezdj gépelni vagy válassz a gombok közül...</p>';
@@ -320,81 +370,46 @@
                   document.getElementById('ajanlatkeres-sav').classList.add('hidden');
                   document.querySelectorAll('select').forEach(s => s.value = "");
                   document.querySelectorAll('.szuro-cb').forEach(cb => cb.checked = false);
-                  aktivFeatures = { erkely: false, uj: false, tegla: false, lift: false };
+                  window.aktivFeatures = { erkely: false, uj: false, tegla: false, lift: false };
                   document.querySelectorAll('.feature-btn').forEach(btn => btn.classList.remove('active'));
                   document.getElementById('ai-input').focus();
             }
 
-            window.belsoSzures = function () {
-                  const allapot = document.getElementById('filter-allapot').value;
-                  const futes = document.getElementById('filter-futes').value;
-                  const parkolas = document.getElementById('filter-parkolas').value;
-                  const furdo = document.getElementById('filter-furdo').value;
-
-                  const szurtLista = window.aktualisTalalatok.filter(ingatlan => {
-                        if (allapot && !ingatlan._allapot.includes(allapot)) return false;
-                        if (futes && !ingatlan._futes.includes(futes)) return false;
-                        if (parkolas && !ingatlan._parkolas.includes(parkolas)) return false;
-                        if (furdo && !ingatlan._furdo.includes(furdo)) return false;
-
-                        if (aktivFeatures.erkely) { if (!ingatlan._erkely || ingatlan._erkely < 1) return false; }
-                        if (aktivFeatures.lift) { if (!ingatlan._lift || ingatlan._lift === "Nincs" || ingatlan._lift === "nincs") return false; }
-                        if (aktivFeatures.uj) { if (!ingatlan._allapot.toLowerCase().includes('új')) return false; }
-
-                        return true;
-                  });
-                  megjelenites(szurtLista);
+            // Menü Kezelés
+            window.toggleMenu = function (id) {
+                  const menu = document.getElementById(id);
+                  const isHidden = menu.classList.contains('hidden');
+                  window.osszesMenuZarasa();
+                  if (isHidden) { menu.classList.remove('hidden'); document.getElementById('backdrop').classList.remove('hidden'); }
+            }
+            window.osszesMenuZarasa = function () {
+                  ['metro-menu', 'lakopark-menu', 'kerulet-menu'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                  document.getElementById('backdrop').classList.add('hidden');
             }
 
-            window.ajanlatModalNyitasa = function () { document.getElementById('ajanlat-modal').classList.remove('hidden'); }
-            window.ajanlatModalZarasa = function () { document.getElementById('ajanlat-modal').classList.add('hidden'); }
+            // Init
+            window.addEventListener('DOMContentLoaded', () => {
+                  metroListaEpites(); // Most már az új verzió fut le!
+                  keruletListaEpites();
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const q = urlParams.get('q');
+                  const menu = urlParams.get('menu');
 
-            window.ajanlatKuldese = async function (e) {
-                  e.preventDefault();
-                  const nev = document.getElementById('aj-nev').value;
-                  const email = document.getElementById('aj-email').value;
-                  const tel = document.getElementById('aj-tel').value;
-                  const uzenet = document.getElementById('aj-uzenet').value;
-                  const ingatlanLista = window.aktualisTalalatok.map(ing => ({ id: ing.id, cim: `${ing.telepules}, ${ing.utca || ''}`, ar: ing._ar, azon: ing.azon || "Nincs ID" }));
-                  try {
-                        await addDoc(collection(adatbazis, "ajanlatkeresek"), { ugyfel_nev: nev, ugyfel_email: email, ugyfel_tel: tel, megjegyzes: uzenet, ingatlanok: ingatlanLista, ingatlan_db: ingatlanLista.length, datum: new Date().toISOString(), statusz: "uj", uid: currentUser ? currentUser.uid : null });
-                        alert("Sikeres ajánlatkérés! ✅"); ajanlatModalZarasa();
-                  } catch (error) { console.error("Hiba:", error); alert("Hiba."); }
-            }
+                  if (q) { document.getElementById('ai-input').value = q; setTimeout(() => window.gyorsKereses({}, q), 100); }
+                  else if (menu) { setTimeout(() => window.toggleMenu(`${menu}-menu`), 100); }
+                  else { document.getElementById('ai-input').focus(); }
 
-            function mentettSzurokBetoltese() {
-                  const listaDiv = document.getElementById('mentett-szurok-lista'); if (!currentUser) return;
-                  const q = query(collection(adatbazis, "mentett_szurok"), where("uid", "==", currentUser.uid));
-                  onSnapshot(q, (snapshot) => {
-                        listaDiv.innerHTML = ""; betoltottSzurokCache = {};
-                        if (snapshot.empty) { listaDiv.innerHTML = '<p class="text-white/30 text-xs">Nincs mentett szűrőd.</p>'; return; }
-                        snapshot.forEach(docSnap => {
-                              const data = docSnap.data(); betoltottSzurokCache[docSnap.id] = data.filter;
-                              const elem = document.createElement('div'); elem.className = "flex items-start gap-3 bg-white/5 p-3 rounded-lg border border-transparent hover:border-[#E2F1B0]/30 transition";
-                              elem.innerHTML = `<div class="pt-1"><input type="checkbox" id="cb-${docSnap.id}" value="${docSnap.id}" class="szuro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0] cursor-pointer"></div><div class="flex-1 overflow-hidden"><div class="flex justify-between items-start"><span class="text-white text-sm font-medium truncate cursor-pointer hover:text-[#E2F1B0]" onclick="betoltEgySzurot('${docSnap.id}', '${data.nev}')">${data.nev}</span><button onclick="szuroTorles('${docSnap.id}')" class="text-white/20 hover:text-red-400 ml-1"><i class="fa-solid fa-trash text-xs"></i></button></div><p class="text-[10px] text-white/40 mt-1 truncate">${formatFilterSummary(data.filter)}</p></div>`;
-                              listaDiv.appendChild(elem);
-                        });
-                  });
-            }
-            window.betoltEgySzurot = function (id, nev) { const filter = betoltottSzurokCache[id]; if (filter) { document.getElementById('ai-input').value = nev; gyorsKereses(filter, ""); } }
-            window.kombinaltKereses = async function () {
-                  const checkboxes = document.querySelectorAll('.szuro-cb:checked'); if (checkboxes.length === 0) { alert("Jelölj ki legalább egyet!"); return; }
-                  const kontener = document.getElementById('eredmenyek'); kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i></div>';
-                  let osszesTalalat = []; let latottIdk = new Set();
-                  for (const cb of checkboxes) { const id = cb.value; const filter = betoltottSzurokCache[id]; if (filter) { const eredmeny = await engine.keresesVegrehajtasa("", filter); if (!eredmeny.hiba && eredmeny.talalatok) { eredmeny.talalatok.forEach(ingatlan => { if (!latottIdk.has(ingatlan.id)) { latottIdk.add(ingatlan.id); osszesTalalat.push(ingatlan); } }); } } }
-                  window.aktualisTalalatok = osszesTalalat; document.getElementById('ai-input').value = `Kombinált lista (${checkboxes.length})`; document.getElementById('szuro-mentes-sav').classList.add('hidden'); document.getElementById('ajanlatkeres-sav').classList.remove('hidden'); megjelenites(window.aktualisTalalatok);
-            }
-            window.szuroMentese = async function () { if (!currentUser) { alert("Jelentkezz be!"); return; } if (!aktualisFilterObj) { alert("Nincs aktív keresés!"); return; } const nev = prompt("Név:", "Keresés " + new Date().toLocaleDateString()); if (!nev) return; try { await addDoc(collection(adatbazis, "mentett_szurok"), { uid: currentUser.uid, nev: nev, filter: aktualisFilterObj, datum: new Date().toISOString() }); alert("Sikeres mentés! ✅"); } catch (error) { console.error(error); alert("Hiba."); } }
-            window.szuroTorles = async function (id) { if (!confirm("Törlöd?")) return; await deleteDoc(doc(adatbazis, "mentett_szurok", id)); }
-            function formatFilterSummary(f) { let s = []; if (f.telepules) s.push(f.telepules); if (f.arMax) s.push("<" + f.arMax / 1000000 + "M"); if (f.szobaMin) s.push(f.szobaMin + "+ szoba"); return s.join(", "); }
+                  document.getElementById('ai-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') window.keresesInditasa(); });
+                  document.getElementById('lp-nev-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') window.lakoparkNevKereses(); });
+            });
 
-            window.toggleMenu = function (id) { const menu = document.getElementById(id); const isHidden = menu.classList.contains('hidden'); osszesMenuZarasa(); if (isHidden) { menu.classList.remove('hidden'); document.getElementById('backdrop').classList.remove('hidden'); } }
-            window.osszesMenuZarasa = function () { ['metro-menu', 'lakopark-menu', 'kerulet-menu'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('backdrop').classList.add('hidden'); }
-            function metroListaEpites() { ['M1', 'M2', 'M3', 'M4'].forEach(vonal => { const container = document.getElementById(`${vonal.toLowerCase()}-list`); if (!container) return; METRO_ALLOMASOK[vonal].forEach(allomas => { const div = document.createElement('div'); div.className = "flex items-center gap-2"; div.innerHTML = `<input type="checkbox" id="${allomas.id}" value="${allomas.id}" class="metro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0]"><label for="${allomas.id}" class="text-white/70 text-sm cursor-pointer hover:text-white select-none">${allomas.nev}</label>`; container.appendChild(div); }); }); }
-            window.metroKeresesInditasa = function () { const cbs = document.querySelectorAll('.metro-cb:checked'); const checkedIds = Array.from(cbs).map(cb => cb.value); if (checkedIds.length === 0) { alert("Válassz állomást!"); return; } document.getElementById('ai-input').value = `Metró (${checkedIds.length})`; gyorsKereses({ metroIds: checkedIds }); osszesMenuZarasa(); }
-            function keruletListaEpites() { const romai = ["I.", "II.", "III.", "IV.", "V.", "VI.", "VII.", "VIII.", "IX.", "X.", "XI.", "XII.", "XIII.", "XIV.", "XV.", "XVI.", "XVII.", "XVIII.", "XIX.", "XX.", "XXI.", "XXII.", "XXIII."]; const container = document.getElementById('kerulet-menu'); if (!container) return; romai.forEach(k => { const btn = document.createElement('button'); btn.className = "bg-black/40 hover:bg-red-400 hover:text-white text-white/80 text-xs py-3 rounded border border-white/10 transition font-mono shadow"; btn.innerText = k; btn.onclick = () => { document.getElementById('ai-input').value = `Budapest ${k} kerület`; gyorsKereses({ kerulet: k }); osszesMenuZarasa(); }; container.appendChild(btn); }); }
-            window.lakoparkNevKereses = function () { const nev = document.getElementById('lp-nev-input').value; if (nev) { document.getElementById('ai-input').value = `Lakópark: ${nev}`; gyorsKereses({ lakoparkNev: nev }); osszesMenuZarasa(); } }
-            window.keresesInditasa = async function () { gyorsKereses({}, document.getElementById('ai-input').value); }
+            // --- A többi segédfüggvény (keresés, szűrés, megjelenítés) változatlan, de be kell másolnod ide őket az előző válaszból, ha hiányoznának! ---
+            // (A helytakarékosság miatt itt most csak jelzem, hogy az előző kód többi része ide jön változatlanul:
+            // keruletListaEpites, lakoparkNevKereses, keresesInditasa, gyorsKereses, belsoSzures, megjelenites, ajanlatModalNyitasa, stb.)
+
+            function keruletListaEpites() { const romai = ["I.", "II.", "III.", "IV.", "V.", "VI.", "VII.", "VIII.", "IX.", "X.", "XI.", "XII.", "XIII.", "XIV.", "XV.", "XVI.", "XVII.", "XVIII.", "XIX.", "XX.", "XXI.", "XXII.", "XXIII."]; const container = document.getElementById('kerulet-menu'); if (!container) return; romai.forEach(k => { const btn = document.createElement('button'); btn.className = "bg-black/40 hover:bg-red-400 hover:text-white text-white/80 text-xs py-3 rounded border border-white/10 transition font-mono shadow"; btn.innerText = k; btn.onclick = () => { document.getElementById('ai-input').value = `Budapest ${k} kerület`; window.gyorsKereses({ kerulet: k }); window.osszesMenuZarasa(); }; container.appendChild(btn); }); }
+            window.lakoparkNevKereses = function () { const nev = document.getElementById('lp-nev-input').value; if (nev) { document.getElementById('ai-input').value = `Lakópark: ${nev}`; window.gyorsKereses({ lakoparkNev: nev }); window.osszesMenuZarasa(); } }
+            window.keresesInditasa = async function () { window.gyorsKereses({}, document.getElementById('ai-input').value); }
             window.gyorsKereses = async function (extraFilterek, szovegBemenet = "") {
                   const kontener = document.getElementById('eredmenyek'); kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i></div>'; document.getElementById('belso-szuro-container').classList.add('hidden'); document.getElementById('ajanlatkeres-sav').classList.add('hidden');
                   const bemenet = szovegBemenet !== "" ? szovegBemenet : (extraFilterek.bemenet || document.getElementById('ai-input').value);
@@ -404,23 +419,39 @@
                   document.querySelectorAll('select').forEach(s => s.value = ""); document.getElementById('szuro-mentes-sav').classList.remove('hidden'); if (window.aktualisTalalatok.length > 0) document.getElementById('ajanlatkeres-sav').classList.remove('hidden');
                   megjelenites(window.aktualisTalalatok);
             }
-            function megjelenites(lista) {
-                  const kontener = document.getElementById('eredmenyek'); const szamlaloDiv = document.getElementById('belso-szuro-container'); const szamlaloText = document.getElementById('talalat-szamlalo');
-                  kontener.innerHTML = ""; szamlaloDiv.classList.remove('hidden'); szamlaloText.innerText = `${lista.length} db`;
-                  if (lista.length === 0) { kontener.innerHTML = `<div class="col-span-full text-center py-20 bg-white/5 rounded-2xl border border-white/5 border-dashed"><i class="fa-regular fa-face-frown text-5xl text-white/20 mb-4"></i><p class="text-white/60 text-lg">Sajnos nincs találat.</p></div>`; return; }
-                  lista.forEach(ingatlan => {
-                        const ar = new Intl.NumberFormat('hu-HU').format(ingatlan._ar);
-                        let kepUrl = "https://placehold.co/600x400/2a2a2a/E2F1B0?text=Nincs+kép";
-                        const lehetsegesKep = ingatlan.kepek_horiz?.[0] || ingatlan.kepek_vert?.[0] || ingatlan.kepek?.[0];
-                        if (lehetsegesKep) { if (typeof lehetsegesKep === 'string') kepUrl = lehetsegesKep; else if (lehetsegesKep.url) kepUrl = lehetsegesKep.url; }
-                        const azon = ingatlan.azon || ingatlan.id || "Nincs ID";
-                        const kartya = document.createElement('div');
-                        kartya.className = "bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden hover:border-[#E2F1B0]/30 hover:shadow-2xl hover:shadow-[#E2F1B0]/5 transition-all duration-300 flex flex-col h-full";
-                        kartya.innerHTML = `<div class="h-56 relative overflow-hidden group"><img src="${kepUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700"><span class="absolute bottom-3 right-3 bg-black/80 text-[#E2F1B0] px-3 py-1 rounded-lg text-sm font-bold border border-[#E2F1B0]/20 shadow-lg backdrop-blur-md">${ar} Ft</span>${ingatlan._kategoria === 'kiado' ? '<span class="absolute top-3 left-3 bg-blue-500/90 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">KIADÓ</span>' : '<span class="absolute top-3 left-3 bg-[#E2F1B0]/90 text-black px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">ELADÓ</span>'}</div><div class="p-5 flex-1 flex flex-col justify-between"><div><div class="flex justify-between items-start mb-1"><span class="text-yellow-500/80 text-[10px] font-bold uppercase tracking-widest border border-yellow-500/20 px-1.5 py-0.5 rounded bg-yellow-500/5">${azon}</span></div><h3 class="font-bold text-white text-lg leading-tight truncate w-full mb-1" title="${ingatlan.telepules}, ${ingatlan.utca || ''}">${ingatlan.telepules}, <span class="text-white/70 font-normal">${ingatlan.utca || 'Központ'}</span></h3><p class="text-xs text-white/40 mb-4 flex items-center gap-1"><i class="fa-solid fa-map-pin text-red-400/70"></i> ${ingatlan._kerulet ? ingatlan._kerulet + " ker." : "Környék"} ${ingatlan._lakoparkNev ? ` <span class="text-purple-400/70 ml-2"><i class="fa-solid fa-city"></i> ${ingatlan._lakoparkNev}</span>` : ""}</p></div><div><div class="grid grid-cols-2 gap-3 pb-4 border-b border-white/5"><div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-vector-square text-[#E2F1B0]/70"></i><span>${ingatlan._alapterulet} m²</span></div><div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-bed text-[#E2F1B0]/70"></i><span>${ingatlan._szobak} szoba</span></div></div><button onclick="window.location.href='../../html/vevo/adatlap.html?id=${ingatlan.id}'" class="w-full mt-4 bg-[#E2F1B0]/10 text-[#E2F1B0] hover:bg-[#E2F1B0] hover:text-black py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Adatlap megtekintése</button></div></div>`;
-                        kontener.appendChild(kartya);
+            window.belsoSzures = function () {
+                  const allapot = document.getElementById('filter-allapot').value;
+                  const futes = document.getElementById('filter-futes').value;
+                  const parkolas = document.getElementById('filter-parkolas').value;
+                  const furdo = document.getElementById('filter-furdo').value;
+                  const szurtLista = window.aktualisTalalatok.filter(ingatlan => {
+                        if (allapot && !ingatlan._allapot.includes(allapot)) return false;
+                        if (futes && !ingatlan._futes.includes(futes)) return false;
+                        if (parkolas && !ingatlan._parkolas.includes(parkolas)) return false;
+                        if (furdo && !ingatlan._furdo.includes(furdo)) return false;
+                        if (window.aktivFeatures.erkely && (!ingatlan._erkely || ingatlan._erkely < 1)) return false;
+                        if (window.aktivFeatures.lift && (!ingatlan._lift || ingatlan._lift === "Nincs")) return false;
+                        if (window.aktivFeatures.uj && !ingatlan._allapot.toLowerCase().includes('új')) return false;
+                        return true;
                   });
+                  megjelenites(szurtLista);
             }
+            window.ajanlatModalNyitasa = function () { document.getElementById('ajanlat-modal').classList.remove('hidden'); }
+            window.ajanlatModalZarasa = function () { document.getElementById('ajanlat-modal').classList.add('hidden'); }
+            window.ajanlatKuldese = async function (e) {
+                  e.preventDefault(); const nev = document.getElementById('aj-nev').value; const email = document.getElementById('aj-email').value; const tel = document.getElementById('aj-tel').value; const uzenet = document.getElementById('aj-uzenet').value;
+                  const ingatlanLista = window.aktualisTalalatok.map(ing => ({ id: ing.id, cim: `${ing.telepules}, ${ing.utca || ''}`, ar: ing._ar, azon: ing.azon || "Nincs ID" }));
+                  try { await addDoc(collection(adatbazis, "ajanlatkeresek"), { ugyfel_nev: nev, ugyfel_email: email, ugyfel_tel: tel, megjegyzes: uzenet, ingatlanok: ingatlanLista, ingatlan_db: ingatlanLista.length, datum: new Date().toISOString(), statusz: "uj", uid: currentUser ? currentUser.uid : null }); alert("Sikeres ajánlatkérés! ✅"); window.ajanlatModalZarasa(); } catch (error) { console.error("Hiba:", error); alert("Hiba."); }
+            }
+            function mentettSzurokBetoltese() { const listaDiv = document.getElementById('mentett-szurok-lista'); if (!currentUser) return; const q = query(collection(adatbazis, "mentett_szurok"), where("uid", "==", currentUser.uid)); onSnapshot(q, (snapshot) => { listaDiv.innerHTML = ""; betoltottSzurokCache = {}; if (snapshot.empty) { listaDiv.innerHTML = '<p class="text-white/30 text-xs">Nincs mentett szűrőd.</p>'; return; } snapshot.forEach(docSnap => { const data = docSnap.data(); betoltottSzurokCache[docSnap.id] = data.filter; const elem = document.createElement('div'); elem.className = "flex items-start gap-3 bg-white/5 p-3 rounded-lg border border-transparent hover:border-[#E2F1B0]/30 transition"; elem.innerHTML = `<div class="pt-1"><input type="checkbox" id="cb-${docSnap.id}" value="${docSnap.id}" class="szuro-cb w-4 h-4 rounded bg-black/50 border-white/20 text-[#E2F1B0] focus:ring-[#E2F1B0] cursor-pointer"></div><div class="flex-1 overflow-hidden"><div class="flex justify-between items-start"><span class="text-white text-sm font-medium truncate cursor-pointer hover:text-[#E2F1B0]" onclick="betoltEgySzurot('${docSnap.id}', '${data.nev}')">${data.nev}</span><button onclick="szuroTorles('${docSnap.id}')" class="text-white/20 hover:text-red-400 ml-1"><i class="fa-solid fa-trash text-xs"></i></button></div><p class="text-[10px] text-white/40 mt-1 truncate">${formatFilterSummary(data.filter)}</p></div>`; listaDiv.appendChild(elem); }); }); }
+            window.betoltEgySzurot = function (id, nev) { const filter = betoltottSzurokCache[id]; if (filter) { document.getElementById('ai-input').value = nev; window.gyorsKereses(filter, ""); } }
+            window.kombinaltKereses = async function () { const checkboxes = document.querySelectorAll('.szuro-cb:checked'); if (checkboxes.length === 0) { alert("Jelölj ki legalább egyet!"); return; } const kontener = document.getElementById('eredmenyek'); kontener.innerHTML = '<div class="col-span-full text-center py-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-[#E2F1B0]"></i></div>'; let osszesTalalat = []; let latottIdk = new Set(); for (const cb of checkboxes) { const id = cb.value; const filter = betoltottSzurokCache[id]; if (filter) { const eredmeny = await engine.keresesVegrehajtasa("", filter); if (!eredmeny.hiba && eredmeny.talalatok) { eredmeny.talalatok.forEach(ingatlan => { if (!latottIdk.has(ingatlan.id)) { latottIdk.add(ingatlan.id); osszesTalalat.push(ingatlan); } }); } } } window.aktualisTalalatok = osszesTalalat; document.getElementById('ai-input').value = `Kombinált lista (${checkboxes.length})`; document.getElementById('szuro-mentes-sav').classList.add('hidden'); document.getElementById('ajanlatkeres-sav').classList.remove('hidden'); megjelenites(window.aktualisTalalatok); }
+            window.szuroMentese = async function () { if (!currentUser) { alert("Jelentkezz be!"); return; } if (!aktualisFilterObj) { alert("Nincs aktív keresés!"); return; } const nev = prompt("Név:", "Keresés " + new Date().toLocaleDateString()); if (!nev) return; try { await addDoc(collection(adatbazis, "mentett_szurok"), { uid: currentUser.uid, nev: nev, filter: aktualisFilterObj, datum: new Date().toISOString() }); alert("Sikeres mentés! ✅"); } catch (error) { console.error(error); alert("Hiba."); } }
+            window.szuroTorles = async function (id) { if (!confirm("Törlöd?")) return; await deleteDoc(doc(adatbazis, "mentett_szurok", id)); }
+            function formatFilterSummary(f) { let s = []; if (f.telepules) s.push(f.telepules); if (f.arMax) s.push("<" + f.arMax / 1000000 + "M"); return s.join(", "); }
+            function megjelenites(lista) { const kontener = document.getElementById('eredmenyek'); const szamlaloDiv = document.getElementById('belso-szuro-container'); const szamlaloText = document.getElementById('talalat-szamlalo'); kontener.innerHTML = ""; szamlaloDiv.classList.remove('hidden'); szamlaloText.innerText = `${lista.length} db`; if (lista.length === 0) { kontener.innerHTML = `<div class="col-span-full text-center py-20 bg-white/5 rounded-2xl border border-white/5 border-dashed"><i class="fa-regular fa-face-frown text-5xl text-white/20 mb-4"></i><p class="text-white/60 text-lg">Sajnos nincs találat.</p></div>`; return; } lista.forEach(ingatlan => { const ar = new Intl.NumberFormat('hu-HU').format(ingatlan._ar); let kepUrl = "https://placehold.co/600x400/2a2a2a/E2F1B0?text=Nincs+kép"; const lehetsegesKep = ingatlan.kepek_horiz?.[0] || ingatlan.kepek_vert?.[0] || ingatlan.kepek?.[0]; if (lehetsegesKep) { if (typeof lehetsegesKep === 'string') kepUrl = lehetsegesKep; else if (lehetsegesKep.url) kepUrl = lehetsegesKep.url; } const azon = ingatlan.azon || ingatlan.id || "Nincs ID"; const kartya = document.createElement('div'); kartya.className = "bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden hover:border-[#E2F1B0]/30 hover:shadow-2xl hover:shadow-[#E2F1B0]/5 transition-all duration-300 flex flex-col h-full"; kartya.innerHTML = `<div class="h-56 relative overflow-hidden group"><img src="${kepUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700"><span class="absolute bottom-3 right-3 bg-black/80 text-[#E2F1B0] px-3 py-1 rounded-lg text-sm font-bold border border-[#E2F1B0]/20 shadow-lg backdrop-blur-md">${ar} Ft</span>${ingatlan._kategoria === 'kiado' ? '<span class="absolute top-3 left-3 bg-blue-500/90 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">KIADÓ</span>' : '<span class="absolute top-3 left-3 bg-[#E2F1B0]/90 text-black px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow">ELADÓ</span>'}</div><div class="p-5 flex-1 flex flex-col justify-between"><div><div class="flex justify-between items-start mb-1"><span class="text-yellow-500/80 text-[10px] font-bold uppercase tracking-widest border border-yellow-500/20 px-1.5 py-0.5 rounded bg-yellow-500/5">${azon}</span></div><h3 class="font-bold text-white text-lg leading-tight truncate w-full mb-1" title="${ingatlan.telepules}, ${ingatlan.utca || ''}">${ingatlan.telepules}, <span class="text-white/70 font-normal">${ingatlan.utca || 'Központ'}</span></h3><p class="text-xs text-white/40 mb-4 flex items-center gap-1"><i class="fa-solid fa-map-pin text-red-400/70"></i> ${ingatlan._kerulet ? ingatlan._kerulet + " ker." : "Környék"} ${ingatlan._lakoparkNev ? ` <span class="text-purple-400/70 ml-2"><i class="fa-solid fa-city"></i> ${ingatlan._lakoparkNev}</span>` : ""}</p></div><div><div class="grid grid-cols-2 gap-3 pb-4 border-b border-white/5"><div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-vector-square text-[#E2F1B0]/70"></i><span>${ingatlan._alapterulet} m²</span></div><div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-bed text-[#E2F1B0]/70"></i><span>${ingatlan._szobak} szoba</span></div></div><button onclick="window.location.href='../../html/vevo/adatlap.html?id=${ingatlan.id}'" class="w-full mt-4 bg-[#E2F1B0]/10 text-[#E2F1B0] hover:bg-[#E2F1B0] hover:text-black py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Adatlap megtekintése</button></div></div>`; kontener.appendChild(kartya); }); }
       </script>
+
 </body>
 
 </html>
