@@ -253,8 +253,8 @@
       <script type="module">
             import { engine } from "./engine.js";
             import { METRO_ALLOMASOK } from "./metro_adatok.js";
-            import { adatbazis, auth } from "./firebase-config.js";
-            //         import { adatbazis, auth } from "../../js/util/firebase-config.js";
+            //            import { adatbazis, auth } from "./firebase-config.js";
+            import { adatbazis, auth } from "../../js/util/firebase-config.js";
             import { collection, addDoc, getDocs, deleteDoc, doc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
             import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -477,7 +477,7 @@
                                 <div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-vector-square text-[#E2F1B0]/70"></i><span>${ingatlan._alapterulet} m²</span></div>
                                 <div class="flex items-center gap-2 text-white/60 text-sm bg-white/5 p-2 rounded-lg justify-center"><i class="fa-solid fa-bed text-[#E2F1B0]/70"></i><span>${ingatlan._szobak} szoba</span></div>
                             </div>
-                            <button onclick="window.location.href='../../html/vevo/adatlap.html?id=${ingatlan.id}'" class="w-full mt-4 bg-[#E2F1B0]/10 text-[#E2F1B0] hover:bg-[#E2F1B0] hover:text-black py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Adatlap megtekintése</button>
+                            <button onclick="window.location.href='../../html/src/vevo/adatlap.html?id=${ingatlan.id}'" class="w-full mt-4 bg-[#E2F1B0]/10 text-[#E2F1B0] hover:bg-[#E2F1B0] hover:text-black py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2"><i class="fa-solid fa-eye"></i> Adatlap megtekintése</button>
                         </div>
                     </div>
                 `;
