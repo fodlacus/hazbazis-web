@@ -334,27 +334,33 @@
                   window.location.href = "../../shorts-index.html";
             }
             // --- FRISSÍTÉS: Találatok megjelenítésekor ellenőrizzük a videókat ---
+
             function frissitShortsGombot() {
-                  // KÉMKEDÉS: Nézzük meg a konzolban, mit lát a gép!
-                  console.log("🔍 Videó ellenőrzés indul...");
+                  console.log("🎬 Gomb frissítése indul...");
 
-                  // Számoljuk meg
-                  const videoCount = window.aktualisTalalatok.filter(p => {
-                        // Kiírjuk azokat, amiknek van videója (debug)
-                        if (p._videoUrl) console.log("🎥 Talált videó:", p.id, p._videoUrl);
-                        return p._videoUrl && p._videoUrl.length > 5;
-                  }).length;
+                  // Megszámoljuk a videókat
+                  const videok = window.aktualisTalalatok.filter(p => p._videoUrl && p._videoUrl.length > 10);
+                  const videoCount = videok.length;
 
-                  console.log("📊 Összes videós találat:", videoCount);
+                  console.log("📊 Videós ingatlanok száma:", videoCount);
 
                   const bar = document.getElementById('shorts-bar');
                   const counter = document.getElementById('video-count');
 
+                  if (!bar) {
+                        console.error("❌ HIBA: Nem találom a 'shorts-bar' ID-jű elemet a HTML-ben!");
+                        return;
+                  }
+
                   if (videoCount > 0) {
-                        bar.classList.remove('hidden');
-                        counter.innerText = videoCount;
+                        console.log("✅ Van videó! Gomb megjelenítése.");
+                        bar.classList.remove('hidden'); // Levesszük a rejtést
+                        bar.style.display = "flex"; // Kényszerítjük a megjelenést
+                        if (counter) counter.innerText = videoCount;
                   } else {
+                        console.log("bot Nincs videó. Gomb elrejtése.");
                         bar.classList.add('hidden');
+                        bar.style.display = "none";
                   }
             }
 
@@ -489,7 +495,9 @@
                   if (eredmeny.hiba) { kontener.innerHTML = `<div class="col-span-full max-w-md mx-auto bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-center mt-10"><p class="text-red-400 font-bold mb-1">Hoppá!</p><p class="text-white/60 text-sm">${eredmeny.uzenet}</p></div>`; return; }
                   window.aktualisTalalatok = eredmeny.talalatok; aktualisFilterObj = eredmeny.filterObj;
                   document.querySelectorAll('select').forEach(s => s.value = ""); document.getElementById('szuro-mentes-sav').classList.remove('hidden'); if (window.aktualisTalalatok.length > 0) document.getElementById('ajanlatkeres-sav').classList.remove('hidden');
+                  frissitShortsGombot();
                   megjelenites(window.aktualisTalalatok);
+
             }
             window.belsoSzures = function () {
                   const allapot = document.getElementById('filter-allapot').value;
