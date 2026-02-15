@@ -1,4 +1,4 @@
-import { adatbazis } from "../../../src/js/util/firebase-config.js";
+import { adatbazis } from "../../../src/js/search/firebase-config.js"; // ⚠️ ÚTVONAL ELLENŐRZÉS: Lehet, hogy ../../../src/js/util/firebase-config.js kell neked!
 import {
   collection,
   getDocs,
@@ -29,8 +29,8 @@ export const DataManager = {
 
       // Normalizálás: a motornak már csak a tiszta, ellenőrzött adatot adjuk át
       this._rawData = raw.map((item) => ({
-        id: item.azon,
-        video_url: item.videoUrl, // Most már fixen a jó mezőnév
+        id: item.azon || item.id, // Biztosítjuk, hogy legyen ID
+        video_url: item.videoUrl,
         title: item.telepules || "Budapest",
         address: `${item.utca || ""} utca`,
         price: item.vételár
@@ -44,11 +44,46 @@ export const DataManager = {
         coords: item.lat && item.lng ? [item.lat, item.lng] : null,
       }));
 
-      window.lakasok = this._rawData; // A Registry miatt maradjon meg a globális elérés
+      // 👇👇👇 ITT A JAVÍTÁS (A KAPUŐR) 👇👇👇
+
+      // Megnézzük, van-e playlist a sessionben
+      const playlistStr = sessionStorage.getItem("shorts_playlist");
+
+      if (playlistStr) {
+        try {
+          const allowedIds = JSON.parse(playlistStr);
+          console.log("🎯 [DataManager] Playlist aktív:", allowedIds);
+
+          // Kiszűrjük azokat, amik nincsenek a listán
+          // Figyelem: A rawData-ban lévő ID-t (item.id) vetjük össze a listával
+          const filteredData = this._rawData.filter((item) =>
+            allowedIds.includes(item.id)
+          );
+
+          if (filteredData.length > 0) {
+            this._rawData = filteredData;
+            console.log(
+              `✅ [DataManager] Szűrés sikeres! Csak a kért ${filteredData.length} videót töltjük be.`
+            );
+          } else {
+            console.warn(
+              "⚠️ [DataManager] A szűrés 0 találatot adott (rossz ID-k?), ezért marad az összes videó."
+            );
+          }
+        } catch (e) {
+          console.error("Hiba a playlist feldolgozásakor:", e);
+        }
+      } else {
+        console.log("🌍 [DataManager] Nincs playlist, összes videó betöltése.");
+      }
+
+      // 👆👆👆 JAVÍTÁS VÉGE 👆👆👆
+
+      window.lakasok = this._rawData;
       this._currentFeed = [...this._rawData];
 
       console.log(
-        `✅ [DataManager] Kész! ${this._rawData.length} videós ingatlan betöltve.`
+        `✅ [DataManager] Kész! ${this._rawData.length} db videó átadva a lejátszónak.`
       );
       return this._currentFeed;
     } catch (error) {
