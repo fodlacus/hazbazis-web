@@ -1,4 +1,4 @@
-import { adatbazis } from "../../../src/js/search/firebase-config.js"; // ⚠️ ÚTVONAL ELLENŐRZÉS: Lehet, hogy ../../../src/js/util/firebase-config.js kell neked!
+import { adatbazis } from "../../../src/js/util/firebase-config.js"; // ⚠️ ÚTVONAL ELLENŐRZÉS: Lehet, hogy ../../../src/js/util/firebase-config.js kell neked!
 import {
   collection,
   getDocs,
