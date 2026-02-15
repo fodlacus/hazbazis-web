@@ -41,6 +41,23 @@
                   color: black;
                   border-color: #E2F1B0;
             }
+
+            /* SHORTS GOMB ANIMÁCIÓ */
+            @keyframes pulse-glow {
+
+                  0%,
+                  100% {
+                        box-shadow: 0 0 10px rgba(255, 75, 75, 0.2);
+                  }
+
+                  50% {
+                        box-shadow: 0 0 20px rgba(255, 75, 75, 0.6);
+                  }
+            }
+
+            .shorts-btn {
+                  animation: pulse-glow 2s infinite;
+            }
       </style>
 </head>
 
@@ -68,6 +85,13 @@
             <button onclick="keresesInditasa()"
                   class="absolute right-6 top-1/2 transform -translate-y-1/2 bg-[#E2F1B0] text-black w-10 h-10 rounded-full flex items-center justify-center hover:scale-110 transition shadow-lg shadow-lime-900/20"><i
                         class="fa-solid fa-arrow-right"></i></button>
+      </div>
+
+      <div id="shorts-bar" class="hidden w-full max-w-3xl px-4 mb-6 z-40 flex justify-center">
+            <button onclick="inditasShortsLejatszo()"
+                  class="shorts-btn bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold py-3 px-8 rounded-full flex items-center gap-3 transition transform hover:scale-105 border border-white/20">
+                  <i class="fa-solid fa-play"></i> Videós Találatok Lejátszása (<span id="video-count">0</span>)
+            </button>
       </div>
 
       <div class="flex flex-wrap gap-2 mb-4 justify-center w-full max-w-3xl px-4 relative z-40">
@@ -286,6 +310,42 @@
                   else { const sb = document.getElementById('saved-filters-sidebar'); if (sb) sb.classList.add('hidden'); }
             });
 
+            window.inditasShortsLejatszo = function () {
+                  // 1. Kiválogatjuk azokat, amiknek van videója
+                  const videok = window.aktualisTalalatok.filter(p => p._videoUrl && p._videoUrl.length > 5);
+
+                  if (videok.length === 0) {
+                        alert("Sajnos a jelenlegi találatok között nincs videós hirdetés.");
+                        return;
+                  }
+
+                  // 2. Kimentjük az ID-kat a sessionStorage-ba
+                  const playlistIds = videok.map(v => v.id);
+                  sessionStorage.setItem('shorts_playlist', JSON.stringify(playlistIds));
+
+                  console.log("Shorts indítása ezzel a listával:", playlistIds);
+
+                  // 3. Átirányítás a shorts lejátszóra
+                  // Figyelem: Feltételezzük, hogy a shorts-index.html a 'shorts' mappában van, vagy a gyökérben.
+                  // A te struktúrádban: src/search/search-index.html -> ../../shorts-index.html ?
+                  // A feltöltött fájl alapján a shorts-index.html valószínűleg egy szinten van a src mappával vagy a public-ban.
+                  // Biztonságosabb abszolút útvonalat használni, vagy próbálgatni.
+                  // Tipp: Ha a search-index a src/search-ben van, akkor ../../shorts-index.html
+                  window.location.href = "../../shorts-index.html";
+            }
+            // --- FRISSÍTÉS: Találatok megjelenítésekor ellenőrizzük a videókat ---
+            function frissitShortsGombot() {
+                  const videoCount = window.aktualisTalalatok.filter(p => p._videoUrl && p._videoUrl.length > 5).length;
+                  const bar = document.getElementById('shorts-bar');
+                  const counter = document.getElementById('video-count');
+
+                  if (videoCount > 0) {
+                        bar.classList.remove('hidden');
+                        counter.innerText = videoCount;
+                  } else {
+                        bar.classList.add('hidden');
+                  }
+            }
             // --- ÚJ: METRÓ VONAL NYITOGATÓ (Golyóálló verzió) ---
             window.toggleMetroLine = function (lineId) {
                   const listDiv = document.getElementById(lineId);

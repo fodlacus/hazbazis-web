@@ -211,6 +211,7 @@ class KeresoMotor {
           _furdo: data.fürdő_wc || data.furdo || "-",
           _erkely: parseInt(data.erkély_terasz || 0),
           _lift: data.lift || "Nincs",
+          _videoUrl: data.videoUrl || null,
         };
       });
 

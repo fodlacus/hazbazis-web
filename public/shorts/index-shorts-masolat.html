@@ -14,33 +14,7 @@
             Object.defineProperty(window, 'lakasok', {
                   set: function (val) {
                         console.log("!!! ADAT MEGÉRKEZETT !!!", val.length, "db");
-
-                        // --- ITT A TRÜKK: SZŰRJÜK A BEJÖVŐ ADATOT A KERESŐ ALAPJÁN ---
-                        const playlistStr = sessionStorage.getItem('shorts_playlist');
-                        if (playlistStr) {
-                              try {
-                                    const allowedIds = JSON.parse(playlistStr);
-                                    console.log("🔍 Szűrés aktív:", allowedIds);
-                                    // Csak azokat hagyjuk meg, amik benne vannak a listában
-                                    const filtered = val.filter(item => allowedIds.includes(item.id));
-
-                                    if (filtered.length > 0) {
-                                          this._lakasok = filtered;
-                                          console.log("✅ Szűrt lista beállítva:", filtered.length, "db");
-                                    } else {
-                                          console.warn("⚠️ A szűrés üres listát eredményezett, marad az eredeti.");
-                                          this._lakasok = val;
-                                    }
-
-                                    // Töröljük a filtert, hogy legközelebb friss legyen (opcionális)
-                                    // sessionStorage.removeItem('shorts_playlist');
-                              } catch (e) {
-                                    console.error("Hiba a playlist olvasásakor:", e);
-                                    this._lakasok = val;
-                              }
-                        } else {
-                              this._lakasok = val;
-                        }
+                        this._lakasok = val;
                   },
                   get: function () { return this._lakasok; },
                   configurable: true
@@ -49,14 +23,6 @@
 </head>
 
 <body class="bg-black text-white overflow-hidden">
-
-      <a href="src/search/search-index.html"
-            class="fixed top-4 left-4 z-[100] bg-black/50 backdrop-blur text-white p-3 rounded-full border border-white/20 hover:bg-white/20 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                  stroke="currentColor" class="w-6 h-6">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-            </svg>
-      </a>
 
       <main id="shorts-container" class="video-feed"></main>
 
@@ -71,8 +37,9 @@
                   </div>
                   <div id="modal-content-grid" class="grid grid-cols-2 gap-3 overflow-y-auto flex-1 pb-4"></div>
                   <button id="reset-filter-btn"
-                        class="w-full mt-4 py-3 rounded-xl border border-white/20 font-bold bg-white/5 hover:bg-white/10 transition">🔄
-                        Összes ingatlan mutatása</button>
+                        class="w-full mt-4 py-3 rounded-xl border border-white/20 font-bold bg-white/5 hover:bg-white/10 transition">
+                        🔄 Összes ingatlan mutatása
+                  </button>
             </div>
       </div>
 
@@ -81,16 +48,21 @@
             import { UIManager } from './js/core/ui-manager.js';
             import { FilterRegistry } from './js/core/filter-registry.js';
             import { FavLogic } from './js/strategies/fav-logic.js';
-            import { auth } from '../../src/js/util/firebase-config.js'; // ÚTVONAL ELLENŐRZÉS!
+            import { auth } from '../../src/js/util/firebase-config.js';
             import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+            // 1. Globális szűrő vezérlés
             window.executeFilter = async (tileId, params = null) => {
-                  if (typeof window.executeFilterInternal === 'function') { await window.executeFilterInternal(tileId, params); }
+                  if (typeof window.executeFilterInternal === 'function') {
+                        await window.executeFilterInternal(tileId, params);
+                  }
             };
 
+            // 2. Bejelentkezés és Indítás
             document.addEventListener('DOMContentLoaded', () => {
                   onAuthStateChanged(auth, async (user) => {
                         if (user) {
+                              console.log("👤 User OK:", user.email);
                               window.currentUser = { azon: user.uid };
                               await FavLogic.init(user.uid);
                         } else {
@@ -101,24 +73,52 @@
                   });
             });
 
+            // 3. Kedvencek kezelése (Összevont, stabil verzió)
             window.handleToggleFav = async function (hbAzon, btnElement) {
                   const userAzon = window.currentUser?.azon;
-                  if (!userAzon) { alert("A kedvencek mentéséhez be kell jelentkezned!"); return; }
-                  btnElement.style.opacity = "0.5"; btnElement.style.pointerEvents = "none";
+                  if (!userAzon) {
+                        alert("A kedvencek mentéséhez be kell jelentkezned!");
+                        return;
+                  }
+
+                  // Vizuális visszajelzés (védelem a dupla kattintás ellen)
+                  btnElement.style.opacity = "0.5";
+                  btnElement.style.pointerEvents = "none";
+
                   try {
                         const { FavLogic } = await import('./js/strategies/fav-logic.js');
                         const isActive = await FavLogic.toggleFavorite(hbAzon, userAzon);
+
                         const svg = btnElement.querySelector('svg');
-                        if (isActive) { btnElement.classList.add('is-favorite'); svg.setAttribute('fill', '#ff4b4b'); } else { btnElement.classList.remove('is-favorite'); svg.setAttribute('fill', 'currentColor'); }
-                  } catch (err) { console.error("Fav hiba:", err); } finally { btnElement.style.opacity = "1"; btnElement.style.pointerEvents = "auto"; }
+                        if (isActive) {
+                              btnElement.classList.add('is-favorite');
+                              svg.setAttribute('fill', '#ff4b4b');
+                        } else {
+                              btnElement.classList.remove('is-favorite');
+                              svg.setAttribute('fill', 'currentColor');
+                        }
+                  } catch (err) {
+                        console.error("Fav hiba:", err);
+                  } finally {
+                        btnElement.style.opacity = "1";
+                        btnElement.style.pointerEvents = "auto";
+                  }
             };
 
             window.openDetails = function (hbAzon) {
                   if (!hbAzon) return;
+
+                  // 1. Megszüntetjük az esetleges kavarodást: először levágjuk, ha van, 
+                  // majd fixen visszatesszük a "HB-" előtagot.
                   const tisztaSzam = hbAzon.toString().replace('HB-', '').trim();
                   const veglegesId = 'HB-' + tisztaSzam;
+
+                  console.log("🚀 Navigáció a teljes azonosítóval:", veglegesId);
+
+                  // 2. Az útvonal küldése a teljes HB-XXXXXX formátumban
                   window.location.href = `../../src/html/vevo/adatlap.html?id=${veglegesId}`;
             };
+
       </script>
 </body>
 
