@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <title>Házbázis Shorts (Simple)</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+      <style>
+            /* TIKTOK SCROLL MAGIC ✨ */
+            body {
+                  background-color: #000;
+                  overflow: hidden;
+            }
+
+            #video-container {
+                  height: 100vh;
+                  width: 100%;
+                  overflow-y: scroll;
+                  scroll-snap-type: y mandatory;
+                  /* Ez a lényeg: "bepattan" a videó */
+                  scroll-behavior: smooth;
+            }
+
+            .video-card {
+                  height: 100vh;
+                  width: 100%;
+                  scroll-snap-align: start;
+                  /* Mindig a tetejére igazít */
+                  position: relative;
+                  background: #000;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+            }
+
+            video {
+                  height: 100%;
+                  width: 100%;
+                  object-fit: cover;
+                  /* Kitölti a képernyőt */
+            }
+
+            /* Vezérlő ikonok jobb oldalt */
+            .sidebar-actions {
+                  position: absolute;
+                  right: 15px;
+                  bottom: 120px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 20px;
+                  z-index: 50;
+            }
+
+            .action-btn {
+                  width: 50px;
+                  height: 50px;
+                  border-radius: 50%;
+                  background: rgba(0, 0, 0, 0.4);
+                  border: 1px solid rgba(255, 255, 255, 0.3);
+                  color: white;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  font-size: 20px;
+                  cursor: pointer;
+                  transition: transform 0.2s;
+                  backdrop-filter: blur(4px);
+            }
+
+            .action-btn:active {
+                  transform: scale(0.9);
+            }
+
+            .is-favorite {
+                  color: #ff4b4b;
+                  border-color: #ff4b4b;
+            }
+
+            /* Adatlap infók alul */
+            .info-overlay {
+                  position: absolute;
+                  bottom: 0;
+                  left: 0;
+                  width: 100%;
+                  padding: 20px;
+                  padding-bottom: 40px;
+                  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+                  color: white;
+                  pointer-events: none;
+                  /* Átkattintható */
+            }
+      </style>
+</head>
+
+<body>
+
+      <div id="video-container">
+      </div>
+
+      <div id="loading" class="fixed inset-0 flex items-center justify-center bg-black z-50 text-white">
+            <div class="text-center">
+                  <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-4 text-lime-400"></i>
+                  <p>Videók betöltése...</p>
+            </div>
+      </div>
+
+      <script type="module">
+            // 1. IMPORTÁLÁS (Az egyetlen külső függőség a Firebase config)
+            // Mivel a fájl a public/shorts/ mappában van, egyet lépünk vissza a gyökérbe, majd src/js/util
+            import { adatbazis } from '../src/js/util/firebase-config.js';
+            import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+            // Globális állapot
+            let osszesVideo = [];
+            let jelenlegiVideoIndex = 0;
+
+            // --- 2. INDÍTÁS ---
+            document.addEventListener('DOMContentLoaded', async () => {
+                  await adatBetoltes();
+            });
+
+            // --- 3. ADATOK LETÖLTÉSE ÉS SZŰRÉSE ---
+            async function adatBetoltes() {
+                  try {
+                        console.log("🔥 Adatok lekérése Firebase-ből...");
+                        const snapshot = await getDocs(collection(adatbazis, "lakasok"));
+
+                        let nyersLista = [];
+                        snapshot.forEach(doc => {
+                              const data = doc.data();
+                              // Csak videós hirdetéseket kérünk
+                              if (data.videoUrl && data.videoUrl.length > 5) {
+                                    nyersLista.push({ id: doc.id, ...data });
+                              }
+                        });
+
+                        console.log("📦 Összes videós ingatlan:", nyersLista.length);
+
+                        // SZŰRÉS LOGIKA (SessionStorage)
+                        const szuroListaStr = sessionStorage.getItem('shorts_playlist');
+                        if (szuroListaStr) {
+                              try {
+                                    const szuroLista = JSON.parse(szuroListaStr);
+                                    console.log("🎯 Szűrés aktív ezekre:", szuroLista);
+
+                                    // Kiszűrjük, ami nincs a listán
+                                    const szurt = nyersLista.filter(item => szuroLista.includes(item.id));
+
+                                    if (szurt.length > 0) {
+                                          osszesVideo = szurt;
+                                          console.log("✅ Szűrt lista alkalmazva:", szurt.length, "db");
+                                    } else {
+                                          osszesVideo = nyersLista; // Ha üres a metszet, marad az összes
+                                    }
+                              } catch (e) {
+                                    osszesVideo = nyersLista;
+                              }
+                        } else {
+                              osszesVideo = nyersLista; // Nincs szűrés
+                        }
+
+                        rendereles();
+                        figyeloInditasa(); // Scroll figyelő
+
+                  } catch (err) {
+                        console.error("Hiba:", err);
+                        alert("Hiba történt az adatok betöltésekor.");
+                  } finally {
+                        document.getElementById('loading').style.display = 'none';
+                  }
+            }
+
+            // --- 4. MEGJELENÍTÉS (HTML Generálás) ---
+            function rendereles() {
+                  const container = document.getElementById('video-container');
+                  container.innerHTML = ''; // Törlés
+
+                  if (osszesVideo.length === 0) {
+                        container.innerHTML = '<div class="h-screen flex items-center justify-center text-white">Nincs megjeleníthető videó.</div>';
+                        return;
+                  }
+
+                  osszesVideo.forEach((ingatlan, index) => {
+                        // Ár formázás
+                        const ar = ingatlan.vételár ? (ingatlan.vételár / 1000000).toFixed(1) + " M Ft" : "Ár megegyezés szerint";
+                        const cim = ingatlan.telepules || "Ingatlan";
+                        const utca = ingatlan.utca || "";
+
+                        // HTML SABLON
+                        const html = `
+                    <div class="video-card" id="card-${index}">
+                        <video loop playsinline poster="${ingatlan.boritokep || ''}" class="video-player">
+                            <source src="${ingatlan.videoUrl}" type="video/mp4">
+                        </video>
+
+                        <div class="sidebar-actions">
+                            <div class="action-btn" onclick="goHome()">
+                                <i class="fa-solid fa-house"></i>
+                            </div>
+
+                            <div class="action-btn" onclick="goToSearch()">
+                                <i class="fa-solid fa-filter"></i>
+                            </div>
+
+                            <div class="action-btn" onclick="openBus()">
+                                <i class="fa-solid fa-bus"></i>
+                            </div>
+                            
+                            <div class="action-btn" onclick="toggleFav(this)">
+                                <i class="fa-regular fa-heart"></i>
+                            </div>
+
+                            <div class="action-btn" onclick="openDetails('${ingatlan.id}')">
+                                <i class="fa-regular fa-file-lines"></i>
+                            </div>
+                        </div>
+
+                        <div class="info-overlay">
+                            <div class="bg-lime-300 text-black text-xs font-bold px-2 py-1 rounded w-fit mb-2">
+                                ${ingatlan.id}
+                            </div>
+                            <h2 class="text-2xl font-bold mb-1 shadow-black drop-shadow-md">${cim}</h2>
+                            <p class="text-lg font-medium mb-1 drop-shadow-md">${ar} • ${ingatlan.alapterület || 0} m² • ${ingatlan.szobák || 0} szoba</p>
+                            <p class="text-sm opacity-90 drop-shadow-md"><i class="fa-solid fa-location-dot"></i> ${utca}</p>
+                        </div>
+                    </div>
+                `;
+                        container.innerHTML += html;
+                  });
+            }
+
+            // --- 5. GOMB FUNKCIÓK (Globálisra tesszük őket) ---
+
+            window.goHome = function () {
+                  window.location.href = '../../index.html'; // Főoldal
+            };
+
+            window.goToSearch = function () {
+                  // Vissza a keresőre
+                  window.location.href = '../../src/search/search-index.html';
+            };
+
+            window.openBus = function () {
+                  alert("🚧 Fejlesztés alatt!\n\nA BKK menetrend integrációja hamarosan érkezik. 🚌");
+            };
+
+            window.toggleFav = function (btn) {
+                  // Egyszerű vizuális váltás (később beköthetjük a Firebase mentést)
+                  const icon = btn.querySelector('i');
+                  if (icon.classList.contains('fa-regular')) {
+                        icon.classList.remove('fa-regular');
+                        icon.classList.add('fa-solid');
+                        btn.classList.add('is-favorite'); // Piros keret/szín
+                  } else {
+                        icon.classList.remove('fa-solid');
+                        icon.classList.add('fa-regular');
+                        btn.classList.remove('is-favorite');
+                  }
+            };
+
+            window.openDetails = function (id) {
+                  // Adatlap ellenőrzés
+                  const ingatlan = osszesVideo.find(x => x.id === id);
+
+                  // Státusz check (ha van státusz mező)
+                  // Ha a Firebase-ben 'statusz' a neve, akkor itt azt használjuk
+                  if (ingatlan && ingatlan.statusz && ingatlan.statusz !== 'Aktív' && ingatlan.statusz !== 'Active') {
+                        alert("⚠️ Ez az adatlap még generálás alatt áll.\nKérlek térj vissza később!");
+                        return;
+                  }
+
+                  const tisztaId = id.replace('HB-', '');
+                  // Útvonal: Shorts mappa -> Gyökér -> src -> html -> vevo
+                  window.location.href = `../../src/html/vevo/adatlap.html?id=HB-${tisztaId}`;
+            };
+
+            // --- 6. INTELLIGENS LEJÁTSZÁS (Observer) ---
+            function figyeloInditasa() {
+                  const options = { threshold: 0.6 }; // Ha 60% látszik, akkor aktív
+
+                  const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                              const video = entry.target.querySelector('video');
+                              if (entry.isIntersecting) {
+                                    // Látható -> Lejátszás
+                                    video.play().catch(e => console.log("Autoplay tiltva:", e));
+                              } else {
+                                    // Nem látható -> Szünet + Visszatekerés
+                                    video.pause();
+                                    video.currentTime = 0;
+                              }
+                        });
+                  }, options);
+
+                  document.querySelectorAll('.video-card').forEach(card => {
+                        observer.observe(card);
+                  });
+            }
+
+      </script>
+</body>
+
+</html>
