@@ -115,6 +115,21 @@
                                     <div id="inf-tipus" class="font-bold text-lg">...</div>
                               </div>
                         </div>
+
+                  </div>
+
+                  <div class="lg:hidden mt-6 mb-8">
+                        <button onclick="openVirtualTour()"
+                              class="w-full py-4 bg-[#3D4A16] hover:bg-[#4d5c1e] text-[#E2F1B0] border border-[#E2F1B0]/30 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 group relative overflow-hidden">
+
+                              <div
+                                    class="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                              </div>
+
+                              <i
+                                    class="fa-solid fa-street-view text-2xl group-hover:rotate-12 transition-transform"></i>
+                              <span class="text-lg font-bold tracking-wide">Virtuális séta indítása</span>
+                        </button>
                   </div>
 
                   <div class="bg-black/20 p-6 rounded-3xl border border-white/5">
@@ -206,6 +221,18 @@
                         window.location.href = '../../../index.html';
                   }
             }
+            window.openVirtualTour = function () {
+                  // Kiolvassuk az ID-t az URL-ből
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const id = urlParams.get('id');
+
+                  if (id) {
+                        // Átirányítás a túrára
+                        window.location.href = `../../src/html/vevo/virtual-tour.html?id=${id}`;
+                  } else {
+                        alert("Hiba: Nem található az ingatlan azonosítója!");
+                  }
+            };
       </script>
       <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
       <script type="module" src="../../js/vevo/adatlap.js"></script>
