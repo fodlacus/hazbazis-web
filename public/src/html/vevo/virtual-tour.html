@@ -60,18 +60,14 @@
       <div
             class="w-full lg:w-1/4 h-[40%] lg:h-full bg-[#3D4A16] border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col shadow-2xl relative z-40">
 
-
-            <div class="p-4 bg-black/10 border-b border-white/5 flex flex-col gap-3">
-
+            <div class="p-4 bg-black/10 border-b border-white/5 flex flex-col gap-2 shrink-0">
                   <div class="flex justify-between items-start">
                         <h3 class="font-bold text-[#E2F1B0] flex items-center gap-2 text-sm">
                               <i class="fa-regular fa-map"></i> Alaprajz
                         </h3>
-
                         <div class="text-right">
                               <span id="aktualis-szoba-sidebar"
                                     class="block text-[10px] text-white/80 font-mono bg-black/20 px-2 py-1 rounded">
-
                               </span>
                         </div>
                   </div>
@@ -79,25 +75,26 @@
                   <div id="szint-valaszto" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                   </div>
             </div>
-            <div class="flex-1 p-4 overflow-hidden flex items-center justify-center bg-[#333d12] relative">
 
-                  <div class="relative inline-block shadow-2xl rounded-xl overflow-hidden bg-white max-w-full max-h-full"
+            <div class="flex-1 p-2 overflow-hidden flex items-center justify-center bg-[#333d12] relative min-h-0">
+
+                  <div class="relative inline-block shadow-xl rounded-lg overflow-hidden bg-white/5"
                         style="line-height: 0;">
 
                         <img id="alaprajz-img" src=""
-                              class="max-w-full max-h-[30vh] lg:max-h-[40vh] w-auto h-auto block select-none object-contain"
+                              class="max-w-full max-h-[22vh] md:max-h-[30vh] lg:max-h-[40vh] w-auto h-auto block select-none object-contain"
                               alt="Alaprajz">
 
                         <div id="alaprajz-pins" class="absolute inset-0 w-full h-full">
                         </div>
                   </div>
-
             </div>
 
-            <div class="p-2 bg-black/20 text-center text-[10px] text-white/40">
+            <div class="p-2 bg-black/20 text-center text-[10px] text-white/40 shrink-0">
                   Kattints a pontokra a szobák váltásához!
             </div>
       </div>
+
 
       <script type="module" src="../../js/vevo/virtual-tour-page.js"></script>
 
