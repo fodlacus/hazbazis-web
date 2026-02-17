@@ -199,6 +199,7 @@
             </div>
 
       </div>
+
       <script type="module">
             import { adatbazis, auth } from '../src/js/util/firebase-config.js';
             import { collection, getDocs, doc, setDoc, deleteDoc, query, where, limit, startAfter, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -206,10 +207,10 @@
 
             // --- ÁLLAPOTOK ---
             let betoltottVideok = [];
-            let utolsoDokumentum = null; // Hol tartunk a listában?
-            let toltesFolyamatban = false; // Hogy ne töltsünk rá duplán
-            let nincsTobbAdat = false; // Ha a végére értünk
-            const KOTEG_MERET = 5; // Egyszerre hány videót töltsünk le? (Kicsi szám = Gyors)
+            let utolsoDokumentum = null;
+            let toltesFolyamatban = false;
+            let nincsTobbAdat = false;
+            const KOTEG_MERET = 5;
 
             let userUid = null;
             let kedvencekCache = new Set();
@@ -225,12 +226,11 @@
                               userUid = user.uid;
                               await kedvencekBetoltese();
                         }
-                        // Első adag betöltése
                         await kovetkezoAdagBetoltese();
                   });
             });
 
-            // --- KEDVENCEK ELŐTÖLTÉSE ---
+            // --- KEDVENCEK ---
             async function kedvencekBetoltese() {
                   if (!userUid) return;
                   try {
@@ -244,45 +244,27 @@
                   } catch (e) { console.error(e); }
             }
 
-            // --- 🔥 AZ ÚJ "OKOS" BETÖLTŐ ---
+            // --- INFINITE SCROLL BETÖLTÉS ---
             async function kovetkezoAdagBetoltese() {
                   if (toltesFolyamatban || nincsTobbAdat) return;
                   toltesFolyamatban = true;
 
-                  // Ha ez az első töltés, mutassuk a loading ikont
-                  if (!utolsoDokumentum) {
-                        document.getElementById('loading').style.display = 'flex';
-                  }
+                  if (!utolsoDokumentum) document.getElementById('loading').style.display = 'flex';
 
                   try {
-                        console.log("📥 Újabb adag videó lekérése...");
-
-                        let q;
                         const lakasokRef = collection(adatbazis, "lakasok");
+                        let q;
 
-                        // SZŰRÉS LOGIKA (Ha van session filter)
+                        // Szűrés logika
                         const szuroListaStr = sessionStorage.getItem('shorts_playlist');
 
                         if (szuroListaStr && !csakKedvencekMod) {
-                              // ⚠️ Fontos: A Firestore 'in' query limitált (max 10 elem), 
-                              // ezért nagy listánál (15ezer) a kliens oldali szűrést kell kombinálni,
-                              // vagy a szűrt ID-k alapján kérni. 
-                              // Most az egyszerűség kedvéért a sima listázást csináljuk meg profin:
-
-                              // Alap lekérdezés: csak videós hirdetések
-                              // (Feltételezzük, hogy van 'hasVideo' mező, vagy csak sorban kérjük őket)
                               if (utolsoDokumentum) {
                                     q = query(lakasokRef, limit(KOTEG_MERET), startAfter(utolsoDokumentum));
                               } else {
                                     q = query(lakasokRef, limit(KOTEG_MERET));
                               }
-
-                        } else if (csakKedvencekMod) {
-                              // Kedvenceknél nincs végtelen görgetés (általában kevés van), ott betölthetünk mindent
-                              // Ezt a részt most kihagyom az egyszerűségért, a fenti logika az alaplistára vonatkozik.
-                              q = query(lakasokRef, where("videoUrl", "!=", null), limit(KOTEG_MERET));
                         } else {
-                              // NORMAL MÓD: Végtelen görgetés
                               if (utolsoDokumentum) {
                                     q = query(lakasokRef, limit(KOTEG_MERET), startAfter(utolsoDokumentum));
                               } else {
@@ -293,28 +275,24 @@
                         const snapshot = await getDocs(q);
 
                         if (snapshot.empty) {
-                              console.log("🏁 Nincs több videó.");
                               nincsTobbAdat = true;
                               toltesFolyamatban = false;
                               document.getElementById('loading').style.display = 'none';
                               return;
                         }
 
-                        // Az utolsó doksi mentése a következő körhöz
                         utolsoDokumentum = snapshot.docs[snapshot.docs.length - 1];
 
                         const ujVideok = [];
                         snapshot.forEach(doc => {
                               const data = doc.data();
-                              // Csak akkor adjuk hozzá, ha van videója
                               if (data.videoUrl && data.videoUrl.length > 5) {
                                     ujVideok.push({ id: doc.id, ...data });
                               }
                         });
 
-                        // Hozzáadás a listához és renderelés
                         betoltottVideok = [...betoltottVideok, ...ujVideok];
-                        renderUjElemek(ujVideok); // Csak az újakat rajzoljuk ki!
+                        renderUjElemek(ujVideok);
 
                   } catch (err) {
                         console.error("Hiba:", err);
@@ -324,11 +302,10 @@
                   }
             }
 
-            // --- RENDERELÉS (CSAK AZ ÚJAKAT FŰZZÜK HOZZÁ) ---
+            // --- RENDERELÉS ---
             function renderUjElemek(videok) {
                   const container = document.getElementById('video-scroll-container');
 
-                  // Ha üres volt, és most sincs adat
                   if (betoltottVideok.length === 0 && videok.length === 0) {
                         container.innerHTML = '<div class="h-full flex items-center justify-center text-white">Nincs videó.</div>';
                         return;
@@ -340,10 +317,8 @@
                         const favIcon = isFav ? 'fa-solid' : 'fa-regular';
                         const ar = ingatlan.vételár ? (ingatlan.vételár / 1000000).toFixed(1) + " M" : "Ár megegyezés";
 
-                        // DOM elem létrehozása
                         const div = document.createElement('div');
                         div.className = 'video-card';
-                        div.dataset.id = ingatlan.id;
                         div.innerHTML = `
                         <video loop playsinline muted poster="${ingatlan.boritokep || ''}" class="video-player" preload="metadata">
                             <source src="${ingatlan.videoUrl}" type="video/mp4">
@@ -365,57 +340,87 @@
                         </div>
                     `;
                         container.appendChild(div);
-
-                        // Az új elemet azonnal figyelni kezdjük
                         observer.observe(div);
                   });
             }
 
-            // --- FIGYELŐ (SCROLL & LOAD MORE) ---
+            // --- 🔥 JAVÍTOTT SCROLL FIGYELŐ (MOST MÁR JELÖLI A VIDEÓT!) ---
             const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                         const video = entry.target.querySelector('video');
 
                         if (entry.isIntersecting) {
-                              // 1. Videó indítása
+                              // 1. JELÖLÉS (Ez hiányzott!): Ez a videó az aktív
+                              video.setAttribute('data-playing', 'true');
+
                               video.muted = isMuted;
                               video.currentTime = 0;
                               if (!isPaused) video.play().catch(e => { });
 
-                              // 2. 🔥 HA AZ UTOLSÓ ELŐTTI ELEMHEZ ÉRÜNK -> TÖLTSÜNK MÉG!
-                              // Megnézzük, hogy ez az elem hányadik a listában
+                              // Load more logika
                               const kartyak = document.querySelectorAll('.video-card');
                               const index = Array.from(kartyak).indexOf(entry.target);
-
-                              // Ha a lista vége felé járunk (pl. utolsó 2 db), töltsük a következőt!
                               if (index >= kartyak.length - 2) {
                                     kovetkezoAdagBetoltese();
                               }
 
                         } else {
+                              // 2. JELÖLÉS LEVÉTELE (Ha kimegy a képből)
+                              video.removeAttribute('data-playing');
                               video.pause();
                         }
                   });
             }, { threshold: 0.6 });
 
 
-            // --- EGYÉB FÜGGVÉNYEK (Globálisak maradnak) ---
+            // --- 🔥 JAVÍTOTT GLOBÁLIS GOMBOK ---
+
             window.toggleGlobalSound = function () {
                   isMuted = !isMuted;
-                  document.getElementById('global-sound-btn').querySelector('i').className = isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
-                  document.querySelectorAll('video').forEach(vid => vid.muted = isMuted);
+                  const btnIcon = document.getElementById('global-sound-btn').querySelector('i');
+                  btnIcon.className = isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+
+                  // Minden videóra érvényesítjük
+                  document.querySelectorAll('video').forEach(vid => {
+                        vid.muted = isMuted;
+                  });
             };
 
             window.toggleGlobalPlay = function () {
                   isPaused = !isPaused;
-                  document.getElementById('global-play-btn').querySelector('i').className = isPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
-                  const currentVideo = document.querySelector('.video-card video[data-playing="true"]'); // Ezt majd finomítani kell a data attr-el
+                  const btnIcon = document.getElementById('global-play-btn').querySelector('i');
+                  btnIcon.className = isPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+
+                  // Megkeressük az éppen látható (megjelölt) videót
+                  const currentVideo = document.querySelector('video[data-playing="true"]');
+
+                  if (currentVideo) {
+                        if (isPaused) currentVideo.pause();
+                        else currentVideo.play();
+                  }
             };
 
-            window.toggleFav = async function (id, btn) { /* ... Ugyanaz mint előbb ... */ };
-            window.openDetails = function (id) { /* ... Ugyanaz mint előbb ... */ };
+            window.toggleFav = async function (ingatlanId, btn) {
+                  if (!userUid) { alert("Jelentkezz be!"); return; }
+                  const icon = btn.querySelector('i');
+                  const isCurrentlyFav = kedvencekCache.has(ingatlanId);
 
-            // Ez most placeholder, a kedvenc szűrésnél a végtelen görgetést ki kell kapcsolni
+                  if (isCurrentlyFav) {
+                        icon.classList.remove('fa-solid'); icon.classList.add('fa-regular'); btn.classList.remove('is-favorite');
+                        kedvencekCache.delete(ingatlanId);
+                        await deleteDoc(doc(adatbazis, "kedvencek", `${userUid}_${ingatlanId}`));
+                  } else {
+                        icon.classList.remove('fa-regular'); icon.classList.add('fa-solid'); btn.classList.add('is-favorite');
+                        kedvencekCache.add(ingatlanId);
+                        await setDoc(doc(adatbazis, "kedvencek", `${userUid}_${ingatlanId}`), { uid: userUid, ingatlanId: ingatlanId });
+                  }
+            };
+
+            window.openDetails = function (id) {
+                  const tisztaId = id.replace('HB-', '');
+                  window.location.href = `../../src/html/vevo/adatlap.html?id=HB-${tisztaId}`;
+            };
+
             window.toggleKedvencSzuro = function () {
                   alert("A 'Pro' verzióban a szűrés logikáját át kell alakítani végtelen görgetéshez!");
             };
