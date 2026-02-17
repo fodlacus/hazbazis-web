@@ -87,6 +87,7 @@ function initTour(tourData) {
       firstScene: elsoSzobaId,
       sceneFadeDuration: 1000,
       compass: false,
+      crossOrigin: "anonymous",
     },
     scenes: scenes,
   });
