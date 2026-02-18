@@ -269,36 +269,38 @@ function createCard(ing, lat, lng) {
   div.className =
     "bg-gray-900/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg hover:border-[#E2F1B0] hover:scale-[1.02] transition-all duration-200 cursor-pointer group mb-2";
 
-  let boritoKep = ing.boritokep || ing.kepek?.[0] || "";
-  const imgHtml = boritoKep
-    ? `<img src="${boritoKep}" class="w-24 h-20 object-cover rounded-lg border border-white/10 bg-black" onerror="this.src='https://placehold.co/300x200?text=Nincs+kép'">`
-    : `<div class="w-24 h-20 rounded-lg border border-white/10 bg-gray-800 flex items-center justify-center text-xs text-gray-500"><i class="fa-solid fa-image"></i></div>`;
-
-  /*   const getUrl = (item) => {
+  // Segédfüggvény: URL kinyerése (akár string, akár objektum érkezik)
+  const getUrl = (item) => {
     if (!item) return null;
     return typeof item === "object" ? item.url : item;
   };
 
-  if (ing.kepek_horiz && ing.kepek_horiz.length > 0) {
-    boritoKep = getUrl(ing.kepek_horiz[0]);
-  } else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
-    boritoKep = getUrl(ing.kepek_vert[0]);
-  } else if (ing.kepek && ing.kepek.length > 0) {
-    boritoKep = getUrl(ing.kepek[0]);
-  }
- */
+  // Kép keresése prioritási sorrendben
+  let boritoKep = getUrl(ing.boritokep) || "";
 
-  // Azonosító
+  if (!boritoKep) {
+    if (ing.kepek_horiz && ing.kepek_horiz.length > 0) {
+      boritoKep = getUrl(ing.kepek_horiz[0]);
+    } else if (ing.kepek_vert && ing.kepek_vert.length > 0) {
+      boritoKep = getUrl(ing.kepek_vert[0]);
+    } else if (ing.kepek && ing.kepek.length > 0) {
+      boritoKep = getUrl(ing.kepek[0]);
+    }
+  }
+
+  // HTML összeállítása a megtalált kép alapján
+  const imgHtml = boritoKep
+    ? `<img src="${boritoKep}" class="w-24 h-20 object-cover rounded-lg border border-white/10 bg-black" onerror="this.src='https://placehold.co/300x200?text=Nincs+kép'">`
+    : `<div class="w-24 h-20 rounded-lg border border-white/10 bg-gray-800 flex items-center justify-center text-xs text-gray-500"><i class="fa-solid fa-image"></i></div>`;
+
+  // Azonosító kezelése
   const azonosito = ing.azon || `#${ing.id.substring(0, 5)}`;
 
+  // Egér események (marker kiemelés)
   div.addEventListener("mouseenter", () => {
     const marker = markerMap[ing.id];
     if (marker) {
-      // Marker kiemelése (Nagyobb z-index és méret effekt)
       marker.setZIndexOffset(1000);
-
-      // Ha a marker épp csoportban (cluster) van, akkor nem tudjuk effektezni,
-      // de ha látszik, adhatunk neki egy kis CSS osztályt:
       if (marker._icon) {
         marker._icon.classList.add(
           "scale-125",
@@ -320,6 +322,7 @@ function createCard(ing, lat, lng) {
     }
   });
 
+  // Kártya tartalma
   div.innerHTML = `
       <div class="flex gap-3">
           ${imgHtml}          
