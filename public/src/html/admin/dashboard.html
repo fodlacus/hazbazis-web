@@ -320,15 +320,52 @@
                   }
             }
 
-            // Segédfüggvény: Gombok generálása kategória szerint
+
+            // Segédfüggvény: Gombok és Státuszok generálása kategória szerint
             function gombGeneralas(id, kat) {
-                  if (kat === 'varolista') {
-                        return `<a href="hirdetes-kezeles.html?id=${id}" class="bg-yellow-400/20 text-yellow-400 px-3 py-1 rounded text-xs hover:bg-yellow-400/30">Jóváhagyás</a>`;
-                  } else if (kat === 'archiv') {
-                        return `<button class="text-white/40 cursor-not-allowed text-xs">Archivált</button>`;
-                  } else {
-                        return `<button class="text-[#E2F1B0] hover:underline text-xs">Szerkesztés</button>`;
+                  // 1. Aktív hirdetések -> Megtekintés (Adatlap)
+                  if (kat === 'aktiv') {
+                        return `<a href="../../adatlap.html?id=${id}" target="_blank" class="bg-[#E2F1B0]/10 text-[#E2F1B0] border border-[#E2F1B0]/30 px-3 py-1 rounded text-xs hover:bg-[#E2F1B0]/20 transition flex items-center gap-2 justify-center w-fit ml-auto">
+                            <i class="fa-solid fa-eye"></i> Megtekintés
+                        </a>`;
                   }
+
+                  // 2. Fotózásra vár -> "Elkészítendő" (Inaktív)
+                  else if (kat === 'foto') {
+                        return `<span class="text-orange-400 text-xs border border-orange-400/30 px-3 py-1 rounded opacity-60 cursor-not-allowed flex items-center gap-2 justify-center w-fit ml-auto">
+                            <i class="fa-solid fa-camera"></i> Elkészítendő
+                        </span>`;
+                  }
+
+                  // 3. Van alaprajz (Túra) -> Megtekintés (Adatlap)
+                  else if (kat === 'tura') {
+                        return `<a href="../../adatlap.html?id=${id}" target="_blank" class="bg-blue-400/10 text-blue-400 border border-blue-400/30 px-3 py-1 rounded text-xs hover:bg-blue-400/20 transition flex items-center gap-2 justify-center w-fit ml-auto">
+                            <i class="fa-solid fa-layer-group"></i> Megtekintés
+                        </a>`;
+                  }
+
+                  // 4. Shorts videók -> "Lejátszható" (Inaktív)
+                  else if (kat === 'video') {
+                        return `<span class="text-red-500 text-xs border border-red-500/30 px-3 py-1 rounded opacity-60 cursor-not-allowed flex items-center gap-2 justify-center w-fit ml-auto">
+                            <i class="fa-brands fa-youtube"></i> Lejátszható
+                        </span>`;
+                  }
+
+                  // 5. Archivált -> "Archivált" (Inaktív)
+                  else if (kat === 'archiv') {
+                        return `<span class="text-white/30 text-xs border border-white/10 px-3 py-1 rounded cursor-not-allowed flex items-center gap-2 justify-center w-fit ml-auto">
+                            <i class="fa-solid fa-box-archive"></i> Archivált
+                        </span>`;
+                  }
+
+                  // 6. Jóváhagyás -> "Jóváhagyandó" (Inaktív)
+                  else if (kat === 'varolista') {
+                        return `<span class="text-yellow-400 text-xs border border-yellow-400/30 px-3 py-1 rounded opacity-60 cursor-not-allowed flex items-center gap-2 justify-center w-fit ml-auto">
+                            <i class="fa-solid fa-clock"></i> Jóváhagyandó
+                        </span>`;
+                  }
+
+                  return '';
             }
 
             // 4. LAPOZÁS KEZELÉSE
