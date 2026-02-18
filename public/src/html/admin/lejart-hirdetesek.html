@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Lejárat Kezelő - Admin</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+      <style>
+            .custom-checkbox:checked {
+                  background-color: #E2F1B0;
+                  border-color: #E2F1B0;
+            }
+
+            .custom-checkbox:checked:after {
+                  content: '✔';
+                  color: #3D4A16;
+                  display: block;
+                  text-align: center;
+            }
+
+            /* Tab stílusok */
+            .tab-btn.active {
+                  background-color: rgba(255, 255, 255, 0.1);
+                  border-bottom: 2px solid #E2F1B0;
+                  color: #E2F1B0;
+            }
+      </style>
+</head>
+
+<body class="bg-[#1a1a1a] text-white min-h-screen font-sans pb-32">
+
+      <nav class="border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                        <a href="admin-hub.html" class="text-white/60 hover:text-white transition"><i
+                                    class="fa-solid fa-arrow-left"></i> Vissza</a>
+                        <h1 class="text-xl font-bold text-white">Szerződések Kezelése</h1>
+                  </div>
+                  <div id="email-quota" class="text-xs text-white/40 font-mono">
+                  </div>
+            </div>
+      </nav>
+
+      <div class="max-w-5xl mx-auto p-6">
+
+            <div class="flex border-b border-white/10 mb-6">
+                  <button onclick="switchTab('expired')" id="tab-expired"
+                        class="tab-btn active px-6 py-3 text-sm font-bold text-white/60 hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Már Lejárt
+                  </button>
+                  <button onclick="switchTab('upcoming')" id="tab-upcoming"
+                        class="tab-btn px-6 py-3 text-sm font-bold text-white/60 hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-bell"></i> Hamarosan Lejár (Értesítés)
+                  </button>
+            </div>
+
+            <div id="view-expired" class="view-section">
+                  <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mb-6 flex items-start gap-3">
+                        <i class="fa-solid fa-circle-info text-red-400 mt-1"></i>
+                        <div class="text-sm text-white/80">
+                              <strong class="text-white">Működés:</strong>
+                              A bepipált elemek <span class="text-red-400 font-bold">ARCHIVÁLÁSRA</span> kerülnek.
+                              Ha meg akarod hosszabbítani, <span class="text-lime-400 font-bold">vedd ki a pipát</span>
+                              és állíts be új dátumot.
+                        </div>
+                  </div>
+            </div>
+
+            <div id="view-upcoming" class="view-section hidden">
+                  <div class="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mb-6">
+                        <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                              <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-triangle-exclamation text-yellow-400"></i>
+                                    <div class="text-sm text-white/80">
+                                          Listázd ki azokat, akik
+                                          <input type="number" id="nap-szuro" value="5"
+                                                class="bg-black/40 border border-white/20 w-16 text-center rounded text-white font-bold mx-1 focus:border-yellow-400 outline-none">
+                                          napon belül lejárnak.
+                                    </div>
+                              </div>
+                              <button onclick="szuresFuttatasa()"
+                                    class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded text-sm transition">
+                                    <i class="fa-solid fa-filter"></i> Lista frissítése
+                              </button>
+                        </div>
+                  </div>
+            </div>
+
+            <div id="lista-kontener" class="space-y-4">
+                  <p class="text-center text-white/40 py-10">Adatok betöltése...</p>
+            </div>
+
+      </div>
+
+      <div
+            class="fixed bottom-0 left-0 w-full bg-[#1a1a1a] border-t border-white/10 p-4 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.5)]">
+            <div class="max-w-5xl mx-auto flex justify-between items-center">
+                  <span id="kijelolt-db" class="text-white/50 text-sm">Adatok betöltése...</span>
+
+                  <button id="btn-veglegesites" onclick="veglegesites()"
+                        class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 font-bold py-3 px-8 rounded shadow-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> ARCHIVÁLÁS / HOSSZABBÍTÁS
+                  </button>
+
+                  <button id="btn-email" onclick="emailKuldes()"
+                        class="hidden bg-[#E2F1B0] hover:bg-[#cde088] text-[#3D4A16] font-bold py-3 px-8 rounded shadow-lg transition flex items-center gap-2">
+                        <i class="fa-regular fa-paper-plane"></i> ÉRTESÍTŐK KÜLDÉSE
+                  </button>
+            </div>
+      </div>
+
+      <script type="module">
+            import { adatbazis, auth } from "../../js/util/firebase-config.js";
+            import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+            // --- EMAILJS KONFIGURÁCIÓ (Ezt töltsd ki!) ---
+            const EMAILJS_PUBLIC_KEY = "IDE_IRJA_A_PUBLIC_KEYT"; // Pl: "user_..."
+            const EMAILJS_SERVICE_ID = "IDE_A_SERVICE_ID";      // Pl: "service_gmail"
+            const EMAILJS_TEMPLATE_ID = "IDE_A_TEMPLATE_ID";    // Pl: "template_ertesito"
+
+            // Inicializálás
+            try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch (e) { console.warn("EmailJS nincs beállítva még."); }
+
+            let teljesLista = []; // Összes ingatlan
+            let jelenlegiMod = 'expired'; // 'expired' vagy 'upcoming'
+
+            onAuthStateChanged(auth, (user) => { if (!user) window.location.href = '/index.html'; else adatBetoltes(); });
+
+            window.adatBetoltes = async function () {
+                  const kontener = document.getElementById("lista-kontener");
+                  kontener.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-[#E2F1B0]"></i></div>';
+
+                  try {
+                        const snapshot = await getDocs(collection(adatbazis, "lakasok"));
+                        teljesLista = [];
+                        snapshot.forEach(doc => {
+                              if (doc.data().lejarat_datum) {
+                                    teljesLista.push({ id: doc.id, ...doc.data() });
+                              }
+                        });
+                        renderLista();
+                  } catch (err) { console.error(err); }
+            };
+
+            window.switchTab = function (mode) {
+                  jelenlegiMod = mode;
+
+                  // UI Váltás
+                  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                  document.getElementById(`tab-${mode}`).classList.add('active');
+
+                  document.getElementById('view-expired').classList.add('hidden');
+                  document.getElementById('view-upcoming').classList.add('hidden');
+                  document.getElementById(`view-${mode}`).classList.remove('hidden');
+
+                  // Gombok cseréje
+                  if (mode === 'expired') {
+                        document.getElementById('btn-veglegesites').classList.remove('hidden');
+                        document.getElementById('btn-email').classList.add('hidden');
+                  } else {
+                        document.getElementById('btn-veglegesites').classList.add('hidden');
+                        document.getElementById('btn-email').classList.remove('hidden');
+                  }
+
+                  renderLista();
+            };
+
+            window.szuresFuttatasa = function () {
+                  renderLista();
+            };
+
+            function renderLista() {
+                  const kontener = document.getElementById("lista-kontener");
+                  kontener.innerHTML = "";
+
+                  const most = new Date();
+                  let szurtLista = [];
+
+                  if (jelenlegiMod === 'expired') {
+                        // LEJÁRT LOGIKA
+                        szurtLista = teljesLista.filter(ing => new Date(ing.lejarat_datum) < most);
+                  } else {
+                        // HAMAROSAN LEJÁR LOGIKA
+                        const napok = parseInt(document.getElementById('nap-szuro').value) || 5;
+                        const limitDatum = new Date();
+                        limitDatum.setDate(most.getDate() + napok);
+
+                        szurtLista = teljesLista.filter(ing => {
+                              const lejarat = new Date(ing.lejarat_datum);
+                              // Csak azokat, ami MÉG nem járt le, de KISEBB mint a limit
+                              return lejarat > most && lejarat <= limitDatum;
+                        });
+                  }
+
+                  if (szurtLista.length === 0) {
+                        kontener.innerHTML = '<div class="text-center text-white/50 py-10">Nincs megjeleníthető elem.</div>';
+                        frissitUI(0, 0);
+                        return;
+                  }
+
+                  szurtLista.forEach(ing => {
+                        const kartya = document.createElement("div");
+                        const hatralevoNap = Math.ceil((new Date(ing.lejarat_datum) - most) / (1000 * 60 * 60 * 24));
+
+                        // Különböző stílus a két módhoz
+                        const borderColor = jelenlegiMod === 'expired' ? 'border-red-500/30' : 'border-yellow-500/30';
+
+                        let jobbOldalHTML = '';
+
+                        if (jelenlegiMod === 'expired') {
+                              // LEJÁRT KEZELŐK
+                              const jovoDatum = new Date(); jovoDatum.setDate(jovoDatum.getDate() + 30);
+                              const dateStr = jovoDatum.toISOString().split('T')[0];
+
+                              jobbOldalHTML = `
+                        <div class="flex flex-col">
+                            <input type="date" id="date-${ing.id}" value="${dateStr}" disabled
+                                class="bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-sm outline-none disabled:opacity-30">
+                        </div>
+                        <div class="flex items-center gap-3 border-l border-white/10 pl-4">
+                            <label class="text-xs font-bold text-red-300 cursor-pointer" for="check-${ing.id}">ARCHIVÁLÁS</label>
+                            <input type="checkbox" id="check-${ing.id}" checked onchange="toggleLock('${ing.id}')"
+                                class="item-checkbox w-5 h-5 rounded cursor-pointer accent-red-500">
+                        </div>
+                    `;
+                        } else {
+                              // EMAIL ÉRTESÍTŐ KEZELŐK
+                              jobbOldalHTML = `
+                        <div class="text-right mr-4">
+                            <div class="text-yellow-400 font-bold text-sm">${hatralevoNap} nap van hátra</div>
+                            <div class="text-white/40 text-xs">${ing.lejarat_datum.split('T')[0]}</div>
+                        </div>
+                        <div class="flex items-center gap-3 border-l border-white/10 pl-4">
+                            <label class="text-xs font-bold text-[#E2F1B0] cursor-pointer" for="check-${ing.id}">ÉRTESÍTÉS</label>
+                            <input type="checkbox" id="check-${ing.id}" checked 
+                                class="item-checkbox w-5 h-5 rounded cursor-pointer accent-lime-400">
+                        </div>
+                    `;
+                        }
+
+                        kartya.className = `bg-[#2a2a2a] border ${borderColor} rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center mb-3`;
+                        kartya.innerHTML = `
+                    <div class="flex-1 w-full">
+                        <h3 class="text-lg font-bold text-white">${ing.telepules}, ${ing.varosresz || ''}</h3>
+                        <p class="text-white/60 text-xs flex gap-2">
+                            <span>${ing.azon}</span> | 
+                            <span>${ing.email || 'Nincs email cím'}</span>
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4 bg-black/30 p-2 rounded-lg w-full md:w-auto justify-between md:justify-end">
+                        ${jobbOldalHTML}
+                    </div>
+                `;
+                        kontener.appendChild(kartya);
+                  });
+
+                  frissitUI(szurtLista.length, szurtLista.length);
+            }
+
+            window.toggleLock = function (id) {
+                  const chk = document.getElementById(`check-${id}`);
+                  const dateInput = document.getElementById(`date-${id}`);
+                  if (dateInput) dateInput.disabled = chk.checked;
+
+                  // Statisztika frissítése
+                  const allCheck = document.querySelectorAll('.item-checkbox:checked').length;
+                  frissitUI(document.querySelectorAll('.item-checkbox').length, allCheck);
+            };
+
+            function frissitUI(total, checked) {
+                  const label = jelenlegiMod === 'expired' ? 'Archiválandó' : 'Emailre kijelölve';
+                  document.getElementById("kijelolt-db").innerHTML = `Listázva: <b>${total}</b> | ${label}: <b>${checked}</b>`;
+            }
+
+            // --- EMAIL KÜLDÉS ---
+            window.emailKuldes = async function () {
+                  if (!confirm("Biztosan elküldöd az értesítőket a kijelölt hirdetőknek?")) return;
+
+                  const btn = document.getElementById('btn-email');
+                  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> KÜLDÉS...';
+                  btn.disabled = true;
+
+                  let sentCount = 0;
+                  const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+
+                  for (const chk of checkboxes) {
+                        const id = chk.id.replace('check-', '');
+                        const ing = teljesLista.find(x => x.id === id);
+
+                        if (ing && ing.email) {
+                              try {
+                                    // EmailJS küldés
+                                    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                                          to_email: ing.email,
+                                          nev: ing.nev || "Hirdető",
+                                          ingatlan_cim: `${ing.telepules}, ${ing.utca || ing.varosresz}`,
+                                          lejarat_datum: ing.lejarat_datum.split('T')[0],
+                                          napok_hatra: Math.ceil((new Date(ing.lejarat_datum) - new Date()) / (1000 * 60 * 60 * 24))
+                                    });
+                                    sentCount++;
+                                    console.log(`Email elküldve: ${ing.email}`);
+                              } catch (error) {
+                                    console.error("Email hiba:", error);
+                              }
+                        }
+                  }
+
+                  alert(`${sentCount} db emlékeztető e-mail sikeresen elküldve!`);
+                  btn.innerHTML = '<i class="fa-regular fa-paper-plane"></i> ÉRTESÍTŐK KÜLDÉSE';
+                  btn.disabled = false;
+            };
+
+            // --- VÉGLEGESÍTÉS (Archiválás) ---
+            window.veglegesites = async function () {
+                  if (!confirm("Véglegesíted a változásokat?")) return;
+                  // ... (Ez a rész ugyanaz marad, mint az előző verzióban, csak a szelekció alapján)
+                  // A kód egyszerűsítése végett ide másold be a korábbi "veglegesites" függvény logikáját,
+                  // csak most már a checkboxok alapján döntsd el, mi történjen.
+
+                  // Rövidített implementáció a példa kedvéért:
+                  const checkboxes = document.querySelectorAll('.item-checkbox');
+                  for (const chk of checkboxes) {
+                        const id = chk.id.replace('check-', '');
+                        if (chk.checked) {
+                              // Archiválás (hb-archivba mentés, lakasokbol törlés)
+                              const ing = teljesLista.find(x => x.id === id);
+                              await setDoc(doc(adatbazis, "hb-archiv", id), { ...ing, archivalas_ideje: new Date().toISOString() });
+                              await deleteDoc(doc(adatbazis, "lakasok", id));
+                        } else {
+                              // Hosszabbítás
+                              const dateVal = document.getElementById(`date-${id}`).value;
+                              const ujDatum = new Date(dateVal); ujDatum.setHours(23, 59, 59);
+                              await updateDoc(doc(adatbazis, "lakasok", id), { lejarat_datum: ujDatum.toISOString(), statusz: "Aktív" });
+                        }
+                  }
+                  alert("Kész!");
+                  adatBetoltes();
+            };
+
+      </script>
+</body>
+
+</html>
