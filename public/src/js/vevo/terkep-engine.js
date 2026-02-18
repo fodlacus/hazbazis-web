@@ -337,7 +337,7 @@ function showVideoOverlay(ing) {
 
   // Gomb bekötése (Adatlapra visz)
   btnFull.onclick = () => {
-    window.location.href = `../../src/html/vevo/adatlap.html?id=${ing.id}`;
+    window.location.href = `../../html/vevo/adatlap.html?id=${ing.id}`;
   };
 
   // VIDEÓ KEZELÉS
