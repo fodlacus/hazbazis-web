@@ -202,7 +202,8 @@
 
       <script type="module">
             import { adatbazis, auth } from '../src/js/util/firebase-config.js';
-            import { collection, getDocs, doc, setDoc, deleteDoc, query, where, limit, startAfter, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            // ⚠️ FONTOS: Beletettem a 'getDoc'-ot az importba, mert kell a kedvencekhez!
+            import { collection, getDocs, getDoc, doc, setDoc, deleteDoc, query, where, limit, startAfter, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
             import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
             // --- ÁLLAPOTOK ---
@@ -217,21 +218,21 @@
 
             let isMuted = true;
             let isPaused = false;
-            let csakKedvencekMod = false;
+            let csakKedvencekMod = false; // Ez vezérli a két módot
 
             // --- INDÍTÁS ---
             document.addEventListener('DOMContentLoaded', async () => {
                   onAuthStateChanged(auth, async (user) => {
                         if (user) {
                               userUid = user.uid;
-                              await kedvencekBetoltese();
+                              await kedvencekCacheFrissites(); // Először letöltjük, mik a kedvencek
                         }
-                        await kovetkezoAdagBetoltese();
+                        await kovetkezoAdagBetoltese(); // Aztán indítjuk a videókat
                   });
             });
 
-            // --- KEDVENCEK ---
-            async function kedvencekBetoltese() {
+            // --- KEDVENCEK LISTÁJÁNAK BETÖLTÉSE (CACHE) ---
+            async function kedvencekCacheFrissites() {
                   if (!userUid) return;
                   try {
                         const q = query(collection(adatbazis, "kedvencek"), where("uid", "==", userUid));
@@ -241,11 +242,15 @@
                               const data = doc.data();
                               if (data.ingatlanId) kedvencekCache.add(data.ingatlanId);
                         });
-                  } catch (e) { console.error(e); }
+                        console.log("Kedvencek ID-k betöltve:", kedvencekCache.size);
+                  } catch (e) { console.error("Hiba a kedvencek betöltésekor:", e); }
             }
 
-            // --- INFINITE SCROLL BETÖLTÉS ---
+            // --- NORMÁL INFINITE SCROLL BETÖLTÉS ---
             async function kovetkezoAdagBetoltese() {
+                  // Ha Kedvenc módban vagyunk, NE töltsünk be idegen videókat!
+                  if (csakKedvencekMod) return;
+
                   if (toltesFolyamatban || nincsTobbAdat) return;
                   toltesFolyamatban = true;
 
@@ -255,21 +260,11 @@
                         const lakasokRef = collection(adatbazis, "lakasok");
                         let q;
 
-                        // Szűrés logika
-                        const szuroListaStr = sessionStorage.getItem('shorts_playlist');
-
-                        if (szuroListaStr && !csakKedvencekMod) {
-                              if (utolsoDokumentum) {
-                                    q = query(lakasokRef, limit(KOTEG_MERET), startAfter(utolsoDokumentum));
-                              } else {
-                                    q = query(lakasokRef, limit(KOTEG_MERET));
-                              }
+                        // Ha van utolsó doksi, onnan folytatjuk (lapozás)
+                        if (utolsoDokumentum) {
+                              q = query(lakasokRef, limit(KOTEG_MERET), startAfter(utolsoDokumentum));
                         } else {
-                              if (utolsoDokumentum) {
-                                    q = query(lakasokRef, limit(KOTEG_MERET), startAfter(utolsoDokumentum));
-                              } else {
-                                    q = query(lakasokRef, limit(KOTEG_MERET));
-                              }
+                              q = query(lakasokRef, limit(KOTEG_MERET));
                         }
 
                         const snapshot = await getDocs(q);
@@ -306,8 +301,9 @@
             function renderUjElemek(videok) {
                   const container = document.getElementById('video-scroll-container');
 
-                  if (betoltottVideok.length === 0 && videok.length === 0) {
-                        container.innerHTML = '<div class="h-full flex items-center justify-center text-white">Nincs videó.</div>';
+                  // Ha Kedvenc módban vagyunk és nincs találat
+                  if (csakKedvencekMod && videok.length === 0) {
+                        container.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-white gap-4"><i class="fa-regular fa-heart text-4xl text-gray-500"></i><p>Nincsenek kedvenc videóid.</p><button onclick="toggleKedvencSzuro()" class="px-4 py-2 bg-lime-400 text-black rounded-full font-bold">Vissza az összeshez</button></div>';
                         return;
                   }
 
@@ -316,6 +312,9 @@
                         const favClass = isFav ? 'is-favorite' : '';
                         const favIcon = isFav ? 'fa-solid' : 'fa-regular';
                         const ar = ingatlan.vételár ? (ingatlan.vételár / 1000000).toFixed(1) + " M" : "Ár megegyezés";
+
+                        // Szűrő gomb stílusa (ha aktív a szűrő, legyen zöld a gomb háttere a kártyán is)
+                        const filterClass = csakKedvencekMod ? 'filter-active' : '';
 
                         const div = document.createElement('div');
                         div.className = 'video-card';
@@ -328,8 +327,15 @@
                             <div class="action-btn" onclick="window.location.href='../../index.html'"><i class="fa-solid fa-house"></i></div>
                             <div class="action-btn" onclick="window.location.href='../../src/search/search-index.html'"><i class="fa-solid fa-filter"></i></div>
                             <div class="action-btn" onclick="alert('🚧 Hamarosan!')"><i class="fa-solid fa-bus"></i></div>
-                            <div class="action-btn ${favClass}" onclick="toggleFav('${ingatlan.id}', this)"><i class="${favIcon} fa-heart"></i></div>
-                            <div class="action-btn" onclick="toggleKedvencSzuro()"><i class="fa-solid fa-star"></i></div>
+                            
+                            <div class="action-btn ${favClass}" onclick="toggleFav('${ingatlan.id}', this)">
+                                <i class="${favIcon} fa-heart"></i>
+                            </div>
+                            
+                            <div class="action-btn ${filterClass}" onclick="toggleKedvencSzuro()">
+                                <i class="fa-solid fa-star"></i>
+                            </div>
+    
                             <div class="action-btn" onclick="openDetails('${ingatlan.id}')"><i class="fa-regular fa-file-lines"></i></div>
                         </div>
     
@@ -344,28 +350,86 @@
                   });
             }
 
-            // --- 🔥 JAVÍTOTT SCROLL FIGYELŐ (MOST MÁR JELÖLI A VIDEÓT!) ---
+            // --- 🔥 KEDVENC SZŰRŐ LOGIKA (VISSZATÉRT!) 🔥 ---
+            window.toggleKedvencSzuro = async function () {
+                  // 1. Állapot váltás
+                  csakKedvencekMod = !csakKedvencekMod;
+
+                  // 2. Képernyő törlése (Tiszta lap)
+                  const container = document.getElementById('video-scroll-container');
+                  container.innerHTML = '';
+                  betoltottVideok = [];
+                  utolsoDokumentum = null;
+                  nincsTobbAdat = false;
+
+                  document.getElementById('loading').style.display = 'flex';
+
+                  if (csakKedvencekMod) {
+                        // --- KEDVENC MÓD BEKAPCSOLVA ---
+                        console.log("❤️ Kedvenc mód: ON");
+
+                        if (kedvencekCache.size === 0) {
+                              renderUjElemek([]); // Üres üzenet kiírása
+                              document.getElementById('loading').style.display = 'none';
+                              return;
+                        }
+
+                        try {
+                              // Lekérjük az összes kedvencet egyesével
+                              // (Mivel általában < 50 db van, ez gyorsabb és egyszerűbb, mint a query-zés)
+                              const kedvencIds = Array.from(kedvencekCache);
+                              const promises = kedvencIds.map(id => getDoc(doc(adatbazis, "lakasok", id)));
+
+                              const snapshots = await Promise.all(promises);
+                              const kedvencVideok = [];
+
+                              snapshots.forEach(snap => {
+                                    if (snap.exists()) {
+                                          const data = snap.data();
+                                          if (data.videoUrl) {
+                                                kedvencVideok.push({ id: snap.id, ...data });
+                                          }
+                                    }
+                              });
+
+                              // Kirajzoljuk mindet egyszerre (itt nincs lapozás)
+                              renderUjElemek(kedvencVideok);
+
+                        } catch (e) {
+                              console.error("Hiba a kedvencek betöltésekor:", e);
+                        } finally {
+                              document.getElementById('loading').style.display = 'none';
+                        }
+
+                  } else {
+                        // --- VISSZA A NORMÁL MÓDBA ---
+                        console.log("🌍 Normál mód: ON");
+                        await kovetkezoAdagBetoltese(); // Újraindítjuk az infinite scrollt
+                  }
+            };
+
+
+            // --- OBSERVER (LAPOZÁS ÉS LEJÁTSZÁS) ---
             const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                         const video = entry.target.querySelector('video');
 
                         if (entry.isIntersecting) {
-                              // 1. JELÖLÉS (Ez hiányzott!): Ez a videó az aktív
                               video.setAttribute('data-playing', 'true');
-
                               video.muted = isMuted;
                               video.currentTime = 0;
                               if (!isPaused) video.play().catch(e => { });
 
-                              // Load more logika
-                              const kartyak = document.querySelectorAll('.video-card');
-                              const index = Array.from(kartyak).indexOf(entry.target);
-                              if (index >= kartyak.length - 2) {
-                                    kovetkezoAdagBetoltese();
+                              // 🔥 FONTOS: Csak akkor töltünk újat, ha NEM kedvenc módban vagyunk!
+                              if (!csakKedvencekMod) {
+                                    const kartyak = document.querySelectorAll('.video-card');
+                                    const index = Array.from(kartyak).indexOf(entry.target);
+                                    if (index >= kartyak.length - 2) {
+                                          kovetkezoAdagBetoltese();
+                                    }
                               }
 
                         } else {
-                              // 2. JELÖLÉS LEVÉTELE (Ha kimegy a képből)
                               video.removeAttribute('data-playing');
                               video.pause();
                         }
@@ -373,27 +437,19 @@
             }, { threshold: 0.6 });
 
 
-            // --- 🔥 JAVÍTOTT GLOBÁLIS GOMBOK ---
-
+            // --- EGYÉB FUNKCIÓK ---
             window.toggleGlobalSound = function () {
                   isMuted = !isMuted;
                   const btnIcon = document.getElementById('global-sound-btn').querySelector('i');
                   btnIcon.className = isMuted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
-
-                  // Minden videóra érvényesítjük
-                  document.querySelectorAll('video').forEach(vid => {
-                        vid.muted = isMuted;
-                  });
+                  document.querySelectorAll('video').forEach(vid => vid.muted = isMuted);
             };
 
             window.toggleGlobalPlay = function () {
                   isPaused = !isPaused;
                   const btnIcon = document.getElementById('global-play-btn').querySelector('i');
                   btnIcon.className = isPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
-
-                  // Megkeressük az éppen látható (megjelölt) videót
                   const currentVideo = document.querySelector('video[data-playing="true"]');
-
                   if (currentVideo) {
                         if (isPaused) currentVideo.pause();
                         else currentVideo.play();
@@ -406,10 +462,15 @@
                   const isCurrentlyFav = kedvencekCache.has(ingatlanId);
 
                   if (isCurrentlyFav) {
+                        // Törlés
                         icon.classList.remove('fa-solid'); icon.classList.add('fa-regular'); btn.classList.remove('is-favorite');
                         kedvencekCache.delete(ingatlanId);
                         await deleteDoc(doc(adatbazis, "kedvencek", `${userUid}_${ingatlanId}`));
+
+                        // Ha épp a kedvenceket nézzük, és kiveszed, akkor el is tűntethetnénk, 
+                        // de jobb UX, ha ott marad amíg nem frissítesz.
                   } else {
+                        // Mentés
                         icon.classList.remove('fa-regular'); icon.classList.add('fa-solid'); btn.classList.add('is-favorite');
                         kedvencekCache.add(ingatlanId);
                         await setDoc(doc(adatbazis, "kedvencek", `${userUid}_${ingatlanId}`), { uid: userUid, ingatlanId: ingatlanId });
@@ -421,10 +482,6 @@
                   window.location.href = `../../src/html/vevo/adatlap.html?id=HB-${tisztaId}`;
             };
 
-/*             window.toggleKedvencSzuro = function () {
-                  alert("A 'Pro' verzióban a szűrés logikáját át kell alakítani végtelen görgetéshez!");
-            };
- */
       </script>
 
 </body>
