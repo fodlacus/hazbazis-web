@@ -371,50 +371,72 @@ function showVideoOverlay(ing) {
   const btnFull = document.getElementById("btn-full-details");
 
   // ADATOK KITÖLTÉSE
-  label.innerText = ing.id;
+  label.innerText = ing.azon || ing.id;
   title.innerText = `${ing.telepules}, ${ing.varosresz || ing.kerulet || ""}`;
   price.innerText = Number(ing.vételár).toLocaleString() + " Ft";
 
-  // Gomb bekötése (Adatlapra visz)
   btnFull.onclick = () => {
     window.location.href = `../../html/vevo/adatlap.html?id=${ing.id}`;
   };
 
-  // VIDEÓ KEZELÉS
+  // --- VIDEÓ LOGIKA ---
+
+  // Reseteljük az állapotot minden nyitáskor
+  video.pause();
+  video.currentTime = 0;
+  loader.style.display = "flex"; // Loader alapból látszik
+
   if (ing.videoUrl && ing.videoUrl.length > 5) {
-    // A) VAN VIDEÓ -> Videó mutatása
+    // A) VAN VIDEÓ
     console.log("Videó betöltése:", ing.videoUrl);
 
     noVideoMsg.classList.add("hidden"); // Üzenet elrejtése
-    video.classList.remove("hidden"); // Videó megjelenítése
-    loader.style.display = "flex"; // Töltésjelző be
+    video.classList.remove("hidden"); // Videó elem mutatása
 
     video.src = ing.videoUrl;
+    video.muted = false; // Biztos ami biztos (bár a felhasználó interakció miatt működnie kell)
 
-    video.onplaying = () => {
-      loader.style.display = "none";
+    // ESEMÉNYEK: Mikor tűnjön el a homokóra?
+    // A 'timeupdate' biztosabb, mint a 'playing', mert akkor fut le, amikor TÉNYLEG megy a képkocka
+    const hideLoader = () => {
+      if (video.currentTime > 0.1) {
+        loader.style.display = "none";
+        video.removeEventListener("timeupdate", hideLoader); // Levesszük, ne fusson feleslegesen
+      }
     };
+    video.addEventListener("timeupdate", hideLoader);
 
-    video.play().catch((e) => console.log("Autoplay tiltva:", e));
+    // Biztonsági öv: Ha 3 másodperc múlva se tűnne el (pl. hiba van), akkor is vegyük le
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 3000);
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((error) => {
+        console.log("Autoplay hiba:", error);
+        // Ha hiba van, legalább a loadert vegyük le, hogy ne ragadjon be
+        loader.style.display = "none";
+      });
+    }
   } else {
-    // B) NINCS VIDEÓ -> Üzenet mutatása
-    console.log("Nincs videó, statikus nézet.");
+    // B) NINCS VIDEÓ
+    console.log("Nincs videó.");
 
-    loader.style.display = "none"; // Töltésjelző ki
-    video.pause();
-    video.src = ""; // Videó ürítése
-    video.classList.add("hidden"); // Videó elem elrejtése
+    loader.style.display = "none";
+    video.src = "";
+    video.classList.add("hidden");
 
-    // Háttérkép beállítása a "Nincs videó" üzenethez
-    let hatter = "https://via.placeholder.com/400x300?text=Ingatlan";
+    // Háttérkép beállítása
+    let hatter = "https://via.placeholder.com/400x300?text=Nincs+kép";
     if (ing.boritokep) hatter = ing.boritokep;
     else if (ing.kepek && ing.kepek.length > 0)
       hatter = ing.kepek[0].url || ing.kepek[0];
 
     noVideoBg.src = hatter;
-    noVideoMsg.classList.remove("hidden"); // Üzenet megjelenítése
+    noVideoMsg.classList.remove("hidden");
   }
 
-  // MEGJELENÍTÉS (Felcsúszik)
+  // Overlay felcsúsztatása
   overlay.classList.remove("translate-y-full");
 }
