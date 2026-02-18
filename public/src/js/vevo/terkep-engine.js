@@ -23,6 +23,7 @@ window.closeVideo = function () {
 
 let map;
 let allIngatlanok = [];
+let markerMap = {};
 
 // Két külön rétegcsoportot használunk:
 let markersGroup; // Ez a CLUSTER (csoportosító) réteg a gombostűknek
@@ -170,6 +171,7 @@ function renderMapAndList(list) {
   listaDiv.innerHTML = "";
 
   // TÖRLÉS: A csoportokból törlünk, nem a mapról egyesével
+  markerMap = {};
   markersGroup.clearLayers();
   circlesGroup.clearLayers();
 
@@ -254,6 +256,8 @@ function addPrivacyMarkerToGroups(lat, lng, ing) {
   });
 
   markersGroup.addLayer(marker);
+  markerMap[ing.id] = marker; // Elmentjük, hogy később megtaláljuk!
+  markersGroup.addLayer(marker);
 }
 
 //  KÁRTYA GENERÁLÓ (Változatlan)
@@ -265,8 +269,12 @@ function createCard(ing, lat, lng) {
   div.className =
     "bg-gray-900/90 backdrop-blur-md p-3 rounded-xl border border-white/10 shadow-lg hover:border-[#E2F1B0] hover:scale-[1.02] transition-all duration-200 cursor-pointer group mb-2";
 
-  let boritoKep = "https://via.placeholder.com/300x200?text=Nincs+kép";
-  const getUrl = (item) => {
+  let boritoKep = ing.boritokep || ing.kepek?.[0] || "";
+  const imgHtml = boritoKep
+    ? `<img src="${boritoKep}" class="w-24 h-20 object-cover rounded-lg border border-white/10 bg-black" onerror="this.src='https://placehold.co/300x200?text=Nincs+kép'">`
+    : `<div class="w-24 h-20 rounded-lg border border-white/10 bg-gray-800 flex items-center justify-center text-xs text-gray-500"><i class="fa-solid fa-image"></i></div>`;
+
+  /*   const getUrl = (item) => {
     if (!item) return null;
     return typeof item === "object" ? item.url : item;
   };
@@ -278,14 +286,43 @@ function createCard(ing, lat, lng) {
   } else if (ing.kepek && ing.kepek.length > 0) {
     boritoKep = getUrl(ing.kepek[0]);
   }
+ */
 
   // Azonosító
   const azonosito = ing.azon || `#${ing.id.substring(0, 5)}`;
 
+  div.addEventListener("mouseenter", () => {
+    const marker = markerMap[ing.id];
+    if (marker) {
+      // Marker kiemelése (Nagyobb z-index és méret effekt)
+      marker.setZIndexOffset(1000);
+
+      // Ha a marker épp csoportban (cluster) van, akkor nem tudjuk effektezni,
+      // de ha látszik, adhatunk neki egy kis CSS osztályt:
+      if (marker._icon) {
+        marker._icon.classList.add(
+          "scale-125",
+          "transition-transform",
+          "duration-300",
+          "z-50"
+        );
+      }
+    }
+  });
+
+  div.addEventListener("mouseleave", () => {
+    const marker = markerMap[ing.id];
+    if (marker) {
+      marker.setZIndexOffset(0);
+      if (marker._icon) {
+        marker._icon.classList.remove("scale-125", "z-50");
+      }
+    }
+  });
+
   div.innerHTML = `
       <div class="flex gap-3">
-          <img src="${boritoKep}" class="w-24 h-20 object-cover rounded-lg border border-white/10 bg-black">
-          
+          ${imgHtml}          
           <div class="flex-1 min-w-0 flex flex-col justify-center">
               <div class="flex justify-between items-start">
                   <div class="text-[#E2F1B0] font-bold text-sm truncate text-lg">
