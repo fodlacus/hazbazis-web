@@ -115,6 +115,43 @@
                   <video id="overlay-video" class="w-full h-full object-cover" loop playsinline webkit-playsinline>
                   </video>
 
+                  <div class="relative flex-1 bg-black overflow-hidden">
+
+                        <video id="overlay-video" class="w-full h-full object-cover" loop playsinline
+                              webkit-playsinline>
+                        </video>
+
+                        <div id="video-loader"
+                              class="absolute inset-0 flex items-center justify-center bg-black z-20 pointer-events-none">
+                              <svg class="animate-spin h-8 w-8 text-lime-400" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                          stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                              </svg>
+                        </div>
+
+                        <div id="no-video-msg"
+                              class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-gray-900 hidden">
+                              <img id="no-video-bg" src=""
+                                    class="absolute inset-0 w-full h-full object-cover opacity-30 blur-sm">
+
+                              <div class="relative z-10 flex flex-col items-center text-center p-6">
+                                    <div
+                                          class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-4 border border-white/20">
+                                          <i class="fa-solid fa-video-slash text-2xl text-white/60"></i>
+                                    </div>
+                                    <h4 class="text-white font-bold text-lg">Nincs videós bemutató</h4>
+                                    <p class="text-white/60 text-sm mt-1">Ehhez az ingatlanhoz csak fotók érhetők el.
+                                    </p>
+                              </div>
+                        </div>
+
+                  </div>
+
+
                   <div id="video-loader" class="absolute inset-0 flex items-center justify-center bg-black z-10">
                         <svg class="animate-spin h-8 w-8 text-lime-400" xmlns="http://www.w3.org/2000/svg" fill="none"
                               viewBox="0 0 24 24">

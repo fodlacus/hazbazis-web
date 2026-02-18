@@ -362,6 +362,9 @@ function showVideoOverlay(ing) {
   const video = document.getElementById("overlay-video");
   const loader = document.getElementById("video-loader");
 
+  const noVideoMsg = document.getElementById("no-video-msg");
+  const noVideoBg = document.getElementById("no-video-bg");
+
   const label = document.getElementById("overlay-label");
   const title = document.getElementById("overlay-title");
   const price = document.getElementById("overlay-price");
@@ -378,22 +381,38 @@ function showVideoOverlay(ing) {
   };
 
   // VIDEÓ KEZELÉS
-  if (ing.videoUrl) {
-    video.src = ing.videoUrl;
-    loader.style.display = "flex"; // Homokóra be
+  if (ing.videoUrl && ing.videoUrl.length > 5) {
+    // A) VAN VIDEÓ -> Videó mutatása
+    console.log("Videó betöltése:", ing.videoUrl);
 
-    // Ha elindul a lejátszás, eltűnik a homokóra
+    noVideoMsg.classList.add("hidden"); // Üzenet elrejtése
+    video.classList.remove("hidden"); // Videó megjelenítése
+    loader.style.display = "flex"; // Töltésjelző be
+
+    video.src = ing.videoUrl;
+
     video.onplaying = () => {
       loader.style.display = "none";
     };
 
     video.play().catch((e) => console.log("Autoplay tiltva:", e));
   } else {
-    // Ha nincs videó, tegyünk be egy képet poszternek
-    // (Itt opcionálisan lehetne csak a képet mutatni)
-    video.src = "";
-    loader.style.display = "none";
-    // Vagy alert("Ehhez nincs videó!");
+    // B) NINCS VIDEÓ -> Üzenet mutatása
+    console.log("Nincs videó, statikus nézet.");
+
+    loader.style.display = "none"; // Töltésjelző ki
+    video.pause();
+    video.src = ""; // Videó ürítése
+    video.classList.add("hidden"); // Videó elem elrejtése
+
+    // Háttérkép beállítása a "Nincs videó" üzenethez
+    let hatter = "https://via.placeholder.com/400x300?text=Ingatlan";
+    if (ing.boritokep) hatter = ing.boritokep;
+    else if (ing.kepek && ing.kepek.length > 0)
+      hatter = ing.kepek[0].url || ing.kepek[0];
+
+    noVideoBg.src = hatter;
+    noVideoMsg.classList.remove("hidden"); // Üzenet megjelenítése
   }
 
   // MEGJELENÍTÉS (Felcsúszik)
