@@ -4,91 +4,350 @@
 <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>teras.hu - Admin Dashboard</title>
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <title>Központi Dashboard - Admin</title>
       <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
       <style>
-            .hatter-zold {
-                  background-color: #3D4A16;
+            .stat-card {
+                  transition: all 0.3s ease;
+                  cursor: pointer;
             }
 
-            .kartya {
-                  background-color: rgba(255, 255, 255, 0.05);
-                  border: 1px solid rgba(226, 241, 176, 0.1);
+            .stat-card:hover,
+            .stat-card.active {
+                  transform: translateY(-5px);
+                  border-color: #E2F1B0;
+                  background-color: rgba(255, 255, 255, 0.1);
             }
 
-            .szoveg-vilagos {
-                  color: #E2F1B0;
+            .stat-card.active {
+                  box-shadow: 0 0 15px rgba(226, 241, 176, 0.2);
             }
       </style>
 </head>
 
-<body class="hatter-zold text-white font-sans p-6">
+<body class="bg-[#1a1a1a] text-white min-h-screen font-sans pb-20">
 
-      <div class="max-w-6xl mx-auto">
-            <header class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
-                  <div>
-                        <h1 class="text-3xl font-bold">Admin <span class="szoveg-vilagos">Panel</span></h1>
-                        <p id="bejelentkezett-email" class="text-xs opacity-60 italic"></p>
-                        <p class="text-sm opacity-60 uppercase tracking-widest">Ingatlan feldolgozási folyamat</p>
+      <nav class="border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                        <a href="admin-hub.html" class="text-white/60 hover:text-white transition"><i
+                                    class="fa-solid fa-arrow-left"></i> Vissza</a>
+                        <h1 class="text-xl font-bold text-white">Ingatlan Statisztika & Kezelés</h1>
                   </div>
-                  <div class="flex gap-4">
+                  <button onclick="window.location.reload()"
+                        class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded">
+                        <i class="fa-solid fa-rotate-right"></i> Frissítés
+                  </button>
+            </div>
+      </nav>
 
-                        <button onclick="kijelentkezes()"
-                              class="text-xs border border-white/20 px-4 py-2 rounded-full hover:bg-white/10">Kijelentkezés</button>
-                        <a href="admin-hub.html"
-                              class=" z-50 bg-black/50 hover:bg-black/80 text-white px-3 py-2 rounded-lg text-xs font-bold backdrop-blur flex items-center gap-2 transition-colors border border-white/10">
-                              <i class="fa-solid fa-border-all"></i> Admin Menü
-                        </a>
+      <div class="max-w-7xl mx-auto p-6">
 
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
 
+                  <div onclick="szuresValtas('aktiv')" id="card-aktiv"
+                        class="stat-card active bg-[#2a2a2a] border border-white/10 p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-house text-[#E2F1B0] text-xl mb-2"></i>
+                        <div class="text-xs text-white/50 uppercase">Aktív Hirdetés</div>
+                        <div id="count-aktiv" class="text-2xl font-bold mt-1">...</div>
                   </div>
 
-            </header>
+                  <div onclick="szuresValtas('foto')" id="card-foto"
+                        class="stat-card bg-[#2a2a2a] border border-white/10 p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-camera text-orange-400 text-xl mb-2"></i>
+                        <div class="text-xs text-white/50 uppercase">Fotózásra vár</div>
+                        <div id="count-foto" class="text-2xl font-bold mt-1 text-orange-400">...</div>
+                  </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                  <div class="kartya p-6 rounded-2xl">
-                        <p class="text-xs opacity-50 uppercase">Feltöltött hirdetések</p>
-                        <h2 id="statisztika-osszes" class="text-4xl font-bold szoveg-vilagos">--</h2>
+                  <div onclick="szuresValtas('tura')" id="card-tura"
+                        class="stat-card bg-[#2a2a2a] border border-white/10 p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-layer-group text-blue-400 text-xl mb-2"></i>
+                        <div class="text-xs text-white/50 uppercase">Van Alaprajz/Túra</div>
+                        <div id="count-tura" class="text-2xl font-bold mt-1 text-blue-400">...</div>
                   </div>
-                  <div class="kartya p-6 rounded-2xl">
-                        <p class="text-xs opacity-50 uppercase">Fotózásra vár</p>
-                        <h2 class="text-4xl font-bold text-orange-400">12</h2>
+
+                  <div onclick="szuresValtas('video')" id="card-video"
+                        class="stat-card bg-[#2a2a2a] border border-white/10 p-4 rounded-xl text-center">
+                        <i class="fa-brands fa-youtube text-red-500 text-xl mb-2"></i>
+                        <div class="text-xs text-white/50 uppercase">Shorts Videók</div>
+                        <div id="count-video" class="text-2xl font-bold mt-1 text-red-500">...</div>
                   </div>
-                  <div class="kartya p-6 rounded-2xl">
-                        <p class="text-xs opacity-50 uppercase">Aktív Shorts videók</p>
-                        <h2 class="text-4xl font-bold text-lime-400">45</h2>
+
+                  <div onclick="szuresValtas('archiv')" id="card-archiv"
+                        class="stat-card bg-[#2a2a2a] border border-white/10 p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-box-archive text-gray-400 text-xl mb-2"></i>
+                        <div class="text-xs text-white/50 uppercase">Archivált</div>
+                        <div id="count-archiv" class="text-2xl font-bold mt-1 text-gray-400">...</div>
+                  </div>
+
+                  <div onclick="szuresValtas('varolista')" id="card-varolista"
+                        class="stat-card bg-[#2a2a2a] border border-white/10 p-4 rounded-xl text-center">
+                        <i class="fa-solid fa-clock text-yellow-400 text-xl mb-2"></i>
+                        <div class="text-xs text-white/50 uppercase">Jóváhagyás</div>
+                        <div id="count-varolista" class="text-2xl font-bold mt-1 text-yellow-400">...</div>
                   </div>
             </div>
 
-            <div class="kartya rounded-3xl overflow-hidden">
+            <div class="bg-[#2a2a2a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
                   <div class="p-6 border-b border-white/10 flex justify-between items-center">
-                        <h3 class="font-bold">Legutóbbi feltöltések</h3>
-                        <button class="bg-white/10 text-xs px-3 py-1 rounded">Frissítés</button>
+                        <h2 id="lista-cim" class="text-lg font-bold text-white">Aktív ingatlanok listája</h2>
+                        <div class="text-xs text-white/40">Lapozás: 15 tétel / oldal</div>
                   </div>
+
                   <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
-                              <thead class="bg-black/20 text-xs uppercase opacity-60">
+                              <thead class="bg-black/20 text-xs uppercase text-white/50">
                                     <tr>
-                                          <th class="p-4">Ingatlan neve</th>
-                                          <th class="p-4">Helyszín</th>
+                                          <th class="p-4">ID</th>
+                                          <th class="p-4">Ingatlan / Cím</th>
                                           <th class="p-4">Ár</th>
-                                          <th class="p-4">Státusz</th>
+                                          <th class="p-4">Státusz Info</th>
                                           <th class="p-4 text-right">Művelet</th>
                                     </tr>
                               </thead>
-                              <tbody id="admin-ingatlan-lista">
+                              <tbody id="adat-tabla" class="text-sm">
                                     <tr>
-                                          <td colspan="5" class="p-10 text-center opacity-30 italic">Adatok betöltése...
-                                          </td>
+                                          <td colspan="5" class="p-8 text-center text-white/30">Adatok betöltése...</td>
                                     </tr>
                               </tbody>
                         </table>
                   </div>
+
+                  <div class="p-4 bg-black/20 border-t border-white/10 flex justify-between items-center">
+                        <button onclick="lapozas(-1)" id="btn-prev" disabled
+                              class="px-4 py-2 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                              <i class="fa-solid fa-chevron-left"></i> Előző
+                        </button>
+                        <span id="page-info" class="text-xs text-white/50">1. oldal</span>
+                        <button onclick="lapozas(1)" id="btn-next"
+                              class="px-4 py-2 rounded bg-white/5 hover:bg-white/10 transition">
+                              Következő <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                  </div>
             </div>
+
       </div>
 
-      <script type="module" src="../../js/admin/admin.js"></script>
+      <script type="module">
+            import { adatbazis, auth } from "../../js/util/firebase-config.js";
+            import { collection, getDocs, query, where, limit, startAfter, orderBy, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+            // Állapotváltozók
+            let jelenlegiKategoria = 'aktiv';
+            let utolsoDokumentum = null; // A lapozáshoz kell
+            let elozoDokumentumok = []; // Visszalépéshez
+            let oldalSzam = 1;
+            const LAP_MERET = 15;
+
+            // Auth ellenőrzés
+            onAuthStateChanged(auth, (user) => {
+                  if (!user) window.location.href = '/index.html';
+                  else {
+                        frissitStatistikat();
+                        listaBetoltes();
+                  }
+            });
+
+            // 1. STATISZTIKÁK LEKÉRÉSE (Számok a kártyákra)
+            async function frissitStatistikat() {
+                  try {
+                        // Aktív
+                        const qAktiv = query(collection(adatbazis, "lakasok"));
+                        const snapAktiv = await getCountFromServer(qAktiv);
+                        document.getElementById("count-aktiv").innerText = snapAktiv.data().count;
+
+                        // Archiv
+                        const qArchiv = query(collection(adatbazis, "hb-archiv"));
+                        const snapArchiv = await getCountFromServer(qArchiv);
+                        document.getElementById("count-archiv").innerText = snapArchiv.data().count;
+
+                        // Várólista
+                        const qVaro = query(collection(adatbazis, "hirdetesek_varolista"));
+                        const snapVaro = await getCountFromServer(qVaro);
+                        document.getElementById("count-varolista").innerText = snapVaro.data().count;
+
+                        // Speciális szűrők (Ezeket kliens oldalon vagy indexelt query-vel számoljuk)
+                        // Megjegyzés: A pontos számokhoz "count" query kellene minden feltételre.
+                        // Itt most egyszerűsítve lekérjük a lakasokat és megszámoljuk a feltételeket,
+                        // NAGY adatbázisnál ehhez külön számláló mező kellene a DB-be.
+                        // Most egy query-vel közelítünk:
+
+                        const qVideo = query(collection(adatbazis, "lakasok"), where("shorts_video", "!=", ""));
+                        const snapVideo = await getCountFromServer(qVideo);
+                        document.getElementById("count-video").innerText = snapVideo.data().count;
+
+                        const qTura = query(collection(adatbazis, "lakasok"), where("virtual_tur", "!=", ""));
+                        const snapTura = await getCountFromServer(qTura);
+                        document.getElementById("count-tura").innerText = snapTura.data().count;
+
+                        // Fotózásra vár (Nehéz query, mert "üres vagy null". Kliens oldali becslés az első 100-ból, vagy egyszerűen "?")
+                        // Jobb megoldás: Firebase Index szükséges hozzá, ha pontosak akarunk lenni.
+                        // Most egy placeholder-t teszek, vagy lekérünk mindent (nem ajánlott).
+                        // Helyette: csak azt írjuk ki, hogy "Lista", amíg nincs rá index.
+                        document.getElementById("count-foto").innerText = "Lista";
+
+                  } catch (err) {
+                        console.error("Stat hiba:", err);
+                  }
+            }
+
+            // 2. KATEGÓRIA VÁLTÁS (Kártyára kattintáskor)
+            window.szuresValtas = function (kategoria) {
+                  jelenlegiKategoria = kategoria;
+                  oldalSzam = 1;
+                  utolsoDokumentum = null;
+                  elozoDokumentumok = [];
+
+                  // UI frissítés
+                  document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+                  document.getElementById(`card-${kategoria}`).classList.add('active');
+
+                  const cimkek = {
+                        'aktiv': 'Aktív ingatlanok',
+                        'foto': 'Fotózásra váró ingatlanok (Nincs borítókép)',
+                        'tura': 'Virtuális túrával rendelkezők',
+                        'video': 'Shorts videóval rendelkezők',
+                        'archiv': 'Archivált szerződések',
+                        'varolista': 'Jóváhagyásra váró hirdetések'
+                  };
+                  document.getElementById('lista-cim').innerText = cimkek[kategoria];
+
+                  listaBetoltes();
+            };
+
+            // 3. LISTA BETÖLTÉSE (FŐ LOGIKA)
+            async function listaBetoltes() {
+                  const tbody = document.getElementById("adat-tabla");
+                  tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center"><i class="fa-solid fa-spinner fa-spin text-2xl text-[#E2F1B0]"></i></td></tr>';
+
+                  try {
+                        let alapRef;
+                        let feltetelek = [];
+
+                        // Melyik gyűjtemény?
+                        if (jelenlegiKategoria === 'archiv') {
+                              alapRef = collection(adatbazis, "hb-archiv");
+                        } else if (jelenlegiKategoria === 'varolista') {
+                              alapRef = collection(adatbazis, "hirdetesek_varolista");
+                        } else {
+                              alapRef = collection(adatbazis, "lakasok");
+                        }
+
+                        // Szűrők hozzáadása
+                        if (jelenlegiKategoria === 'video') {
+                              feltetelek.push(where("shorts_video", "!=", ""));
+                        }
+                        if (jelenlegiKategoria === 'tura') {
+                              feltetelek.push(where("virtual_tur", "!=", ""));
+                        }
+                        // Fotó hiány: Ez trükkös. Feltételezzük, hogy a boritokep üres string
+                        if (jelenlegiKategoria === 'foto') {
+                              // Mivel a "!=" és "==" keverése indexet igényel, itt kliens oldali szűrést végzünk a lekért adagon,
+                              // VAGY feltételezzük, hogy van egy "statusz: fotozasra_var" mező (jövőbeli fejlesztés).
+                              // Most lekérjük az aktívakat, és js-ben szűrjük ki a képeket.
+                        }
+
+                        // Query összeállítása
+                        let q = query(alapRef, ...feltetelek, limit(LAP_MERET));
+
+                        // Ha lapozunk
+                        if (utolsoDokumentum) {
+                              q = query(alapRef, ...feltetelek, startAfter(utolsoDokumentum), limit(LAP_MERET));
+                        }
+
+                        const snapshot = await getDocs(q);
+
+                        // UI Frissítés
+                        tbody.innerHTML = "";
+
+                        if (snapshot.empty) {
+                              tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-white/50">Nincs megjeleníthető adat ebben a kategóriában.</td></tr>';
+                              document.getElementById("btn-next").disabled = true;
+                              return;
+                        }
+
+                        // Utolsó doksi mentése a köv. oldalhoz
+                        utolsoDokumentum = snapshot.docs[snapshot.docs.length - 1];
+                        document.getElementById("btn-next").disabled = snapshot.docs.length < LAP_MERET;
+
+                        snapshot.forEach(docSnap => {
+                              const data = docSnap.data();
+
+                              // KLIENS OLDALI SZŰRÉS (FOTÓ)
+                              if (jelenlegiKategoria === 'foto') {
+                                    // Ha van borítókép, akkor NEM kell megjeleníteni
+                                    if (data.boritokep || (data.kepek_horiz && data.kepek_horiz.length > 0)) {
+                                          return; // Skip
+                                    }
+                              }
+
+                              const ar = data.ar || data.vételár || 0;
+                              const cim = `${data.telepules || ''}, ${data.varosresz || data.utca || ''}`;
+                              const azon = data.azon || data.id || docSnap.id.substring(0, 6);
+
+                              // Státusz ikonok
+                              let statuszHtml = '';
+                              if (data.shorts_video) statuszHtml += '<i class="fa-brands fa-youtube text-red-500 mr-2" title="Van videó"></i>';
+                              if (data.virtual_tur) statuszHtml += '<i class="fa-solid fa-layer-group text-blue-400 mr-2" title="Van túra"></i>';
+                              if (!data.boritokep) statuszHtml += '<i class="fa-solid fa-camera text-orange-400 mr-2" title="Nincs fotó"></i>';
+                              if (data.lejarat_datum) {
+                                    // Ha lejárt, jelezzük
+                                    if (new Date(data.lejarat_datum) < new Date()) statuszHtml += '<i class="fa-solid fa-clock text-red-500" title="Lejárt"></i>';
+                              }
+
+                              const row = document.createElement('tr');
+                              row.className = "border-b border-white/5 hover:bg-white/5 transition";
+                              row.innerHTML = `
+                        <td class="p-4 font-mono text-white/60">${azon}</td>
+                        <td class="p-4 font-bold text-white">${cim}</td>
+                        <td class="p-4 text-[#E2F1B0]">${Number(ar).toLocaleString()} Ft</td>
+                        <td class="p-4">${statuszHtml}</td>
+                        <td class="p-4 text-right">
+                             ${gombGeneralas(docSnap.id, jelenlegiKategoria)}
+                        </td>
+                    `;
+                              tbody.appendChild(row);
+                        });
+
+                        document.getElementById("page-info").innerText = `${oldalSzam}. oldal`;
+                        document.getElementById("btn-prev").disabled = oldalSzam === 1;
+
+                  } catch (err) {
+                        console.error(err);
+                        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-400">Hiba történt az adatok lekérésekor. Ellenőrizd a konzolt.</td></tr>';
+                  }
+            }
+
+            // Segédfüggvény: Gombok generálása kategória szerint
+            function gombGeneralas(id, kat) {
+                  if (kat === 'varolista') {
+                        return `<a href="hirdetes-kezeles.html?id=${id}" class="bg-yellow-400/20 text-yellow-400 px-3 py-1 rounded text-xs hover:bg-yellow-400/30">Jóváhagyás</a>`;
+                  } else if (kat === 'archiv') {
+                        return `<button class="text-white/40 cursor-not-allowed text-xs">Archivált</button>`;
+                  } else {
+                        return `<button class="text-[#E2F1B0] hover:underline text-xs">Szerkesztés</button>`;
+                  }
+            }
+
+            // 4. LAPOZÁS KEZELÉSE
+            window.lapozas = function (irany) {
+                  if (irany === 1) {
+                        // Következő
+                        elozoDokumentumok.push(utolsoDokumentum); // Elmentjük a mostani utolsót, hogy vissza tudjunk jönni (egyszerűsített logika)
+                        oldalSzam++;
+                        listaBetoltes();
+                  } else {
+                        // Előző (Egyszerűsített: resetelünk az elejére, mert a Firestore-ban nehéz a visszafelé lapozás snapshot nélkül)
+                        // Profibb megoldás: elmenteni a snapshotokat tömbbe. Most: visszaugrunk az elejére.
+                        oldalSzam = 1;
+                        utolsoDokumentum = null;
+                        listaBetoltes();
+                  }
+            };
+
+      </script>
 </body>
 
 </html>
