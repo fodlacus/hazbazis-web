@@ -7,6 +7,20 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { adatbazis } from "../util/firebase-config.js";
 
+window.closeVideo = function () {
+  const overlay = document.getElementById("video-overlay");
+  const video = document.getElementById("overlay-video");
+
+  // 1. Elrejtés (Lecsúszik)
+  overlay.classList.add("translate-y-full");
+
+  // 2. Videó megállítása
+  setTimeout(() => {
+    video.pause();
+    video.src = ""; // Kiürítjük, hogy ne fogyassza a netet
+  }, 500); // Megvárjuk az animációt
+};
+
 let map;
 let allIngatlanok = [];
 
@@ -230,8 +244,13 @@ function addPrivacyMarkerToGroups(lat, lng, ing) {
 
   const marker = L.marker([lat, lng], { icon: customIcon });
 
+  // KATTINTÁS ESEMÉNY: Videó lejátszása
   marker.on("click", () => {
+    // 1. Közelítés (maradjon meg, mert jó effekt)
     map.flyTo([lat, lng], 16, { duration: 1.5 });
+
+    // 2. Videó betöltése és megjelenítése
+    showVideoOverlay(ing);
   });
 
   markersGroup.addLayer(marker);
@@ -299,4 +318,47 @@ function createCard(ing, lat, lng) {
   });
 
   return div;
+}
+
+function showVideoOverlay(ing) {
+  const overlay = document.getElementById("video-overlay");
+  const video = document.getElementById("overlay-video");
+  const loader = document.getElementById("video-loader");
+
+  const label = document.getElementById("overlay-label");
+  const title = document.getElementById("overlay-title");
+  const price = document.getElementById("overlay-price");
+  const btnFull = document.getElementById("btn-full-details");
+
+  // ADATOK KITÖLTÉSE
+  label.innerText = ing.id;
+  title.innerText = `${ing.telepules}, ${ing.varosresz || ing.kerulet || ""}`;
+  price.innerText = Number(ing.vételár).toLocaleString() + " Ft";
+
+  // Gomb bekötése (Adatlapra visz)
+  btnFull.onclick = () => {
+    window.location.href = `../../src/html/vevo/adatlap.html?id=${ing.id}`;
+  };
+
+  // VIDEÓ KEZELÉS
+  if (ing.videoUrl) {
+    video.src = ing.videoUrl;
+    loader.style.display = "flex"; // Homokóra be
+
+    // Ha elindul a lejátszás, eltűnik a homokóra
+    video.onplaying = () => {
+      loader.style.display = "none";
+    };
+
+    video.play().catch((e) => console.log("Autoplay tiltva:", e));
+  } else {
+    // Ha nincs videó, tegyünk be egy képet poszternek
+    // (Itt opcionálisan lehetne csak a képet mutatni)
+    video.src = "";
+    loader.style.display = "none";
+    // Vagy alert("Ehhez nincs videó!");
+  }
+
+  // MEGJELENÍTÉS (Felcsúszik)
+  overlay.classList.remove("translate-y-full");
 }

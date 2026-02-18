@@ -93,7 +93,50 @@
 
             </div>
       </div>
+      <div id="video-overlay"
+            class="fixed bottom-0 left-0 w-full md:w-96 md:left-1/2 md:-translate-x-1/2 z-[2000] 
+             transition-transform duration-500 ease-in-out translate-y-full
+             bg-black text-white rounded-t-2xl shadow-2xl border-t border-white/20 overflow-hidden flex flex-col h-[60vh] md:h-[500px]">
 
+            <div
+                  class="flex justify-between items-center p-3 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-20">
+                  <span class="text-xs font-bold bg-lime-400 text-black px-2 py-1 rounded"
+                        id="overlay-label">HB-12345</span>
+                  <button onclick="closeVideo()"
+                        class="bg-black/50 hover:bg-white/20 text-white rounded-full w-8 h-8 flex items-center justify-center backdrop-blur-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                              stroke="currentColor" class="w-5 h-5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                  </button>
+            </div>
+
+            <div class="relative flex-1 bg-black">
+                  <video id="overlay-video" class="w-full h-full object-cover" loop playsinline webkit-playsinline>
+                  </video>
+
+                  <div id="video-loader" class="absolute inset-0 flex items-center justify-center bg-black z-10">
+                        <svg class="animate-spin h-8 w-8 text-lime-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                              viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                              </circle>
+                              <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                              </path>
+                        </svg>
+                  </div>
+            </div>
+
+            <div class="p-4 bg-gradient-to-t from-black via-black/80 to-transparent absolute bottom-0 w-full z-20">
+                  <h3 id="overlay-title" class="text-lg font-bold truncate">Budapest, 5. kerület</h3>
+                  <p id="overlay-price" class="text-lime-300 font-bold text-xl mb-3">150 M Ft</p>
+
+                  <button id="btn-full-details"
+                        class="w-full bg-lime-400 hover:bg-lime-500 text-black font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-regular fa-eye"></i> Teljes adatlap
+                  </button>
+            </div>
+      </div>
       <script type="module" src="../../js/vevo/terkep-engine.js"></script>
 </body>
 
