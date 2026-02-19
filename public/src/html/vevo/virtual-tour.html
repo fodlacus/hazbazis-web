@@ -97,7 +97,21 @@
 
 
       <script type="module" src="../../js/vevo/virtual-tour-page.js"></script>
-
+      <script>
+            // Ha widget módban vagyunk, elrejtjük a belső navigációt
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('widget') === 'true') {
+                  // Keressük meg a vissza gombot vagy fejlécet és rejtsük el
+                  // (A class nevek a kódtól függnek, itt egy általános tipp:)
+                  const style = document.createElement('style');
+                  style.textContent = `
+                    .back-button, header, nav, .vissza-gomb-osztaly { display: none !important; }
+                    /* Ha van felső sáv padding, azt is eltüntethetjük */
+                    body { padding-top: 0 !important; }
+                `;
+                  document.head.appendChild(style);
+            }
+      </script>
 </body>
 
 </html>

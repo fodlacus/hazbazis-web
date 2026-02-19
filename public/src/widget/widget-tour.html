@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Virtuális Séta</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <style>
+            body {
+                  background-color: #111;
+                  color: white;
+                  margin: 0;
+                  padding: 0;
+                  overflow: hidden;
+            }
+
+            /* Iframe teljes kitöltése */
+            #tour-frame {
+                  width: 100%;
+                  height: calc(100vh - 60px);
+                  /* Fejléc magasságát levonjuk */
+                  border: none;
+            }
+      </style>
+</head>
+
+<body class="h-screen flex flex-col">
+
+      <div class="h-[60px] bg-[#1a1a1a] border-b border-white/10 flex items-center justify-between px-4 shadow-lg z-50">
+            <div class="flex items-center gap-4">
+                  <button onclick="goBack()"
+                        class="text-white hover:text-[#E2F1B0] text-sm flex items-center gap-2 transition font-bold">
+                        <i class="fa-solid fa-arrow-left"></i> Vissza az adatlapra
+                  </button>
+            </div>
+
+            <div class="text-[#E2F1B0] font-bold text-xs tracking-wider uppercase hidden md:block">
+                  Virtuális Séta
+            </div>
+
+            <button onclick="window.close()"
+                  class="text-white/50 hover:text-white text-sm flex items-center gap-2 transition">
+                  <i class="fa-solid fa-xmark"></i> Bezárás
+            </button>
+      </div>
+
+      <iframe id="tour-frame" src="" allowfullscreen></iframe>
+
+      <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+
+            function goBack() {
+                  window.history.back();
+            }
+
+            if (id) {
+                  // JAVÍTÁS 1: Hozzáadtuk a .html kiterjesztést
+                  // JAVÍTÁS 2: Hozzáadtuk a &widget=true paramétert
+                  // Ellenőrizd, hogy az útvonal pontosan ez-e nálad!
+                  const tourUrl = `/src/html/vevo/virtual-tour.html?id=${id}&widget=true`;
+
+                  const iframe = document.getElementById('tour-frame');
+                  iframe.src = tourUrl;
+
+            } else {
+                  document.body.innerHTML = "<div class='p-10 text-center text-red-400'>Hiba: Hiányzó ingatlan azonosító.</div>";
+            }
+      </script>
+</body>
+
+</html>

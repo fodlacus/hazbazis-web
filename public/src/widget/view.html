@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Hazbazis Shorts Widget</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <style>
+            #video-container {
+                  scroll-snap-type: y mandatory;
+                  scroll-behavior: smooth;
+                  -ms-overflow-style: none;
+                  scrollbar-width: none;
+            }
+
+            #video-container::-webkit-scrollbar {
+                  display: none;
+            }
+
+            .video-item {
+                  scroll-snap-align: start;
+                  scroll-snap-stop: always;
+            }
+
+            .control-btn {
+                  background: rgba(0, 0, 0, 0.4);
+                  backdrop-filter: blur(4px);
+                  transition: all 0.2s;
+            }
+
+            .control-btn:hover {
+                  background: rgba(0, 0, 0, 0.7);
+                  transform: scale(1.1);
+            }
+      </style>
+</head>
+
+<body class="bg-[#111] text-white overflow-hidden m-0 p-0 flex justify-center items-center h-screen">
+
+      <div class="w-full h-full max-w-[480px] bg-black relative shadow-2xl overflow-hidden">
+
+            <div id="video-container" class="h-full w-full overflow-y-scroll relative">
+                  <div class="h-full w-full flex items-center justify-center text-white/30 text-xs">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Betöltés...
+                  </div>
+            </div>
+
+            <a href="https://hazbazis.hu" target="_blank"
+                  class="absolute top-4 left-4 z-40 opacity-50 hover:opacity-100 transition pointer-events-auto">
+                  <div class="text-[9px] font-bold tracking-widest uppercase text-white drop-shadow-md">
+                        Powered by Hazbazis
+                  </div>
+            </a>
+
+      </div>
+
+      <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+            import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+            // --- KONFIGURÁCIÓ ---
+            const firebaseConfig = {
+                  apiKey: "AIzaSyAKHxkRj41Y_e6x5TTfXbiBGRtN99V9SGM",
+                  authDomain: "hazbazis.firebaseapp.com",
+                  projectId: "hazbazis",
+                  storageBucket: "hazbazis.firebasestorage.app",
+                  messagingSenderId: "228035570741",
+                  appId: "1:228035570741:web:58827ab31ede50f1f6157c",
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            // A partner paraméter mostantól az UID-t várja!
+            const urlParams = new URLSearchParams(window.location.search);
+            const partnerUid = urlParams.get('partner');
+
+            const observer = new IntersectionObserver((entries) => {
+                  entries.forEach(entry => {
+                        const video = entry.target.querySelector('video');
+                        const playBtnIcon = entry.target.querySelector('.play-btn-icon');
+
+                        if (!video) return;
+
+                        if (entry.isIntersecting) {
+                              video.currentTime = 0;
+                              video.play()
+                                    .then(() => { if (playBtnIcon) playBtnIcon.className = "fa-solid fa-pause play-btn-icon"; })
+                                    .catch(e => { if (playBtnIcon) playBtnIcon.className = "fa-solid fa-play play-btn-icon"; });
+                        } else {
+                              video.pause();
+                              if (playBtnIcon) playBtnIcon.className = "fa-solid fa-play play-btn-icon";
+                        }
+                  });
+            }, { threshold: 0.6 });
+
+
+            async function loadVideos() {
+                  const container = document.getElementById('video-container');
+
+                  if (!partnerUid) {
+                        container.innerHTML = '<div class="h-full flex items-center justify-center text-red-400">Hiányzó partner UID</div>';
+                        return;
+                  }
+
+                  try {
+                        // JAVÍTVA: hirdeto_uid alapú szűrés!
+                        // FIGYELEM: Ehhez Index kell majd a Firebase-ben! (uid + videoUrl)
+                        const q = query(
+                              collection(db, "lakasok"),
+                              where("hirdeto_uid", "==", partnerUid),
+                              where("videoUrl", "!=", "")
+                        );
+
+                        const snapshot = await getDocs(q);
+
+                        if (snapshot.empty) {
+                              container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Nincs videós tartalom ennél a partnernél.</div>';
+                              return;
+                        }
+
+                        container.innerHTML = "";
+
+                        snapshot.forEach(doc => {
+                              renderShortsItem(doc.id, doc.data(), container);
+                        });
+
+                  } catch (error) {
+                        console.error("Firebase Query Hiba:", error);
+                        // Ha index hiba van, írjuk ki a linket a konzolra
+                        if (error.message.includes("index")) {
+                              console.log("KATTINTS A LINKRE A KONZOLBAN AZ INDEX LÉTREHOZÁSÁHOZ!");
+                        }
+                        container.innerHTML = '<div class="h-full flex items-center justify-center text-center px-4">Hiba történt.<br>Ellenőrizd a konzolt (Index hiány?).</div>';
+                  }
+            }
+
+            function renderShortsItem(id, data, container) {
+                  const item = document.createElement('div');
+                  item.className = "video-item h-full w-full relative bg-gray-900 overflow-hidden";
+
+                  const ar = Number(data.ar || data.vételár || 0).toLocaleString() + " Ft";
+                  const cim = `${data.telepules}, ${data.varosresz || data.utca || ''}`;
+                  let posterUrl = data.boritokep || (data.kepek && data.kepek[0]) || "";
+
+                  // JAVÍTVA: HB Azonosító kezelése
+                  const hbAzon = data.azon || id; // Vagy data.azon, vagy a dokumentum ID-ja
+
+                  // JAVÍTVA: widget-adatlap.html hívása
+                  // Fontos: a ../widget-adatlap.html relatív útvonal attól függ, hol van ez a fájl.
+                  // Feltételezem, hogy ugyanabban a mappában lesznek.
+                  const adatlapLink = `widget-adatlap.html?id=${id}`;
+
+                  item.innerHTML = `
+                <video 
+                    src="${data.videoUrl}" 
+                    poster="${posterUrl}"
+                    muted loop playsinline 
+                    class="w-full h-full object-cover"
+                ></video>
+
+                <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none z-10"></div>
+
+                <div class="absolute top-6 right-6 z-50 flex gap-4">
+                    <button onclick="togglePlay(this)" class="control-btn w-12 h-12 rounded-full text-white flex items-center justify-center border border-white/20 shadow-lg cursor-pointer">
+                        <i class="fa-solid fa-pause play-btn-icon text-xl"></i>
+                    </button>
+                    <button onclick="toggleSound(this)" class="control-btn w-12 h-12 rounded-full text-white flex items-center justify-center border border-white/20 shadow-lg cursor-pointer">
+                        <i class="fa-solid fa-volume-xmark sound-btn-icon text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="absolute bottom-0 left-0 w-full p-6 pb-8 z-30">
+                    <div class="mb-4">
+                        <span class="bg-[#E2F1B0] text-[#3D4A16] px-2 py-0.5 rounded text-xs font-bold mb-2 inline-block shadow-sm">
+                            ${hbAzon}
+                        </span>
+
+                        <div class="text-white font-bold text-3xl mb-1 drop-shadow-md tracking-tight">${ar}</div>
+                        <div class="text-white/90 font-medium text-lg drop-shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-location-dot text-red-500"></i> ${cim}
+                        </div>
+                    </div>
+
+                    <a href="${adatlapLink}" target="_blank" class="block w-full">
+                        <button class="bg-[#E2F1B0] hover:bg-[#d4e69e] text-[#3D4A16] font-bold py-3.5 px-6 rounded-xl w-full flex items-center justify-between transition transform active:scale-95 shadow-xl">
+                            <span>Részletek megtekintése</span>
+                            <i class="fa-solid fa-arrow-right-long"></i>
+                        </button>
+                    </a>
+                </div>
+            `;
+
+                  container.appendChild(item);
+                  observer.observe(item);
+            }
+
+            window.togglePlay = function (btn) {
+                  const wrapper = btn.closest('.video-item');
+                  const video = wrapper.querySelector('video');
+                  const icon = btn.querySelector('i');
+
+                  if (video.paused) {
+                        video.play();
+                        icon.className = "fa-solid fa-pause play-btn-icon text-xl";
+                  } else {
+                        video.pause();
+                        icon.className = "fa-solid fa-play play-btn-icon text-xl pl-1";
+                  }
+            };
+
+            window.toggleSound = function (btn) {
+                  const wrapper = btn.closest('.video-item');
+                  const video = wrapper.querySelector('video');
+                  const icon = btn.querySelector('i');
+
+                  if (video.muted) {
+                        video.muted = false;
+                        icon.className = "fa-solid fa-volume-high sound-btn-icon text-xl";
+                  } else {
+                        video.muted = true;
+                        icon.className = "fa-solid fa-volume-xmark sound-btn-icon text-xl";
+                  }
+            };
+
+            loadVideos();
+      </script>
+</body>
+
+</html>
