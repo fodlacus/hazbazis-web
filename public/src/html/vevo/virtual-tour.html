@@ -94,24 +94,24 @@
                   Kattints a pontokra a szobák váltásához!
             </div>
       </div>
-
-
-      <script type="module" src="../../js/vevo/virtual-tour-page.js"></script>
       <script>
-            // Ha widget módban vagyunk, elrejtjük a belső navigációt
+            // Ellenőrizzük, hogy widgetként nyitották-e meg a túrát
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('widget') === 'true') {
-                  // Keressük meg a vissza gombot vagy fejlécet és rejtsük el
-                  // (A class nevek a kódtól függnek, itt egy általános tipp:)
-                  const style = document.createElement('style');
-                  style.textContent = `
-                    .back-button, header, nav, .vissza-gomb-osztaly { display: none !important; }
-                    /* Ha van felső sáv padding, azt is eltüntethetjük */
-                    body { padding-top: 0 !important; }
-                `;
-                  document.head.appendChild(style);
+
+                  // Végigmegyünk a gombokon és linkeken, és elrejtjük azt, amelyikben benne van a "Vissza" szó
+                  document.querySelectorAll('a, button').forEach(gomb => {
+                        if (gomb.innerText.includes('Vissza az adatlapra') || gomb.innerText.includes('Vissza')) {
+                              gomb.style.display = 'none';
+                        }
+                  });
+
+                  // Opcionális: Ha a sötét felső sávnak van egy azonosítója (pl. id="top-bar"), azt is elrejtheted így:
+                  // document.getElementById('top-bar').style.display = 'none';
             }
       </script>
+
+      <script type="module" src="../../js/vevo/virtual-tour-page.js"></script>
 </body>
 
 </html>
