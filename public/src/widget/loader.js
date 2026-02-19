@@ -32,14 +32,14 @@
 
   // 3. Stílusok beállítása (Ezt a partner oldalának CSS-e nem tudja elrontani)
   container.style.width = "100%";
-  container.style.height = "700px"; // Ideális magasság a Shorts videóknak
-  container.style.maxWidth = "480px"; // Asztali gépen sem nyúlik szét
-  container.style.margin = "0 auto"; // Középre igazítja magát
+  container.style.maxWidth = "400px"; // Asztali gépen és tableten sem lesz ennél szélesebb
+  container.style.aspectRatio = "9 / 16"; // A VARÁZSLAT: Fix mobiltelefon képarány!
+  container.style.margin = "30px auto"; // Szép térköz kívülről, középre igazítva
   container.style.borderRadius = "16px";
   container.style.overflow = "hidden";
-  container.style.boxShadow = "0 10px 30px rgba(0,0,0,0.2)";
-  container.style.backgroundColor = "#111"; // Sötét háttér a betöltés pillanatáig
-
+  container.style.boxShadow = "0 15px 35px rgba(0,0,0,0.25)"; // Kicsit erősebb árnyék, hogy kiemelkedjen
+  container.style.backgroundColor = "#111";
+  
   // 4. Az Iframe létrehozása és beállítása
   const iframe = document.createElement("iframe");
 
