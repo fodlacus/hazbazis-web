@@ -48,6 +48,40 @@
             #torles-gomb:hover {
                   background-color: #d4e89c;
             }
+
+            /* --- A Vissza gomb stílusa --- */
+            #vissza-gomb-tarolo {
+                  position: absolute;
+                  top: 10px;
+                  left: 10px;
+                  /* Bal felső sarok */
+                  z-index: 5;
+                  background-color: #fff;
+                  border-radius: 2px;
+                  border: 1px solid rgba(0, 0, 0, 0.1);
+                  box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+                  cursor: pointer;
+            }
+
+            #vissza-gomb {
+                  color: #3D4A16;
+                  font-family: Roboto, Arial, sans-serif;
+                  font-size: 14px;
+                  font-weight: 500;
+                  padding: 8px 12px;
+                  background-color: #fff;
+                  /* Fehér háttér, hogy elkülönüljön a zöld törlés gombtól */
+                  border: none;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  text-decoration: none;
+                  /* Ne legyen aláhúzva a link */
+            }
+
+            #vissza-gomb:hover {
+                  background-color: #f4f4f4;
+            }
       </style>
 </head>
 
@@ -55,9 +89,15 @@
 
       <div id="terkep_tarolo"></div>
 
+      <div id="vissza-gomb-tarolo">
+            <a href="/" id="vissza-gomb" title="Vissza a főoldalra">
+                  <i class="fa-solid fa-arrow-left"></i> Vissza
+            </a>
+      </div>
+
       <div id="torles-vezerlo-tarolo">
             <button id="torles-gomb" title="Jelenlegi rajz törlése">
-                  <i class="fa-solid fa-trash-can"></i> Keresés törlése
+                  <i class="fa-solid fa-trash-can"></i> törlés
             </button>
       </div>
 
