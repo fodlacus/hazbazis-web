@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Hazbázis - Okos Térkép</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <style>
+            /* Térkép konténer, ami kitölti a képernyőt */
+            #terkep_tarolo {
+                  height: 100vh;
+                  width: 100%;
+            }
+
+            /* --- ÚJ RÉSZ: A Törlés gomb stílusa --- */
+            #torles-vezerlo-tarolo {
+                  position: absolute;
+                  top: 10px;
+                  right: 60px;
+                  /* Hogy ne takarja ki a Google gombjait */
+                  z-index: 5;
+                  /* Hogy a térkép fölött legyen */
+                  background-color: #fff;
+                  border-radius: 2px;
+                  border: 1px solid rgba(0, 0, 0, 0.1);
+                  box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+                  cursor: pointer;
+                  margin-left: 10px;
+                  padding: 0;
+            }
+
+            #torles-gomb {
+                  color: #3D4A16;
+                  /* Hazbázis sötétzöld szöveg */
+                  font-family: Roboto, Arial, sans-serif;
+                  font-size: 14px;
+                  font-weight: 500;
+                  padding: 8px 12px;
+                  background-color: #E2F1B0;
+                  /* Hazbázis világoszöld háttér */
+                  border: none;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+            }
+
+            #torles-gomb:hover {
+                  background-color: #d4e89c;
+            }
+      </style>
+</head>
+
+<body>
+
+      <div id="terkep_tarolo"></div>
+
+      <div id="torles-vezerlo-tarolo">
+            <button id="torles-gomb" title="Jelenlegi rajz törlése">
+                  <i class="fa-solid fa-trash-can"></i> Keresés törlése
+            </button>
+      </div>
+
+      <script type="module" src="../../js/vevo/terkep-google-engine.js"></script>
+
+      <script
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCohNOyA4S3XEayQTSqdshNkPxisNdoc90&libraries=drawing,geometry&callback=terkep_alap_inditasa"
+            async defer></script>
+
+</body>
+
+</html>
