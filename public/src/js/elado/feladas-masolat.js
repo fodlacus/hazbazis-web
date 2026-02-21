@@ -7,6 +7,7 @@ import {
   doc,
   setDoc,
   updateDoc,
+  getDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { szerkesztendoId } from "./szerkesztes.js";
@@ -44,6 +45,7 @@ export function helyszinFigyelo() {
 
 // --- VISSZAÁLLÍTVA 6 SZÁMJEGYRE ---
 function generalHirdetesAzonosito() {
+  // Generál egy véletlen számot 100000 és 999999 között (pontosan 6 jegy)
   const hatjegyuSzam = Math.floor(100000 + Math.random() * 900000);
   return `HB-${hatjegyuSzam}`;
 }
@@ -75,54 +77,6 @@ function adatokOsszegyujtese() {
   return adatok;
 }
 
-// --- ÚJ FUNKCIÓ: BKK JÁRATOK LEKÉRDEZÉSE ---
-async function bkkJaratokLekerdezese(lat, lng) {
-  // A 'bkk-web' egy nyilvános tesztkulcs, amit a BKK is használ a példáiban.
-  // Élesüzemhez majd érdemes sajátot igényelni a BKK fejlesztői portálján!
-
-  const BKK_API_KEY = "e34bb19f-331e-4bed-89a4-fd9ee86280d0";
-
-  const radius = 500; // 500 méteres körzet
-  const url = `https://futar.bkk.hu/api/query/v1/ws/otp/api/where/stops-for-location.json?lat=${lat}&lon=${lng}&radius=${radius}&key=${BKK_API_KEY}`;
-
-  try {
-    const valasz = await fetch(url);
-    const adat = await valasz.json();
-
-    if (adat.code !== 200 || !adat.data || !adat.data.list) return [];
-
-    const megallok = adat.data.list;
-    const jarat_szotar = adat.data.references.routes;
-    const egyedi_jarat_idk = new Set();
-
-    // Járat azonosítók kigyűjtése a megállókból (deduplikálva a Set-tel)
-    megallok.forEach((megallo) => {
-      if (megallo.routeIds) {
-        megallo.routeIds.forEach((routeId) => egyedi_jarat_idk.add(routeId));
-      }
-    });
-
-    const vegleges_jaratok = [];
-
-    egyedi_jarat_idk.forEach((routeId) => {
-      const jaratAdat = jarat_szotar[routeId];
-      if (jaratAdat) {
-        vegleges_jaratok.push({
-          szam: jaratAdat.shortName,
-          tipus: jaratAdat.type,
-          szin: jaratAdat.color,
-          szoveg_szin: jaratAdat.textColor,
-        });
-      }
-    });
-
-    return vegleges_jaratok;
-  } catch (hiba) {
-    console.error("BKK API Hiba:", hiba);
-    return []; // Ha hiba van, üres tömbbel térünk vissza, hogy ne álljon meg a mentés
-  }
-}
-
 // --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
 
@@ -141,7 +95,6 @@ if (urlap) {
     adatok.hibakod = "OK";
     adatok.leiras_hiba = "";
     adatok.metro_kozelseg = [];
-    adatok.bkk_jaratok = []; // Alapértelmezett üres tömb a BKK járatoknak
 
     try {
       const currentUser = auth.currentUser;
@@ -164,7 +117,7 @@ if (urlap) {
           adatok.lat = parseFloat(geoAdatok[0].lat);
           adatok.lng = parseFloat(geoAdatok[0].lon);
 
-          // 3. METRO LOGIKA
+          // 3. METRO LOGIKA (Csak ha van koordinata es a jo utvonalon)
           try {
             const modul = await import(
               "../../../shorts/js/strategies/metro-logic.js"
@@ -183,18 +136,6 @@ if (urlap) {
             console.warn("⚠️ Metro szamitas hiba:", metro_error);
             adatok.hibakod = "METRO_HIBA";
           }
-
-          // 3/B. ÚJ: BKK JÁRATOK LEKÉRDEZÉSE (ha megvan a koordináta)
-          try {
-            console.log("BKK járatok lekérdezése folyamatban...");
-            adatok.bkk_jaratok = await bkkJaratokLekerdezese(
-              adatok.lat,
-              adatok.lng
-            );
-            console.log("✅ BKK adatok rogzitve:", adatok.bkk_jaratok);
-          } catch (bkk_error) {
-            console.warn("⚠️ BKK szamitas hiba:", bkk_error);
-          }
         } else {
           adatok.lat = null;
           adatok.lng = null;
@@ -210,15 +151,18 @@ if (urlap) {
       adatok.hirdeto_uid = currentUser.uid;
       adatok.email = currentUser.email;
       adatok.letrehozva = new Date().toISOString();
+      //      adatok.statusz = "Feldolgozas alatt";
 
       if (szerkesztendoId) {
         const docRef = doc(adatbazis, "lakasok", szerkesztendoId);
         await updateDoc(docRef, adatok);
         alert("Sikeres modositas!");
       } else {
+        // HA ÚJ HIRDETÉS: A "hirdetesek_varolista" kollekcióba megy!
         adatok.azon = adatok.azon || generalHirdetesAzonosito();
-        adatok.statusz = "Jóváhagyásra vár";
+        adatok.statusz = "Jóváhagyásra vár"; // Státusz beállítása
 
+        // ITT A VÁLTOZÁS: Nem 'lakasok', hanem 'hirdetesek_varolista'
         const docRef = doc(adatbazis, "hirdetesek_varolista", adatok.azon);
         await setDoc(docRef, adatok);
 
@@ -240,7 +184,7 @@ if (urlap) {
   };
 }
 
-// --- ŰRLAP ÜRÍTÉSE ---
+// --- FŐ BEKÜLDÉSI FOLYAMAT JAVÍTVA ---
 window.urlapUrites = function () {
   if (confirm("Biztosan törlöd az adatokat?")) {
     document.getElementById("hirdetes-urlap")?.reset();
