@@ -78,7 +78,7 @@ function adatokOsszegyujtese() {
 // --- ÚJ FUNKCIÓ: BKK JÁRATOK LEKÉRDEZÉSE (OKOS SZŰRŐVEL) ---
 async function bkkJaratokLekerdezese(lat, lng) {
   const BKK_API_KEY = "e34bb19f-331e-4bed-89a4-fd9ee86280d0";
-  const radius = 500;
+  const radius = 300;
   const url = `https://futar.bkk.hu/api/query/v1/ws/otp/api/where/stops-for-location.json?lat=${lat}&lon=${lng}&radius=${radius}&key=${BKK_API_KEY}`;
 
   try {
@@ -141,6 +141,7 @@ async function bkkJaratokLekerdezese(lat, lng) {
     return [];
   }
 }
+
 
 // --- FŐ BEKÜLDÉSI FOLYAMAT ---
 const urlap = document.getElementById("hirdetes-urlap");
