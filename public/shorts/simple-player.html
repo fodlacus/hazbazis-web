@@ -164,6 +164,75 @@
                   margin-bottom: 8px;
                   display: inline-block;
             }
+
+            #bkk_ablak_tarolo {
+                  display: none;
+                  /* Alapból rejtve */
+                  position: absolute;
+                  bottom: 80px;
+                  /* A gombok magasságához igazítva */
+                  right: 70px;
+                  /* A jobb oldali ikonsáv mellé */
+                  background-color: rgba(20, 25, 15, 0.95);
+                  /* Hazbázis sötétzöldes/fekete háttér */
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                  border-radius: 12px;
+                  padding: 15px;
+                  width: 250px;
+                  z-index: 1000;
+                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+                  backdrop-filter: blur(5px);
+                  color: white;
+                  font-family: sans-serif;
+            }
+
+            #bkk_ablak_fejlec {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 12px;
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-bottom: 8px;
+            }
+
+            #bkk_ablak_fejlec h4 {
+                  margin: 0;
+                  font-size: 14px;
+                  font-weight: bold;
+                  color: #E2F1B0;
+                  /* Hazbázis világoszöld */
+            }
+
+            #bkk_ablak_bezaras {
+                  background: none;
+                  border: none;
+                  color: #999;
+                  font-size: 18px;
+                  cursor: pointer;
+                  padding: 0;
+            }
+
+            #bkk_ablak_bezaras:hover {
+                  color: white;
+            }
+
+            #bkk_jaratok_lista {
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 8px;
+            }
+
+            /* A színes bogyók alap stílusa */
+            .bkk_bogyo {
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 4px 10px;
+                  border-radius: 15px;
+                  font-weight: bold;
+                  font-size: 13px;
+                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
       </style>
 </head>
 
@@ -188,7 +257,14 @@
                         </button>
                   </div>
             </div>
-
+            <div id="bkk_ablak_tarolo">
+                  <div id="bkk_ablak_fejlec">
+                        <h4>Közlekedés (300m)</h4>
+                        <button id="bkk_ablak_bezaras" onclick="bkk_ablak_elrejtese()">×</button>
+                  </div>
+                  <div id="bkk_jaratok_lista">
+                  </div>
+            </div>
             <div id="video-scroll-container"></div>
 
             <div id="loading" class="absolute inset-0 flex items-center justify-center bg-black z-[70] text-white">
@@ -318,33 +394,37 @@
 
                         const div = document.createElement('div');
                         div.className = 'video-card';
+                        const bkkAdatokBiztonsagos = encodeURIComponent(JSON.stringify(ingatlan.bkk_jaratok || []));
+
                         div.innerHTML = `
-                        <video loop playsinline muted poster="${ingatlan.boritokep || ''}" class="video-player" preload="metadata">
-                            <source src="${ingatlan.videoUrl}" type="video/mp4">
-                        </video>
-    
-                        <div class="sidebar-actions">
-                            <div class="action-btn" onclick="window.location.href='../../index.html'"><i class="fa-solid fa-house"></i></div>
-                            <div class="action-btn" onclick="window.location.href='../../src/search/search-index.html'"><i class="fa-solid fa-filter"></i></div>
-                            <div class="action-btn" onclick="alert('🚧 Hamarosan!')"><i class="fa-solid fa-bus"></i></div>
-                            
-                            <div class="action-btn ${favClass}" onclick="toggleFav('${ingatlan.id}', this)">
-                                <i class="${favIcon} fa-heart"></i>
-                            </div>
-                            
-                            <div class="action-btn ${filterClass}" onclick="toggleKedvencSzuro()">
-                                <i class="fa-solid fa-star"></i>
-                            </div>
-    
-                            <div class="action-btn" onclick="openDetails('${ingatlan.id}')"><i class="fa-regular fa-file-lines"></i></div>
-                        </div>
-    
-                        <div class="info-overlay">
-                            <div class="badge">${ingatlan.id}</div>
-                            <h2 class="text-2xl font-bold mb-1 drop-shadow-md">${ingatlan.telepules || ""}</h2>
-                            <p class="text-lg font-medium mb-1 text-lime-300 drop-shadow-md">${ar}</p>
-                        </div>
-                    `;
+                              <video loop playsinline muted poster="${ingatlan.boritokep || ''}" class="video-player" preload="metadata">
+                                    <source src="${ingatlan.videoUrl}" type="video/mp4">
+                              </video>
+
+                              <div class="sidebar-actions">
+                                    <div class="action-btn" onclick="window.location.href='../../index.html'"><i class="fa-solid fa-house"></i></div>
+                                    <div class="action-btn" onclick="window.location.href='../../src/search/search-index.html'"><i class="fa-solid fa-filter"></i></div>
+                                    
+                                    <div class="action-btn" onclick="bkk_ablak_megjelenitese('${bkkAdatokBiztonsagos}')"><i class="fa-solid fa-bus"></i></div>
+                                    
+                                    <div class="action-btn ${favClass}" onclick="toggleFav('${ingatlan.id}', this)">
+                                          <i class="${favIcon} fa-heart"></i>
+                                    </div>
+                                    
+                                    <div class="action-btn ${filterClass}" onclick="toggleKedvencSzuro()">
+                                          <i class="fa-solid fa-star"></i>
+                                    </div>
+
+                                    <div class="action-btn" onclick="openDetails('${ingatlan.id}')"><i class="fa-regular fa-file-lines"></i></div>
+                              </div>
+
+                              <div class="info-overlay">
+                                    <div class="badge">${ingatlan.id}</div>
+                                    <h2 class="text-2xl font-bold mb-1 drop-shadow-md">${ingatlan.telepules || ""}</h2>
+                                    <p class="text-lg font-medium mb-1 text-lime-300 drop-shadow-md">${ar}</p>
+                              </div>
+                        `;
+
                         container.appendChild(div);
                         observer.observe(div);
                   });
@@ -413,8 +493,9 @@
             const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                         const video = entry.target.querySelector('video');
-
+                        bkk_ablak_elrejtese();
                         if (entry.isIntersecting) {
+
                               video.setAttribute('data-playing', 'true');
                               video.muted = isMuted;
                               video.currentTime = 0;
@@ -480,6 +561,55 @@
             window.openDetails = function (id) {
                   const tisztaId = id.replace('HB-', '');
                   window.location.href = `../../src/html/vevo/adatlap.html?id=HB-${tisztaId}`;
+            };
+
+            // Megjeleníti a BKK ablakot az aktuális lakás adataival
+
+            // Megjeleníti a BKK ablakot az átadott (és kódolt) adatokból
+            window.bkk_ablak_megjelenitese = function (kodolt_adat) {
+                  const tarolo = document.getElementById("bkk_ablak_tarolo");
+                  const lista_div = document.getElementById("bkk_jaratok_lista");
+
+                  if (!tarolo || !lista_div) return;
+
+                  // 1. Lépés: Kicsomagoljuk a szöveget vissza egy BKK tömbbé
+                  let bkk_jaratok = [];
+                  try {
+                        bkk_jaratok = JSON.parse(decodeURIComponent(kodolt_adat));
+                  } catch (e) {
+                        console.error("Hiba a BKK adatok értelmezésekor");
+                  }
+
+                  // 2. Lépés: Ha nincsenek adatok (üres a tömb)
+                  if (bkk_jaratok.length === 0) {
+                        lista_div.innerHTML = "<p style='font-size: 12px; color: #999; margin:0;'>Nincs közeli BKK járat az adatbázisban.</p>";
+                        tarolo.style.display = "block";
+                        return;
+                  }
+
+                  // 3. Lépés: Végigmegyünk a járatokon és legyártjuk a HTML "bogyókat"
+                  let bogyok_html = "";
+                  for (let i = 0; i < bkk_jaratok.length; i++) {
+                        const jarat = bkk_jaratok[i];
+
+                        const hatter_szin = `#${jarat.szin}`;
+                        const szoveg_szin = `#${jarat.szoveg_szin}`;
+
+                        bogyok_html += `
+            <span class="bkk_bogyo" style="background-color: ${hatter_szin}; color: ${szoveg_szin};">
+                ${jarat.szam}
+            </span>
+             `;
+                  }
+
+                  lista_div.innerHTML = bogyok_html;
+                  tarolo.style.display = "block"; // Ablak megjelenítése
+            };
+
+            // Elrejti az ablakot
+            window.bkk_ablak_elrejtese = function () {
+                  const tarolo = document.getElementById("bkk_ablak_tarolo");
+                  if (tarolo) tarolo.style.display = "none";
             };
 
       </script>
