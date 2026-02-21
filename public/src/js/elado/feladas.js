@@ -75,14 +75,10 @@ function adatokOsszegyujtese() {
   return adatok;
 }
 
-// --- ÚJ FUNKCIÓ: BKK JÁRATOK LEKÉRDEZÉSE ---
+// --- ÚJ FUNKCIÓ: BKK JÁRATOK LEKÉRDEZÉSE (OKOS SZŰRŐVEL) ---
 async function bkkJaratokLekerdezese(lat, lng) {
-  // A 'bkk-web' egy nyilvános tesztkulcs, amit a BKK is használ a példáiban.
-  // Élesüzemhez majd érdemes sajátot igényelni a BKK fejlesztői portálján!
-
   const BKK_API_KEY = "e34bb19f-331e-4bed-89a4-fd9ee86280d0";
-
-  const radius = 500; // 500 méteres körzet
+  const radius = 500;
   const url = `https://futar.bkk.hu/api/query/v1/ws/otp/api/where/stops-for-location.json?lat=${lat}&lon=${lng}&radius=${radius}&key=${BKK_API_KEY}`;
 
   try {
@@ -95,31 +91,54 @@ async function bkkJaratokLekerdezese(lat, lng) {
     const jarat_szotar = adat.data.references.routes;
     const egyedi_jarat_idk = new Set();
 
-    // Járat azonosítók kigyűjtése a megállókból (deduplikálva a Set-tel)
     megallok.forEach((megallo) => {
       if (megallo.routeIds) {
         megallo.routeIds.forEach((routeId) => egyedi_jarat_idk.add(routeId));
       }
     });
 
-    const vegleges_jaratok = [];
+    let vegleges_jaratok = [];
 
     egyedi_jarat_idk.forEach((routeId) => {
       const jaratAdat = jarat_szotar[routeId];
       if (jaratAdat) {
-        vegleges_jaratok.push({
-          szam: jaratAdat.shortName,
-          tipus: jaratAdat.type,
-          szin: jaratAdat.color,
-          szoveg_szin: jaratAdat.textColor,
-        });
+        // 1. SZŰRÉS: Éjszakai járatok (900-999) kihagyása
+        const szamErtek = parseInt(jaratAdat.shortName, 10);
+        const isEjszakai = szamErtek >= 900 && szamErtek <= 999;
+
+        if (!isEjszakai) {
+          vegleges_jaratok.push({
+            szam: jaratAdat.shortName,
+            tipus: jaratAdat.type,
+            szin: jaratAdat.color,
+            szoveg_szin: jaratAdat.textColor,
+          });
+        }
       }
     });
 
-    return vegleges_jaratok;
+    // 2. RENDEZÉS PRIORITÁS SZERINT (Metró > Villamos > Troli > Busz)
+    const tipusSuly = {
+      SUBWAY: 1,
+      TRAM: 2,
+      TROLLEYBUS: 3,
+      BUS: 4,
+    };
+
+    vegleges_jaratok.sort((a, b) => {
+      // Ha különböző a típusuk, a súly dönt
+      if (tipusSuly[a.tipus] !== tipusSuly[b.tipus]) {
+        return tipusSuly[a.tipus] - tipusSuly[b.tipus];
+      }
+      // Ha azonos típusúak (pl. mindkettő busz), akkor járatszám szerint rendezzük (pl. 5, 7, 8E)
+      return a.szam.localeCompare(b.szam, undefined, { numeric: true });
+    });
+
+    // 3. LIMITÁLÁS: Csak a Top 10 legfontosabb járatot tartjuk meg
+    return vegleges_jaratok.slice(0, 10);
   } catch (hiba) {
     console.error("BKK API Hiba:", hiba);
-    return []; // Ha hiba van, üres tömbbel térünk vissza, hogy ne álljon meg a mentés
+    return [];
   }
 }
 
