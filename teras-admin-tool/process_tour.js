@@ -18,7 +18,7 @@ console.log(`⚙️  Kiválasztott ingatlan: ${INGATLAN_ID}`);
 // Útvonalak
 const SOURCE_ROOT = path.join(__dirname, "letoltott_drive_anyag");
 const DEST_ROOT = path.join(__dirname, "feltoltesre");
-const MEDIA_BASE_URL = `https://media.hazbazis.hu/${INGATLAN_ID}/virtual_tour`;
+const MEDIA_BASE_URL = `https://pub-cbf740778c2a46d3bcfb429ff54ec05d.r2.dev/${INGATLAN_ID}/virtual_tour`;
 
 // --- FIREBASE INIT ---
 const serviceAccountPath = "./serviceAccountKey.json";
