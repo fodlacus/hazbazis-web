@@ -25,9 +25,41 @@ export const ShortsEngine = {
     }
 
     // 3. Adatok betöltése
-    const initialData = await DataManager.init();
+    let initialData = await DataManager.init();
 
-    // 4. Első adag renderelése
+    // --- SHORTS SZŰRŐ LOGIKA INDUL ---
+    const playlistStr = sessionStorage.getItem("shorts_playlist");
+
+    if (playlistStr) {
+      try {
+        const allowedIds = JSON.parse(playlistStr);
+        console.log("🔍 Motor Szűrés aktív:", allowedIds);
+
+        const eredetiHossz = initialData.length;
+
+        // Szűrjük a letöltött adatokat
+        initialData = initialData.filter((item) => {
+          const firebaseId = String(item.id || "").toLowerCase();
+          const hazbazisAzon = String(item.azon || "").toLowerCase();
+
+          return allowedIds.some((szurtId) => {
+            const idSzoveg = String(szurtId).toLowerCase();
+            return (
+              firebaseId.includes(idSzoveg) || hazbazisAzon.includes(idSzoveg)
+            );
+          });
+        });
+
+        console.log(
+          `✅ Szűrt lista: ${eredetiHossz} db -> ${initialData.length} db`
+        );
+      } catch (e) {
+        console.error("Hiba a playlist olvasásakor:", e);
+      }
+    }
+    // --- SHORTS SZŰRŐ LOGIKA VÉGE ---
+
+    // 4. Első adag renderelése (immár a szűrt adatokkal)
     this.renderFeed(initialData);
 
     // 5. Figyeljük a szűrők változásait
