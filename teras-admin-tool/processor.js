@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // --- BEÁLLÍTÁSOK ---
-const MEDIA_BASE_URL = "https://media.hazbazis.hu";
+const MEDIA_BASE_URL = "https://pub-cbf740778c2a46d3bcfb429ff54ec05d.r2.dev";
 const SOURCE_ROOT = "./letoltott_drive_anyag";
 
 // Firebase indítása
@@ -41,7 +41,7 @@ async function runProcessor(ingatlanId) {
     kepek_vert: [],
     kepek_pano: [],
     floor_plan: "",
-    shorts_video: "",
+    videoUrl: "",
     updatedAt: new Date().toISOString(),
   };
 
@@ -110,18 +110,36 @@ async function runProcessor(ingatlanId) {
     console.log(`✅ Alaprajz feldolgozva.`);
   }
 
-  // Videó
-  const videoFile = allFiles.find((f) => f.endsWith(".mp4"));
-  if (videoFile) {
-    const targetDir = path.join(targetBase, "shorts_video");
-    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+  // Video
 
-    fs.copyFileSync(
-      path.join(sourceBase, videoFile),
-      path.join(targetDir, "video.mp4")
-    );
-    updateData.shorts_video = `${MEDIA_BASE_URL}/${ingatlanId}/shorts_video/video.mp4`;
-    console.log(`✅ Videó feldolgozva.`);
+  const sourceVideoDir = path.join(sourceBase, "shorts");
+
+  if (fs.existsSync(sourceVideoDir)) {
+    const videoFiles = fs
+      .readdirSync(sourceVideoDir)
+      .filter((f) => f.endsWith(".mp4") && !f.startsWith("."));
+
+    if (videoFiles.length > 0) {
+      const videoFile = videoFiles[0]; // Vesszük a legelsőt
+
+      // ÚJ: A cél mappa mostantól a 'feltoltesre' GYÖKERÉBEN lévő 'shorts' mappa!
+      const targetVideoDir = path.join(__dirname, "feltoltesre", "shorts");
+
+      if (!fs.existsSync(targetVideoDir))
+        fs.mkdirSync(targetVideoDir, { recursive: true });
+
+      // Másolás és átnevezés a közös shorts mappába (Pl: feltoltesre/shorts/HB-407050.mp4)
+      fs.copyFileSync(
+        path.join(sourceVideoDir, videoFile),
+        path.join(targetVideoDir, `${ingatlanId}.mp4`)
+      );
+
+      // JAVÍTOTT Cloudflare URL generálása (Nincs benne a HB- mappa a shorts előtt!)
+      updateData.videoUrl = `${MEDIA_BASE_URL}/shorts/${ingatlanId}.mp4`;
+      console.log(`✅ Videó sikeresen feldolgozva a közös 'shorts' mappába.`);
+    } else {
+      console.log(`⚠️ A 'shorts' mappa létezik, de nincs benne .mp4 videó.`);
+    }
   }
 
   // MENTÉS

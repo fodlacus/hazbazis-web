@@ -22,8 +22,7 @@
                                     const allowedIds = JSON.parse(playlistStr);
                                     console.log("🔍 Szűrés aktív:", allowedIds);
                                     // Csak azokat hagyjuk meg, amik benne vannak a listában
-                                    const filtered = val.filter(item => allowedIds.includes(item.id));
-
+                                    const filtered = val.filter(item => allowedIds.includes(item.id) || allowedIds.includes(item.azon));
                                     if (filtered.length > 0) {
                                           this._lakasok = filtered;
                                           console.log("✅ Szűrt lista beállítva:", filtered.length, "db");

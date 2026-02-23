@@ -267,63 +267,50 @@ export function renderVezerloGombok(data) {
     }
   }
 }
-
 // -------------------------------------------------------------
-// 4. FUNKCIÓ: KÖRNYÉK (API Szimuláció és Megjelenítés)
+// 4. FUNKCIÓ: KÖRNYÉK (Valós BKK adatok megjelenítése)
 // -------------------------------------------------------------
 export function renderKornyek(data) {
   const container = document.getElementById("poi-container");
   container.innerHTML = "";
 
-  // Itt hívnánk meg a Google Places API-t a valóságban.
-  // MOST: Generálunk releváns pontokat a lokáció alapján, hogy lásd a működést.
+  // Ha nincsenek BKK adatok (üres a tömb vagy nem is létezik)
+  if (!data.bkk_jaratok || data.bkk_jaratok.length === 0) {
+    container.innerHTML =
+      "<p class='text-white/40 text-sm p-3'>Nincs elérhető közlekedési információ 300 méteren belül.</p>";
+    return;
+  }
 
-  const pontok = [
-    {
-      ikon: "fa-school",
-      nev: "Általános Iskola",
-      tav: "350m",
-      szin: "text-blue-400",
-    },
-    {
-      ikon: "fa-basket-shopping",
-      nev: "Szupermarket (SPAR)",
-      tav: "120m",
-      szin: "text-green-400",
-    },
-    {
-      ikon: "fa-bus",
-      nev: "Buszmegálló (7-es)",
-      tav: "50m",
-      szin: "text-yellow-400",
-    },
-    {
-      ikon: "fa-tree",
-      nev: "Játszótér / Park",
-      tav: "500m",
-      szin: "text-emerald-400",
-    },
-    {
-      ikon: "fa-prescription-bottle-medical",
-      nev: "Gyógyszertár",
-      tav: "200m",
-      szin: "text-red-400",
-    },
-  ];
+  // Ha vannak adatok, végigmegyünk rajtuk
+  data.bkk_jaratok.forEach((jarat) => {
+    // Ikon és típus magyarítása a BKK adatok alapján
+    let ikon = "fa-bus";
+    let tipusNev = "Busz";
 
-  pontok.forEach((poi) => {
+    if (jarat.tipus === "TRAM") {
+      ikon = "fa-train-tram";
+      tipusNev = "Villamos";
+    } else if (jarat.tipus === "SUBWAY") {
+      ikon = "fa-train-subway";
+      tipusNev = "Metró";
+    } else if (jarat.tipus === "TROLLEYBUS") {
+      ikon = "fa-bus-simple";
+      tipusNev = "Trolibusz";
+    }
+
     const div = document.createElement("div");
     div.className =
       "flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5";
     div.innerHTML = `
-            <div class="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center ${poi.szin}">
-                <i class="fa-solid ${poi.ikon}"></i>
-            </div>
-            <div>
-                <div class="font-bold text-sm">${poi.nev}</div>
-                <div class="text-xs text-white/40">${poi.tav} sétára</div>
-            </div>
-        `;
+        <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg" 
+             style="background-color: #${jarat.szin}; color: #${jarat.szoveg_szin}; font-weight: bold; font-size: 14px;">
+            ${jarat.szam}
+        </div>
+        <div>
+            <div class="font-bold text-sm">BKK Járat</div>
+            <div class="text-xs text-white/40"><i class="fa-solid ${ikon} mr-1"></i> ${tipusNev} (300m)</div>
+        </div>
+    `;
     container.appendChild(div);
   });
 }

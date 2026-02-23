@@ -25,7 +25,6 @@ export const VideoPlayer = {
     }
   },
 
-  // TELJES LEJÁTSZÁS FÜGGVÉNY: Cseréli a forrást és indítja a preload-ot
   lejatszas: async function (index, szurt_lista) {
     if (!szurt_lista || !szurt_lista[index]) return;
 
