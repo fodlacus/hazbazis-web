@@ -311,6 +311,8 @@
             });
 
             window.inditasShortsLejatszo = function () {
+                  console.log("🎬 Shorts indítása gomb megnyomva!");
+
                   // 1. Kiválogatjuk azokat, amiknek van videója
                   const videok = window.aktualisTalalatok.filter(p => p._videoUrl && p._videoUrl.length > 5);
 
@@ -319,20 +321,21 @@
                         return;
                   }
 
-                  // 2. Kimentjük az ID-kat a sessionStorage-ba
-                  const playlistIds = videok.map(v => v.id);
-                  sessionStorage.setItem('shorts_playlist', JSON.stringify(playlistIds));
+                  // 2. JAVÍTÁS: Kimentjük a Firebase ID-kat ÉS a HB azonosítókat is!
+                  let playlistIds = [];
+                  videok.forEach(v => {
+                        if (v.id) playlistIds.push(v.id);
+                        if (v.azon) playlistIds.push(v.azon);
+                  });
 
-                  console.log("Shorts indítása ezzel a listával:", playlistIds);
+                  sessionStorage.setItem('shorts_playlist', JSON.stringify(playlistIds));
+                  console.log("💾 Shorts lejátszónak átadott azonosítók:", playlistIds);
 
                   // 3. Átirányítás a shorts lejátszóra
-                  // Figyelem: Feltételezzük, hogy a shorts-index.html a 'shorts' mappában van, vagy a gyökérben.
-                  // A te struktúrádban: src/search/search-index.html -> ../../shorts-index.html ?
-                  // A feltöltött fájl alapján a shorts-index.html valószínűleg egy szinten van a src mappával vagy a public-ban.
-                  // Biztonságosabb abszolút útvonalat használni, vagy próbálgatni.
-                  // Tipp: Ha a search-index a src/search-ben van, akkor ../../shorts-index.html
                   window.location.href = "../../shorts/simple-player.html";
             }
+
+
             // --- FRISSÍTÉS: Találatok megjelenítésekor ellenőrizzük a videókat ---
 
             function frissitShortsGombot() {
