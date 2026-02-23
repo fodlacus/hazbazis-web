@@ -11,6 +11,8 @@ export const ShortsEngine = {
    * Motor inicializálása
    */
   init: async function (containerId) {
+    console.log("🚀 ÚJ MOTOR BETÖLTVE! Ha ezt látod, a fájl frissült!");
+
     this.container = document.getElementById(containerId);
     if (!this.container) return;
 
