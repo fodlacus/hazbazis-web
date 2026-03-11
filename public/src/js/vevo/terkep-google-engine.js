@@ -20,12 +20,18 @@ const getUrl = (item) => {
 };
 
 // --- 3. INDÍTÁS AMIKOR AZ OLDAL BETÖLTÖTT ---
-window.addEventListener("DOMContentLoaded", async () => {
+async function initTerkepOldal() {
   // Először letöltjük az adatokat
   await loadIngatlanok();
   // Inicializáljuk a törlés gombot
   initDeleteButton();
-});
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initTerkepOldal);
+} else {
+  initTerkepOldal();
+}
 
 // ÚJ: Törlés gomb működése
 function initDeleteButton() {
