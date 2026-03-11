@@ -87,7 +87,21 @@
             </button>
       </div>
 
-      <script type="module" src="../../js/vevo/terkep-google-engine.js"></script>
+      <script>
+            window.terkep_alap_inditasa = function () {
+                  import("../../js/vevo/terkep-google-engine.js")
+                        .then((mod) => {
+                              if (mod && typeof mod.terkep_alap_inditasa === "function") {
+                                    mod.terkep_alap_inditasa();
+                              } else if (typeof window.__terkep_alap_inditasa === "function") {
+                                    window.__terkep_alap_inditasa();
+                              } else {
+                                    console.error("Térkép indítás funkció nem található.");
+                              }
+                        })
+                        .catch((err) => console.error("Térkép modul betöltési hiba:", err));
+            };
+      </script>
 
       <script
             src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCohNOyA4S3XEayQTSqdshNkPxisNdoc90&libraries=drawing,geometry&callback=terkep_alap_inditasa"

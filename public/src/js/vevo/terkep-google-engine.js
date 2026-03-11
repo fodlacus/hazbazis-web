@@ -58,7 +58,7 @@ async function loadIngatlanok() {
 }
 
 // --- 5. GOOGLE MAPS INDÍTÁSA ---
-window.terkep_alap_inditasa = function () {
+export function terkep_alap_inditasa() {
   console.log("Google Maps betöltése indul...");
   const budapest_kozeppont = { lat: 47.4979, lng: 19.0402 };
   fo_terkep = new google.maps.Map(document.getElementById("terkep_tarolo"), {
@@ -127,7 +127,9 @@ window.terkep_alap_inditasa = function () {
       terkep_markerek_frissitese(szurt_ingatlanok);
     }
   );
-};
+}
+
+window.__terkep_alap_inditasa = terkep_alap_inditasa;
 
 // --- 6. SZŰRŐ ÉS FRISSÍTŐ FÜGGVÉNYEK ---
 function ingatlanok_szurese_poligonnal(sokszog_objektum, osszes_ingatlan_tomb) {
