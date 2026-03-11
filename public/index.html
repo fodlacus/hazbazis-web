@@ -29,7 +29,7 @@
             }
 
             .bg-foto {
-                  background-image: linear-gradient(rgba(17, 39, 30, 0.85), rgba(17, 24, 39, 0.75)), url('hb-nyito.jpg');
+                  background-image: linear-gradient(rgba(17, 39, 30, 0.85), rgba(17, 24, 39, 0.75)), url('hb-hero.png');
                   background-size: cover;
                   background-position: center center;
             }
@@ -129,127 +129,132 @@
             </div>
       </nav>
 
-      <main class="max-w-7xl mx-auto px-6 py-20 text-center">
-            <h2 class="text-5xl md:text-7xl font-semibold leading-[1.1] mb-10 tracking-tight">
-                  Az <span class="szoveg-vilagos italic">Otthon</span>, amit keresel.<br>
-                  A technológia, ami segít.
-            </h2>
-            <div class="flex flex-col items-center gap-10">
-                  <button onclick="inditasMindenVideo()"
-                        class="gomb-vilagos px-12 py-6 rounded-full font-black text-2xl hover:scale-110 transition-transform flex items-center gap-4 shadow-2xl shadow-lime-900/50">
-                        VIDEÓK PÖRGETÉSE 🎬
-                  </button>
-
-                  <div class="mt-6 flex items-center justify-center gap-2">
-                        <div class="relative group">
-                              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-lime-400 font-bold text-xs">HB-</span>
-                              </div>
-                              <input type="text" id="hb-kereso-input" placeholder="Kódszám (pl. 407050)"
-                                    class="bg-black/40 border border-white/20 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:border-lime-400 outline-none w-48 transition-all hover:bg-black/60"
-                                    onkeydown="if(event.key === 'Enter') inditsHBKeresest()">
-                        </div>
-                        <button onclick="inditsHBKeresest()"
-                              class="bg-white/10 hover:bg-lime-400 hover:text-black text-white p-2 rounded-lg transition-colors border border-white/10">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                    stroke="currentColor" class="w-5 h-5">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                              </svg>
+      <section class="bg-foto">
+            <main class="max-w-7xl mx-auto px-6 py-20 text-center">
+                  <h2 class="text-5xl md:text-7xl font-semibold leading-[1.1] mb-10 tracking-tight">
+                        Az <span class="szoveg-vilagos italic">Otthon</span>, amit keresel.<br>
+                        A technológia, ami segít.
+                  </h2>
+                  <div class="flex flex-col items-center gap-10">
+                        <button onclick="inditasMindenVideo()"
+                              class="gomb-vilagos px-12 py-6 rounded-full font-black text-2xl hover:scale-110 transition-transform flex items-center gap-4 shadow-2xl shadow-lime-900/50">
+                              VIDEÓK PÖRGETÉSE 🎬
                         </button>
-                  </div>
-                  <div class="relative w-full max-w-5xl mx-auto text-center z-10 mt-8">
 
-                        <div class="relative w-full max-w-2xl mx-auto mb-10">
-                              <input type="text" id="main-search-input"
-                                    class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-5 px-8 pl-14 text-xl text-white focus:outline-none focus:border-[#E2F1B0] transition-all shadow-2xl placeholder-white/50 font-light"
-                                    placeholder="Írd be: 'Zugló 3 szoba' vagy 'Pécs 50M alatt'...">
-
-                              <i
-                                    class="fa-solid fa-magnifying-glass absolute left-6 top-1/2 transform -translate-y-1/2 text-[#E2F1B0] text-2xl"></i>
-
-                              <button onclick="iranyAKereso()"
-                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-[#E2F1B0] hover:bg-[#cde088] text-black w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg shadow-lime-900/20 hover:scale-110">
-                                    <i class="fa-solid fa-arrow-right text-lg"></i>
+                        <div class="mt-6 flex items-center justify-center gap-2">
+                              <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                          <span class="text-lime-400 font-bold text-xs">HB-</span>
+                                    </div>
+                                    <input type="text" id="hb-kereso-input" placeholder="Kódszám (pl. 407050)"
+                                          class="bg-black/40 border border-white/20 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:border-lime-400 outline-none w-48 transition-all hover:bg-black/60"
+                                          onkeydown="if(event.key === 'Enter') inditsHBKeresest()">
+                              </div>
+                              <button onclick="inditsHBKeresest()"
+                                    class="bg-white/10 hover:bg-lime-400 hover:text-black text-white p-2 rounded-lg transition-colors border border-white/10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                          stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                          <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
                               </button>
                         </div>
+                        <div class="relative w-full max-w-5xl mx-auto text-center z-10 mt-8">
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 animate-fade-in-up">
+                              <div class="relative w-full max-w-2xl mx-auto mb-10">
+                                    <input type="text" id="main-search-input"
+                                          class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-full py-5 px-8 pl-14 text-xl text-white focus:outline-none focus:border-[#E2F1B0] transition-all shadow-2xl placeholder-white/50 font-light"
+                                          placeholder="Írd be: 'Zugló 3 szoba' vagy 'Pécs 50M alatt'...">
 
-                              <button onclick="iranyMenu('metro')"
-                                    class="group relative overflow-hidden bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 hover:border-blue-400/50 px-6 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 flex items-center gap-4 text-left">
-                                    <div
-                                          class="bg-blue-500/20 p-4 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-colors text-blue-400">
-                                          <i class="fa-solid fa-train-subway text-2xl"></i>
-                                    </div>
-                                    <div>
-                                          <h3 class="text-white font-bold text-xl leading-tight mb-1">Metró mentén</h3>
-                                          <p
-                                                class="text-white/40 text-xs group-hover:text-white/70 transition-colors uppercase tracking-wider font-bold">
-                                                Top Elhelyezkedés</p>
-                                    </div>
-                              </button>
+                                    <i
+                                          class="fa-solid fa-magnifying-glass absolute left-6 top-1/2 transform -translate-y-1/2 text-[#E2F1B0] text-2xl"></i>
 
-                              <button onclick="iranyMenu('lakopark')"
-                                    class="group relative overflow-hidden bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 hover:border-purple-400/50 px-6 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-900/20 flex items-center gap-4 text-left">
-                                    <div
-                                          class="bg-purple-500/20 p-4 rounded-full group-hover:bg-purple-500 group-hover:text-white transition-colors text-purple-400">
-                                          <i class="fa-solid fa-city text-2xl"></i>
-                                    </div>
-                                    <div>
-                                          <h3 class="text-white font-bold text-xl leading-tight mb-1">Lakóparkok</h3>
-                                          <p
-                                                class="text-white/40 text-xs group-hover:text-white/70 transition-colors uppercase tracking-wider font-bold">
-                                                Modern Otthonok</p>
-                                    </div>
-                              </button>
+                                    <button onclick="iranyAKereso()"
+                                          class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-[#E2F1B0] hover:bg-[#cde088] text-black w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg shadow-lime-900/20 hover:scale-110">
+                                          <i class="fa-solid fa-arrow-right text-lg"></i>
+                                    </button>
+                              </div>
 
-                              <button onclick="iranyMenu('kerulet')"
-                                    class="group relative overflow-hidden bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 hover:border-red-400/50 px-6 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-red-900/20 flex items-center gap-4 text-left">
-                                    <div
-                                          class="bg-red-500/20 p-4 rounded-full group-hover:bg-red-500 group-hover:text-white transition-colors text-red-400">
-                                          <i class="fa-solid fa-map-location-dot text-2xl"></i>
-                                    </div>
-                                    <div>
-                                          <h3 class="text-white font-bold text-xl leading-tight mb-1">Kerületek</h3>
-                                          <p
-                                                class="text-white/40 text-xs group-hover:text-white/70 transition-colors uppercase tracking-wider font-bold">
-                                                Budapesti Térkép</p>
-                                    </div>
-                              </button>
+                              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 animate-fade-in-up">
 
+                                    <button onclick="iranyMenu('metro')"
+                                          class="group relative overflow-hidden bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 hover:border-blue-400/50 px-6 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 flex items-center gap-4 text-left">
+                                          <div
+                                                class="bg-blue-500/20 p-4 rounded-full group-hover:bg-blue-500 group-hover:text-white transition-colors text-blue-400">
+                                                <i class="fa-solid fa-train-subway text-2xl"></i>
+                                          </div>
+                                          <div>
+                                                <h3 class="text-white font-bold text-xl leading-tight mb-1">Metró mentén
+                                                </h3>
+                                                <p
+                                                      class="text-white/40 text-xs group-hover:text-white/70 transition-colors uppercase tracking-wider font-bold">
+                                                      Top Elhelyezkedés</p>
+                                          </div>
+                                    </button>
+
+                                    <button onclick="iranyMenu('lakopark')"
+                                          class="group relative overflow-hidden bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 hover:border-purple-400/50 px-6 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-900/20 flex items-center gap-4 text-left">
+                                          <div
+                                                class="bg-purple-500/20 p-4 rounded-full group-hover:bg-purple-500 group-hover:text-white transition-colors text-purple-400">
+                                                <i class="fa-solid fa-city text-2xl"></i>
+                                          </div>
+                                          <div>
+                                                <h3 class="text-white font-bold text-xl leading-tight mb-1">Lakóparkok
+                                                </h3>
+                                                <p
+                                                      class="text-white/40 text-xs group-hover:text-white/70 transition-colors uppercase tracking-wider font-bold">
+                                                      Modern Otthonok</p>
+                                          </div>
+                                    </button>
+
+                                    <button onclick="iranyMenu('kerulet')"
+                                          class="group relative overflow-hidden bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 hover:border-red-400/50 px-6 py-5 rounded-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-red-900/20 flex items-center gap-4 text-left">
+                                          <div
+                                                class="bg-red-500/20 p-4 rounded-full group-hover:bg-red-500 group-hover:text-white transition-colors text-red-400">
+                                                <i class="fa-solid fa-map-location-dot text-2xl"></i>
+                                          </div>
+                                          <div>
+                                                <h3 class="text-white font-bold text-xl leading-tight mb-1">Kerületek
+                                                </h3>
+                                                <p
+                                                      class="text-white/40 text-xs group-hover:text-white/70 transition-colors uppercase tracking-wider font-bold">
+                                                      Budapesti Térkép</p>
+                                          </div>
+                                    </button>
+
+                              </div>
+                        </div>
+
+                        <script>
+                              function iranyAKereso() {
+                                    const bemenet = document.getElementById('main-search-input').value;
+                                    const url = bemenet.trim() === ""
+                                          ? "src/search/search-index.html"
+                                          : `src/search/search-index.html?q=${encodeURIComponent(bemenet)}`;
+                                    window.location.href = url;
+                              }
+
+                              function iranyMenu(tipus) {
+                                    // Átvisszük a 'menu' paramétert (pl. ?menu=metro)
+                                    window.location.href = `src/search/search-index.html?menu=${tipus}`;
+                              }
+
+                              document.getElementById('main-search-input').addEventListener('keypress', (e) => {
+                                    if (e.key === 'Enter') iranyAKereso();
+                              });
+                        </script>
+
+
+                        <div class="flex gap-8 opacity-40 text-[10px] uppercase tracking-[0.3em] font-bold">
+                              <span>8K Minőség</span>
+                              <span>•</span>
+                              <span>360° Bejárás</span>
+                              <span>•</span>
+                              <span>AI Asszisztens</span>
                         </div>
                   </div>
-
-                  <script>
-                        function iranyAKereso() {
-                              const bemenet = document.getElementById('main-search-input').value;
-                              const url = bemenet.trim() === ""
-                                    ? "src/search/search-index.html"
-                                    : `src/search/search-index.html?q=${encodeURIComponent(bemenet)}`;
-                              window.location.href = url;
-                        }
-
-                        function iranyMenu(tipus) {
-                              // Átvisszük a 'menu' paramétert (pl. ?menu=metro)
-                              window.location.href = `src/search/search-index.html?menu=${tipus}`;
-                        }
-
-                        document.getElementById('main-search-input').addEventListener('keypress', (e) => {
-                              if (e.key === 'Enter') iranyAKereso();
-                        });
-                  </script>
-
-
-                  <div class="flex gap-8 opacity-40 text-[10px] uppercase tracking-[0.3em] font-bold">
-                        <span>8K Minőség</span>
-                        <span>•</span>
-                        <span>360° Bejárás</span>
-                        <span>•</span>
-                        <span>AI Asszisztens</span>
-                  </div>
-            </div>
-      </main>
+            </main>
+      </section>
 
       <section class="max-w-7xl mx-auto px-6 py-16 border-t szegely-zold">
             <div class="flex justify-between items-end mb-10">

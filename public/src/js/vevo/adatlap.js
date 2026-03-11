@@ -336,8 +336,17 @@ export async function renderAjanlo(aktualisData) {
 
       // Kép kiválasztása
       let img = "https://placehold.co/400x300";
-      if (d.kepek && d.kepek.length > 0)
-        img = typeof d.kepek[0] === "object" ? d.kepek[0].url : d.kepek[0];
+      const jeloltKepek = [];
+      if (Array.isArray(d.kepek_horiz) && d.kepek_horiz.length > 0) {
+        jeloltKepek.push(...d.kepek_horiz);
+      }
+      if (Array.isArray(d.kepek) && d.kepek.length > 0) {
+        jeloltKepek.push(...d.kepek);
+      }
+      if (jeloltKepek.length > 0) {
+        const elso = jeloltKepek[0];
+        img = typeof elso === "object" ? elso.url : elso;
+      }
 
       const azon = d.azon || `#${doc.id.substring(0, 5)}`;
       const card = document.createElement("div");
