@@ -13,6 +13,91 @@ class KeresoMotor {
     this.utolsoTalalatok = [];
   }
 
+  keruletKulcsok(kerulet) {
+    if (!kerulet) return [];
+    const romanToArabic = {
+      I: "1",
+      II: "2",
+      III: "3",
+      IV: "4",
+      V: "5",
+      VI: "6",
+      VII: "7",
+      VIII: "8",
+      IX: "9",
+      X: "10",
+      XI: "11",
+      XII: "12",
+      XIII: "13",
+      XIV: "14",
+      XV: "15",
+      XVI: "16",
+      XVII: "17",
+      XVIII: "18",
+      XIX: "19",
+      XX: "20",
+      XXI: "21",
+      XXII: "22",
+      XXIII: "23",
+    };
+    const arabicToRoman = {
+      1: "I.",
+      2: "II.",
+      3: "III.",
+      4: "IV.",
+      5: "V.",
+      6: "VI.",
+      7: "VII.",
+      8: "VIII.",
+      9: "IX.",
+      10: "X.",
+      11: "XI.",
+      12: "XII.",
+      13: "XIII.",
+      14: "XIV.",
+      15: "XV.",
+      16: "XVI.",
+      17: "XVII.",
+      18: "XVIII.",
+      19: "XIX.",
+      20: "XX.",
+      21: "XXI.",
+      22: "XXII.",
+      23: "XXIII.",
+    };
+
+    const raw = String(kerulet).trim();
+    const upper = raw.toUpperCase();
+    const noDot = upper.replace(/\./g, "");
+    let arabic = null;
+    let roman = null;
+
+    if (/^\d{1,2}$/.test(noDot)) {
+      arabic = noDot;
+      roman = arabicToRoman[parseInt(noDot, 10)] || null;
+    } else if (romanToArabic[noDot]) {
+      arabic = romanToArabic[noDot];
+      roman = upper.endsWith(".") ? upper : `${upper}.`;
+    }
+
+    const kulcsok = [];
+    const pushUnique = (value) => {
+      if (value && !kulcsok.includes(value)) kulcsok.push(value);
+    };
+
+    pushUnique(raw);
+    if (arabic) {
+      pushUnique(arabic);
+      pushUnique(`${arabic}.`);
+    }
+    if (roman) {
+      pushUnique(roman);
+      pushUnique(roman.replace(/\./g, ""));
+    }
+
+    return kulcsok;
+  }
+
   ekezetMentesit(text) {
     return text
       .normalize("NFD")
@@ -115,6 +200,19 @@ class KeresoMotor {
     const szobaMatch = tisztaSzoveg.match(/(\d+)\s*(szoba|szobás)/);
     if (szobaMatch) feltetelek.szobaMin = parseInt(szobaMatch[1]);
 
+    // KERÜLET (arab vagy római szám)
+    const keruletMatch = tisztaSzoveg.match(/(\d{1,2})\s*\.?\s*ker/);
+    if (keruletMatch) {
+      feltetelek.kerulet = keruletMatch[1];
+    } else {
+      const romanMatch = tisztaSzoveg.match(
+        /\b(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx|xxi|xxii|xxiii)\.?\s*ker/
+      );
+      if (romanMatch) {
+        feltetelek.kerulet = romanMatch[1].toUpperCase() + ".";
+      }
+    }
+
     // MÉRET (m2) LOGIKA
     const meretMatch = tisztaSzoveg.match(/(\d+)\s*(nm|m2|négyzetméter)/);
     if (meretMatch) {
@@ -165,7 +263,12 @@ class KeresoMotor {
       } else if (filter.lakopark || filter.lakoparkNev) {
         feltetelekTomb.push(where("lakopark_e", "==", "Igen"));
       } else if (filter.kerulet) {
-        feltetelekTomb.push(where("kerulet", "==", filter.kerulet));
+        const keruletKulcsok = this.keruletKulcsok(filter.kerulet);
+        if (keruletKulcsok.length > 1) {
+          feltetelekTomb.push(where("kerulet", "in", keruletKulcsok));
+        } else {
+          feltetelekTomb.push(where("kerulet", "==", filter.kerulet));
+        }
         feltetelekTomb.push(where("telepules", "==", "Budapest"));
       } else {
         if (filter.telepules)

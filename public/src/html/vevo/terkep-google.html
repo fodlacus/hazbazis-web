@@ -13,74 +13,60 @@
                   width: 100%;
             }
 
-            /* --- ÚJ RÉSZ: A Törlés gomb stílusa --- */
-            #torles-vezerlo-tarolo {
+            /* --- KÖZÖS VEZÉRLŐ STÍLUS --- */
+            .map-vezerlo {
                   position: absolute;
                   top: 10px;
-                  right: 60px;
                   /* Hogy ne takarja ki a Google gombjait */
                   z-index: 5;
                   /* Hogy a térkép fölött legyen */
-                  background-color: #fff;
+                  background-color: #3D4A16;
                   border-radius: 2px;
-                  border: 1px solid rgba(0, 0, 0, 0.1);
-                  box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+                  border: 1px solid rgba(226, 241, 176, 0.4);
+                  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 8px -2px;
                   cursor: pointer;
                   margin-left: 10px;
                   padding: 0;
             }
 
-            #torles-gomb {
-                  color: #3D4A16;
-                  /* Hazbázis sötétzöld szöveg */
+            .map-vezerlo-gomb {
+                  color: #E2F1B0;
                   font-family: Roboto, Arial, sans-serif;
                   font-size: 14px;
                   font-weight: 500;
                   padding: 8px 12px;
-                  background-color: #E2F1B0;
-                  /* Hazbázis világoszöld háttér */
-                  border: none;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-            }
-
-            #torles-gomb:hover {
-                  background-color: #d4e89c;
-            }
-
-            /* --- A Vissza gomb stílusa --- */
-            #vissza-gomb-tarolo {
-                  position: absolute;
-                  top: 10px;
-                  left: 10px;
-                  /* Bal felső sarok */
-                  z-index: 5;
-                  background-color: #fff;
-                  border-radius: 2px;
-                  border: 1px solid rgba(0, 0, 0, 0.1);
-                  box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
-                  cursor: pointer;
-            }
-
-            #vissza-gomb {
-                  color: #3D4A16;
-                  font-family: Roboto, Arial, sans-serif;
-                  font-size: 14px;
-                  font-weight: 500;
-                  padding: 8px 12px;
-                  background-color: #fff;
-                  /* Fehér háttér, hogy elkülönüljön a zöld törlés gombtól */
+                  background-color: transparent;
                   border: none;
                   display: flex;
                   align-items: center;
                   gap: 8px;
                   text-decoration: none;
-                  /* Ne legyen aláhúzva a link */
             }
 
-            #vissza-gomb:hover {
-                  background-color: #f4f4f4;
+            .map-vezerlo-gomb:hover {
+                  background-color: rgba(226, 241, 176, 0.15);
+            }
+
+            /* --- GOMB POZÍCÓK --- */
+            #vissza-gomb-tarolo {
+                  left: 10px;
+            }
+
+            #torles-vezerlo-tarolo {
+                  right: 10px;
+            }
+
+            /* Google kijelölés (drawing) gombok egységesítése */
+            .gm-style .gm-control-active,
+            .gm-style .gm-control-active:focus,
+            .gm-style .gm-control-active:hover {
+                  background-color: #3D4A16 !important;
+                  border: 1px solid rgba(226, 241, 176, 0.4) !important;
+                  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 8px -2px !important;
+            }
+
+            .gm-style .gm-control-active img {
+                  filter: brightness(0) saturate(100%) invert(88%) sepia(11%) saturate(588%) hue-rotate(12deg) brightness(99%) contrast(91%);
             }
       </style>
 </head>
@@ -89,15 +75,15 @@
 
       <div id="terkep_tarolo"></div>
 
-      <div id="vissza-gomb-tarolo">
-            <a href="/" id="vissza-gomb" title="Vissza a főoldalra">
+      <div id="vissza-gomb-tarolo" class="map-vezerlo">
+            <a href="/" id="vissza-gomb" class="map-vezerlo-gomb" title="Vissza a főoldalra">
                   <i class="fa-solid fa-arrow-left"></i> Vissza
             </a>
       </div>
 
-      <div id="torles-vezerlo-tarolo">
-            <button id="torles-gomb" title="Jelenlegi rajz törlése">
-                  <i class="fa-solid fa-trash-can"></i> törlés
+      <div id="torles-vezerlo-tarolo" class="map-vezerlo">
+            <button id="torles-gomb" class="map-vezerlo-gomb" title="Jelenlegi rajz törlése">
+                  <i class="fa-solid fa-trash-can"></i> Törlés
             </button>
       </div>
 
