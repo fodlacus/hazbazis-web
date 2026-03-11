@@ -39,6 +39,7 @@ async function initAdatlap() {
       renderVezerloGombok(data);
       renderKornyek(data); // "Places API" logika
       renderAjanlo(data); // Hasonló lakások
+      renderKapcsolat(data);
     } else {
       document.body.innerHTML =
         "<h1 class='text-center mt-20 text-red-500'>Az ingatlan nem található (vagy törölték).</h1>";
@@ -375,5 +376,93 @@ export async function renderAjanlo(aktualisData) {
     });
   } catch (e) {
     console.error("Hiba az ajánlóban:", e);
+  }
+}
+
+// -------------------------------------------------------------
+// 6. FUNKCIÓ: KAPCSOLAT FELVÉTEL
+// -------------------------------------------------------------
+function renderKapcsolat(data) {
+  const emailEl = document.getElementById("hirdeto-email");
+  const btnHivas = document.getElementById("btn-hivas");
+  const btnUzenet = document.getElementById("btn-uzenet");
+
+  if (emailEl) {
+    emailEl.innerText = "Kapcsolat kérésre";
+  }
+
+  let cache = null;
+  let folyamatban = false;
+
+  async function biztositsKapcsolat() {
+    if (cache || folyamatban) return cache;
+    folyamatban = true;
+
+    let email = data.hirdeto_email || data.email || "";
+    let telefon = data.telefon || "";
+
+    try {
+      if (!email || !telefon) {
+        const hirdetoUid = data.hirdeto_uid;
+        const hirdetoAzon = data.hirdeto_azon;
+
+        if (hirdetoUid) {
+          const userSnap = await getDoc(
+            doc(adatbazis, "felhasznalok", hirdetoUid)
+          );
+          if (userSnap.exists()) {
+            const user = userSnap.data();
+            email = email || user.email || "";
+            telefon = telefon || user.telefon || "";
+          }
+        } else if (hirdetoAzon) {
+          const q = query(
+            collection(adatbazis, "felhasznalok"),
+            where("hirdeto_azon", "==", hirdetoAzon),
+            limit(1)
+          );
+          const snap = await getDocs(q);
+          snap.forEach((userDoc) => {
+            const user = userDoc.data();
+            email = email || user.email || "";
+            telefon = telefon || user.telefon || "";
+          });
+        }
+      }
+    } catch (error) {
+      console.warn("Kapcsolat adatok betöltése sikertelen:", error);
+    }
+
+    cache = { email, telefon };
+    folyamatban = false;
+
+    if (emailEl) {
+      emailEl.innerText = email || "Kapcsolat kérésre";
+    }
+
+    return cache;
+  }
+
+  if (btnHivas) {
+    btnHivas.classList.add("opacity-50", "cursor-not-allowed");
+    btnHivas.onclick = async () => {
+      const adat = await biztositsKapcsolat();
+      const tisztaTelefon = adat.telefon
+        ? adat.telefon.replace(/\s+/g, "")
+        : "";
+      if (tisztaTelefon) {
+        window.location.href = `tel:${tisztaTelefon}`;
+      }
+    };
+  }
+
+  if (btnUzenet) {
+    btnUzenet.classList.add("opacity-50", "cursor-not-allowed");
+    btnUzenet.onclick = async () => {
+      const adat = await biztositsKapcsolat();
+      if (adat.email) {
+        window.location.href = `mailto:${adat.email}`;
+      }
+    };
   }
 }
