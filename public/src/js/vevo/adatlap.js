@@ -387,12 +387,34 @@ function renderKapcsolat(data) {
   const btnHivas = document.getElementById("btn-hivas");
   const btnUzenet = document.getElementById("btn-uzenet");
 
-  if (emailEl) {
-    emailEl.innerText = "Kapcsolat kérésre";
-  }
-
   let cache = null;
   let folyamatban = false;
+
+  function allapotBeallitas(email, telefon) {
+    if (emailEl) {
+      emailEl.innerText = email || "Kapcsolat kérésre";
+    }
+
+    if (btnHivas) {
+      if (telefon) {
+        btnHivas.classList.remove("opacity-50", "cursor-not-allowed");
+      } else {
+        btnHivas.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    if (btnUzenet) {
+      if (email) {
+        btnUzenet.classList.remove("opacity-50", "cursor-not-allowed");
+      } else {
+        btnUzenet.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    }
+  }
+
+  const kezdetiEmail = data.hirdeto_email || data.email || "";
+  const kezdetiTelefon = data.telefon || "";
+  allapotBeallitas(kezdetiEmail, kezdetiTelefon);
 
   async function biztositsKapcsolat() {
     if (cache || folyamatban) return cache;
@@ -436,15 +458,12 @@ function renderKapcsolat(data) {
     cache = { email, telefon };
     folyamatban = false;
 
-    if (emailEl) {
-      emailEl.innerText = email || "Kapcsolat kérésre";
-    }
+    allapotBeallitas(email, telefon);
 
     return cache;
   }
 
   if (btnHivas) {
-    btnHivas.classList.add("opacity-50", "cursor-not-allowed");
     btnHivas.onclick = async () => {
       const adat = await biztositsKapcsolat();
       const tisztaTelefon = adat.telefon
@@ -457,7 +476,6 @@ function renderKapcsolat(data) {
   }
 
   if (btnUzenet) {
-    btnUzenet.classList.add("opacity-50", "cursor-not-allowed");
     btnUzenet.onclick = async () => {
       const adat = await biztositsKapcsolat();
       if (adat.email) {
