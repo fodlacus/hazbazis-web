@@ -58,7 +58,7 @@
 
       <script type="module">
             import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-            import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            import { getFirestore, collection, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
             // --- KONFIGURÁCIÓ ---
             const firebaseConfig = {
@@ -73,9 +73,10 @@
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
 
-            // A partner paraméter mostantól az UID-t várja!
+            // A partner paraméter mostantól HB azonosítót vár (fallback UID-ra)
             const urlParams = new URLSearchParams(window.location.search);
-            const partnerUid = urlParams.get('partner');
+            const partnerKey = urlParams.get('partner');
+            const partnerType = urlParams.get('type');
 
             const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
@@ -100,14 +101,61 @@
             async function loadVideos() {
                   const container = document.getElementById('video-container');
 
-                  if (!partnerUid) {
+                  if (!partnerKey) {
                         container.innerHTML = '<div class="h-full flex items-center justify-center text-red-400">Hiányzó partner UID</div>';
                         return;
                   }
 
                   try {
-                        // JAVÍTVA: hirdeto_uid alapú szűrés!
-                        // FIGYELEM: Ehhez Index kell majd a Firebase-ben! (uid + videoUrl)
+                        let partnerUid = null;
+
+                        const hbMod = partnerType === "hb" || (partnerKey && partnerKey.startsWith("hb-"));
+                        if (hbMod) {
+                              const widgetSnap = await getDocs(
+                                    query(
+                                          collection(db, "widget"),
+                                          where("hb_azon", "==", partnerKey),
+                                          limit(1)
+                                    )
+                              );
+
+                              if (widgetSnap.empty) {
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Nincs aktív widget ehhez a partnerhez.</div>';
+                                    return;
+                              }
+
+                              const widgetData = widgetSnap.docs[0].data();
+                              if (widgetData.active === false) {
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">A widget jelenleg inaktív.</div>';
+                                    return;
+                              }
+
+                              const hirdetoAzon = widgetData.hirdeto_azon;
+                              if (!hirdetoAzon) {
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Hiányzó hirdető azonosító.</div>';
+                                    return;
+                              }
+
+                              const userSnap = await getDocs(
+                                    query(
+                                          collection(db, "felhasznalok"),
+                                          where("azon", "==", hirdetoAzon),
+                                          limit(1)
+                                    )
+                              );
+
+                              if (userSnap.empty) {
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">A hirdető nem található.</div>';
+                                    return;
+                              }
+
+                              partnerUid = userSnap.docs[0].id;
+                        } else {
+                              partnerUid = partnerKey;
+                        }
+
+                        // hirdeto_uid alapú szűrés
+                        // FIGYELEM: Ehhez Index kell majd a Firebase-ben! (hirdeto_uid + videoUrl)
                         const q = query(
                               collection(db, "lakasok"),
                               where("hirdeto_uid", "==", partnerUid),

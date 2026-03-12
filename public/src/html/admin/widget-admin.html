@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Widget Kezelő - Hazbazis.hu</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-[#1a1a1a] text-white min-h-screen font-sans">
+      <div class="max-w-6xl mx-auto px-6 py-12">
+            <div class="flex items-center justify-between mb-10">
+                  <div>
+                        <h1 class="text-3xl font-bold text-[#E2F1B0]">Widget Kezelő</h1>
+                        <p class="text-white/50 text-sm mt-1">Partner widget beállítások és embed kód.</p>
+                  </div>
+                  <div class="flex items-center gap-3">
+                        <a href="admin-hub.html"
+                              class="px-4 py-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:bg-white/5 transition text-sm flex items-center gap-2">
+                              <i class="fa-solid fa-arrow-left"></i> Vissza
+                        </a>
+                        <button id="logout-btn"
+                              class="px-4 py-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:bg-white/5 transition text-sm flex items-center gap-2">
+                              <i class="fa-solid fa-right-from-bracket"></i> Kijelentkezés
+                        </button>
+                  </div>
+            </div>
+
+            <div class="bg-[#222] border border-white/10 rounded-2xl p-6 mb-10">
+                  <h2 class="text-lg font-bold mb-4">Új partner hozzáadása</h2>
+                  <form id="widget-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                              <label class="block text-xs text-white/60 mb-1 uppercase tracking-wider">Widget HB
+                                    azonosító</label>
+                              <input id="hb-azon" type="text" placeholder="hb-1769..."
+                                    class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
+                        </div>
+                        <div>
+                              <label class="block text-xs text-white/60 mb-1 uppercase tracking-wider">Hirdető HB
+                                    azonosító</label>
+                              <input id="hirdeto-azon" type="text" placeholder="hb-1769..."
+                                    class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
+                        </div>
+                        <div>
+                              <label class="block text-xs text-white/60 mb-1 uppercase tracking-wider">Partner
+                                    név</label>
+                              <input id="partner-nev" type="text" placeholder="Cég neve"
+                                    class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
+                        </div>
+                        <div>
+                              <label class="block text-xs text-white/60 mb-1 uppercase tracking-wider">Domain
+                                    (opcionális)</label>
+                              <input id="partner-domain" type="text" placeholder="ceg.hu"
+                                    class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-[#E2F1B0] outline-none">
+                        </div>
+                        <div class="md:col-span-2 flex items-center justify-between gap-4">
+                              <label class="inline-flex items-center gap-2 text-sm text-white/70">
+                                    <input id="partner-active" type="checkbox"
+                                          class="rounded bg-black/50 border-white/20 text-[#E2F1B0]">
+                                    Aktív
+                              </label>
+                              <button type="submit"
+                                    class="bg-[#E2F1B0] hover:bg-[#cde088] text-[#3D4A16] font-bold px-6 py-3 rounded-xl transition shadow-lg">
+                                    Mentés
+                              </button>
+                        </div>
+                  </form>
+            </div>
+
+            <div class="bg-[#222] border border-white/10 rounded-2xl p-6">
+                  <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold">Partnerek</h2>
+                        <button id="frissites-btn"
+                              class="text-white/60 hover:text-white text-sm flex items-center gap-2">
+                              <i class="fa-solid fa-rotate"></i> Frissítés
+                        </button>
+                  </div>
+                  <div id="widget-lista" class="space-y-4"></div>
+            </div>
+      </div>
+
+      <script type="module">
+            import { auth, adatbazis } from "../../js/util/firebase-config.js";
+            import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+            import {
+                  collection,
+                  addDoc,
+                  getDocs,
+                  deleteDoc,
+                  doc,
+                  updateDoc,
+                  query,
+                  orderBy
+            } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+            const listaDiv = document.getElementById("widget-lista");
+            const form = document.getElementById("widget-form");
+            const frissitesBtn = document.getElementById("frissites-btn");
+
+            async function betoltWidgetek() {
+                  listaDiv.innerHTML = '<div class="text-white/40 text-sm">Betöltés...</div>';
+                  const q = query(collection(adatbazis, "widget"), orderBy("letrehozva", "desc"));
+                  const snapshot = await getDocs(q);
+
+                  if (snapshot.empty) {
+                        listaDiv.innerHTML = '<div class="text-white/40 text-sm">Nincs még partner.</div>';
+                        return;
+                  }
+
+                  listaDiv.innerHTML = "";
+                  snapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        const active = data.active !== false;
+                        const embed = `<script src="https://hazbazis.hu/src/widget/loader.js" data-hb="${data.hb_azon}" defer></script>
+      `;
+
+      const card = document.createElement("div");
+      card.className = "bg-black/30 border border-white/10 rounded-xl p-4 flex flex-col gap-3";
+      card.innerHTML = `
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                  <div class="text-white font-bold">${data.nev || "Névtelen partner"}</div>
+                  <div class="text-xs text-white/50 mt-1">Widget: ${data.hb_azon || "-"}</div>
+                  <div class="text-xs text-white/50">Hirdető: ${data.hirdeto_azon || "-"}</div>
+                  <div class="text-xs text-white/50">Domain: ${data.domain || "-"}</div>
+            </div>
+            <div class="flex items-center gap-2">
+                  <button data-id="${docSnap.id}" class="toggle-btn px-3 py-2 rounded-lg text-xs font-bold ${active ? "
+                        bg-[#E2F1B0] text-[#3D4A16]" : "bg-white/10 text-white/60" }">
+                        ${active ? "Aktív" : "Inaktív"}
+                  </button>
+                  <button data-id="${docSnap.id}"
+                        class="delete-btn px-3 py-2 rounded-lg text-xs font-bold bg-red-500/20 text-red-300 hover:bg-red-500/40">
+                        Törlés
+                  </button>
+            </div>
+      </div>
+      <div class="bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-white/70 font-mono break-all">
+            ${embed}
+      </div>
+      <button data-embed="${embed.replace(/" /g, "&quot;" )}"
+            class="copy-btn text-xs text-[#E2F1B0] hover:text-white self-start">
+            <i class="fa-solid fa-copy"></i> Embed kód másolása
+      </button>
+      `;
+      listaDiv.appendChild(card);
+      });
+      }
+
+      form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const hbAzon = document.getElementById("hb-azon").value.trim();
+      const hirdetoAzon = document.getElementById("hirdeto-azon").value.trim();
+      const nev = document.getElementById("partner-nev").value.trim();
+      const domain = document.getElementById("partner-domain").value.trim();
+      const active = document.getElementById("partner-active").checked;
+
+      if (!hbAzon || !hirdetoAzon) {
+      alert("A widget és hirdető HB azonosító kötelező.");
+      return;
+      }
+
+      await addDoc(collection(adatbazis, "widget"), {
+      hb_azon: hbAzon,
+      hirdeto_azon: hirdetoAzon,
+      nev: nev || null,
+      domain: domain || null,
+      active: active,
+      letrehozva: new Date().toISOString()
+      });
+
+      form.reset();
+      document.getElementById("partner-active").checked = true;
+      await betoltWidgetek();
+      });
+
+      listaDiv.addEventListener("click", async (e) => {
+      const target = e.target.closest("button");
+      if (!target) return;
+
+      if (target.classList.contains("delete-btn")) {
+      const id = target.getAttribute("data-id");
+      if (confirm("Biztos törlöd ezt a partnert?")) {
+      await deleteDoc(doc(adatbazis, "widget", id));
+      await betoltWidgetek();
+      }
+      }
+
+      if (target.classList.contains("toggle-btn")) {
+      const id = target.getAttribute("data-id");
+      const isActive = target.innerText.trim() === "Aktív";
+      await updateDoc(doc(adatbazis, "widget", id), { active: !isActive });
+      await betoltWidgetek();
+      }
+
+      if (target.classList.contains("copy-btn")) {
+      const embed = target.getAttribute("data-embed").replace(/&quot;/g, '"');
+      try {
+      await navigator.clipboard.writeText(embed);
+      target.innerText = "✅ Másolva";
+      setTimeout(() => (target.innerHTML = '<i class="fa-solid fa-copy"></i> Embed kód másolása'), 1200);
+      } catch (err) {
+      alert("A másolás nem sikerült.");
+      }
+      }
+      });
+
+      frissitesBtn.addEventListener("click", betoltWidgetek);
+
+      // AUTH
+      onAuthStateChanged(auth, (user) => {
+      if (user) {
+      betoltWidgetek();
+      document.getElementById("partner-active").checked = true;
+      } else {
+      window.location.href = "/index.html";
+      }
+      });
+
+      // Logout
+      const logoutBtn = document.getElementById("logout-btn");
+      logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => (window.location.href = "/index.html"));
+      });
+      </script>
+</body>
+
+</html>

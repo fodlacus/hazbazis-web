@@ -4,19 +4,27 @@
   console.log("Elindult a loader.js");
   const scripts = document.getElementsByTagName("script");
   let currentScript = null;
-  let partnerUid = null;
+  let partnerId = null;
+  let partnerType = null;
 
   for (let i = 0; i < scripts.length; i++) {
+    if (scripts[i].getAttribute("data-hb")) {
+      currentScript = scripts[i];
+      partnerId = currentScript.getAttribute("data-hb");
+      partnerType = "hb";
+      break;
+    }
     if (scripts[i].getAttribute("data-uid")) {
       currentScript = scripts[i];
-      partnerUid = currentScript.getAttribute("data-uid");
+      partnerId = currentScript.getAttribute("data-uid");
+      partnerType = "uid";
       break;
     }
   }
 
-  if (!partnerUid) {
+  if (!partnerId) {
     console.error(
-      "Hazbazis Widget Hiba: Hiányzik a 'data-uid' paraméter a beillesztett kódból!"
+      "Hazbazis Widget Hiba: Hiányzik a 'data-hb' paraméter a beillesztett kódból!"
     );
     return;
   }
@@ -39,13 +47,14 @@
   container.style.overflow = "hidden";
   container.style.boxShadow = "0 15px 35px rgba(0,0,0,0.25)"; // Kicsit erősebb árnyék, hogy kiemelkedjen
   container.style.backgroundColor = "#111";
-  
+
   // 4. Az Iframe létrehozása és beállítása
   const iframe = document.createElement("iframe");
 
   // AZ ÉLES ÚTVONALAD A SZERVEREN:
-  //  const widgetUrl = `https://hazbazis.hu/src/widget/view.html?partner=${partnerUid}`;
-  const widgetUrl = `https://hazbazis.hu/src/widget/view?partner=JEFcSLfbHGguZhPBxik7q8Fxa572`;
+  const widgetUrl = `https://hazbazis.hu/src/widget/view.html?partner=${encodeURIComponent(
+    partnerId
+  )}&type=${partnerType}`;
 
   iframe.src = widgetUrl;
   iframe.style.width = "100%";
@@ -62,8 +71,5 @@
   // 5. Iframe beillesztése a konténerbe
   container.appendChild(iframe);
 
-  console.log(
-    "✅ Hazbazis Widget sikeresen betöltve. Partner UID:",
-    partnerUid
-  );
+  console.log("✅ Hazbazis Widget sikeresen betöltve. Partner:", partnerId);
 })();
