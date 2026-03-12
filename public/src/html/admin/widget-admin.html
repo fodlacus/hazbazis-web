@@ -115,6 +115,9 @@
                         const active = data.active !== false;
                         const embed = `<script src="https://hazbazis.hu/src/widget/loader.js" data-hb="${data.hb_azon}" defer></script>
       `;
+      const toggleClasses = active
+      ? "bg-[#E2F1B0] text-[#3D4A16]"
+      : "bg-white/10 text-white/60";
 
       const card = document.createElement("div");
       card.className = "bg-black/30 border border-white/10 rounded-xl p-4 flex flex-col gap-3";
@@ -127,8 +130,8 @@
                   <div class="text-xs text-white/50">Domain: ${data.domain || "-"}</div>
             </div>
             <div class="flex items-center gap-2">
-                  <button data-id="${docSnap.id}" class="toggle-btn px-3 py-2 rounded-lg text-xs font-bold ${active ? "
-                        bg-[#E2F1B0] text-[#3D4A16]" : "bg-white/10 text-white/60" }">
+                  <button data-id="${docSnap.id}"
+                        class="toggle-btn px-3 py-2 rounded-lg text-xs font-bold ${toggleClasses}">
                         ${active ? "Aktív" : "Inaktív"}
                   </button>
                   <button data-id="${docSnap.id}"
