@@ -14,7 +14,7 @@ let aktualis_clusterer = null; // MarkerClusterer példány, ha van
 let allIngatlanok = [];
 let utolso_rajz = null;
 
-const KLASZTER_KUSZOB = 15; // Ennél több marker esetén klaszterezünk
+const KLASZTER_KUSZOB = 5; // Ennél több marker esetén klaszterezünk (kevés tesztadaton is látszik; 20+ esetén növelhető)
 
 // Árkategória (M Ft), m2 sávok a csoportosításhoz
 function getArKategoria(ar) {
@@ -77,7 +77,19 @@ async function loadIngatlanok() {
     const q = query(collection(adatbazis, "lakasok"));
     const snap = await getDocs(q);
     allIngatlanok = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    console.log(`Sikeresen betöltve ${allIngatlanok.length} db ingatlan.`);
+    const gpsVel = allIngatlanok.filter(
+      (i) => i.lat != null && i.lng != null
+    ).length;
+    console.log(
+      `Sikeresen betöltve ${allIngatlanok.length} db ingatlan. Ebből GPS koordinátával: ${gpsVel} db (a térképen csak ezek jelennek meg).`
+    );
+    if (gpsVel < allIngatlanok.length) {
+      console.warn(
+        `${
+          allIngatlanok.length - gpsVel
+        } rekordnak hiányzik a lat/lng, ezért nem látszik a térképen.`
+      );
+    }
   } catch (err) {
     console.error("Hiba az adatok betöltésekor:", err);
   }
