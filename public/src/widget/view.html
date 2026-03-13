@@ -212,10 +212,10 @@
                 <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none z-10"></div>
 
                 <div class="absolute top-6 right-6 z-50 flex gap-4">
-                    <button onclick="togglePlay(this)" class="control-btn w-12 h-12 rounded-full text-white flex items-center justify-center border border-white/20 shadow-lg cursor-pointer">
+                    <button class="play-toggle-btn control-btn w-12 h-12 rounded-full text-white flex items-center justify-center border border-white/20 shadow-lg cursor-pointer">
                         <i class="fa-solid fa-pause play-btn-icon text-xl"></i>
                     </button>
-                    <button onclick="toggleSound(this)" class="control-btn w-12 h-12 rounded-full text-white flex items-center justify-center border border-white/20 shadow-lg cursor-pointer">
+                    <button class="sound-toggle-btn control-btn w-12 h-12 rounded-full text-white flex items-center justify-center border border-white/20 shadow-lg cursor-pointer">
                         <i class="fa-solid fa-volume-xmark sound-btn-icon text-xl"></i>
                     </button>
                 </div>
@@ -241,37 +241,50 @@
                 </div>
             `;
 
+                  const playBtn = item.querySelector('.play-toggle-btn');
+                  const soundBtn = item.querySelector('.sound-toggle-btn');
+
+                  if (playBtn) {
+                        playBtn.addEventListener('click', (e) => {
+                              e.stopPropagation();
+                              const video = item.querySelector('video');
+                              const icon = playBtn.querySelector('i');
+
+                              if (!video) return;
+
+                              if (video.paused) {
+                                    video.play().then(() => {
+                                          if (icon) icon.className = "fa-solid fa-pause play-btn-icon text-xl";
+                                    }).catch(() => {
+                                          if (icon) icon.className = "fa-solid fa-play play-btn-icon text-xl pl-1";
+                                    });
+                              } else {
+                                    video.pause();
+                                    if (icon) icon.className = "fa-solid fa-play play-btn-icon text-xl pl-1";
+                              }
+                        });
+                  }
+
+                  if (soundBtn) {
+                        soundBtn.addEventListener('click', (e) => {
+                              e.stopPropagation();
+                              const video = item.querySelector('video');
+                              const icon = soundBtn.querySelector('i');
+
+                              if (!video) return;
+
+                              video.muted = !video.muted;
+                              if (icon) {
+                                    icon.className = video.muted
+                                          ? "fa-solid fa-volume-xmark sound-btn-icon text-xl"
+                                          : "fa-solid fa-volume-high sound-btn-icon text-xl";
+                              }
+                        });
+                  }
+
                   container.appendChild(item);
                   observer.observe(item);
             }
-
-            window.togglePlay = function (btn) {
-                  const wrapper = btn.closest('.video-item');
-                  const video = wrapper.querySelector('video');
-                  const icon = btn.querySelector('i');
-
-                  if (video.paused) {
-                        video.play();
-                        icon.className = "fa-solid fa-pause play-btn-icon text-xl";
-                  } else {
-                        video.pause();
-                        icon.className = "fa-solid fa-play play-btn-icon text-xl pl-1";
-                  }
-            };
-
-            window.toggleSound = function (btn) {
-                  const wrapper = btn.closest('.video-item');
-                  const video = wrapper.querySelector('video');
-                  const icon = btn.querySelector('i');
-
-                  if (video.muted) {
-                        video.muted = false;
-                        icon.className = "fa-solid fa-volume-high sound-btn-icon text-xl";
-                  } else {
-                        video.muted = true;
-                        icon.className = "fa-solid fa-volume-xmark sound-btn-icon text-xl";
-                  }
-            };
 
             loadVideos();
       </script>
