@@ -45,9 +45,9 @@
       <h1 class="text-3xl font-bold text-[#E2F1B0] mb-6">📍 Pin Koordináta Kereső</h1>
 
       <a href="admin-hub.html"
-      class=" z-50 bg-black/50 hover:bg-black/80 text-white px-3 py-2 rounded-lg text-xs font-bold backdrop-blur flex items-center gap-2 transition-colors border border-white/10">
-      <i class="fa-solid fa-border-all"></i> Admin Menü
-</a>
+            class=" z-50 bg-black/50 hover:bg-black/80 text-white px-3 py-2 rounded-lg text-xs font-bold backdrop-blur flex items-center gap-2 transition-colors border border-white/10">
+            <i class="fa-solid fa-border-all"></i> Admin Menü
+      </a>
 
 
       <div class="bg-white/10 p-6 rounded-xl border border-white/10 mb-8 text-center w-full max-w-2xl">
@@ -100,6 +100,11 @@
                         class="w-full mt-4 bg-[#E2F1B0] text-[#3D4A16] font-bold py-2 rounded hover:bg-white transition">
                         <i class="fa-regular fa-copy"></i> Másolás
                   </button>
+
+                  <button id="send-back-btn" onclick="sendBackToVT()"
+                        class="w-full mt-3 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded border border-white/20 transition hidden">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Visszaküldés a VT szerkesztőnek
+                  </button>
             </div>
       </div>
 
@@ -109,6 +114,20 @@
             const container = document.getElementById('image-container');
             const placeholder = document.getElementById('placeholder-text');
             const markerLayer = document.getElementById('marker-layer');
+
+            // Ha VT szerkesztőből nyitották meg (opener), "Visszaküldés" gomb; image param esetén alaprajz betöltése
+            (function initFromParams() {
+                  if (window.opener)
+                        document.getElementById('send-back-btn').classList.remove('hidden');
+                  const params = new URLSearchParams(location.search);
+                  const imageUrl = params.get('image');
+                  if (imageUrl) {
+                        const url = decodeURIComponent(imageUrl);
+                        preview.src = url;
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                  }
+            })();
 
             // Kép betöltése
             fileInput.addEventListener('change', function (e) {
@@ -158,6 +177,20 @@
                   navigator.clipboard.writeText(text).then(() => {
                         alert('Vágólapra másolva: ' + text);
                   });
+            }
+
+            function sendBackToVT() {
+                  if (!window.opener) return;
+                  const x = document.getElementById('out-x').value;
+                  const y = document.getElementById('out-y').value;
+                  if (x === '-' || y === '-') {
+                        alert('Először kattints az alaprajzon egy pontra!');
+                        return;
+                  }
+                  const xNum = parseFloat(x.replace(',', '.'));
+                  const yNum = parseFloat(y.replace(',', '.'));
+                  window.opener.postMessage({ type: 'pin-koordinata', x: xNum, y: yNum }, '*');
+                  window.close();
             }
       </script>
 </body>

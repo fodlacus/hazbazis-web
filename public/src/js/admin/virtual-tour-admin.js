@@ -23,6 +23,24 @@ const logoutBtn = document.getElementById("logout-btn");
 let currentHbId = null;
 let virtualTour = { szintek: [] };
 
+// Pin Keresőből érkező x,y (VT szerkesztőből megnyitott ablakból)
+let pendingPin = null;
+
+window.addEventListener("message", (e) => {
+  if (e.data && e.data.type === "pin-koordinata" && pendingPin) {
+    const { lIdx, rIdx } = pendingPin;
+    const level = virtualTour.szintek[lIdx];
+    if (level && level.szobak && level.szobak[rIdx]) {
+      level.szobak[rIdx].x = e.data.x;
+      level.szobak[rIdx].y = e.data.y;
+      touchStatus(
+        "Pin koordináták megkaptuk (x: " + e.data.x + ", y: " + e.data.y + ")."
+      );
+    }
+    pendingPin.received = { x: e.data.x, y: e.data.y };
+  }
+});
+
 function renderJson() {
   jsonPreview.textContent = JSON.stringify(virtualTour, null, 2);
 }
@@ -252,44 +270,81 @@ function handleLevelsListClick(e) {
     if (!level || !Array.isArray(level.szobak) || !level.szobak[rIdx]) return;
 
     const room = level.szobak[rIdx];
+    pendingPin = { lIdx, rIdx };
+
+    if (level.alaprajz_url) {
+      const pinUrl =
+        "pin-kereso.html?image=" + encodeURIComponent(level.alaprajz_url);
+      window.open(pinUrl, "pin-kereso", "width=900,height=700,scrollbars=yes");
+      touchStatus(
+        "Pin Kereső megnyitva. Kattints az alaprajzon, majd a «Visszaküldés» gombra – vagy kézzel add meg később az x,y-t."
+      );
+    }
 
     const nev = prompt("Szoba neve", room.nev || "");
-    if (nev === null) return;
+    if (nev === null) {
+      pendingPin = null;
+      return;
+    }
     room.nev = nev.trim();
 
     const id = prompt("Szoba ID (pl. nappali)", room.id || "");
-    if (id === null) return;
+    if (id === null) {
+      pendingPin = null;
+      return;
+    }
     room.id = id.trim();
 
     const pano = prompt("Panoráma URL", room.panorama_url || "");
-    if (pano === null) return;
+    if (pano === null) {
+      pendingPin = null;
+      return;
+    }
     room.panorama_url = pano.trim();
 
-    const xStr = prompt(
-      "X pozíció az alaprajzon (0-100)",
-      room.x != null ? String(room.x) : "50"
-    );
-    if (xStr === null) return;
-    const yStr = prompt(
-      "Y pozíció az alaprajzon (0-100)",
-      room.y != null ? String(room.y) : "50"
-    );
-    if (yStr === null) return;
+    let xStr, yStr;
+    if (pendingPin && pendingPin.received) {
+      xStr = String(pendingPin.received.x);
+      yStr = String(pendingPin.received.y);
+    } else {
+      xStr = prompt(
+        "X pozíció az alaprajzon (0-100)",
+        room.x != null ? String(room.x) : "50"
+      );
+      if (xStr === null) {
+        pendingPin = null;
+        return;
+      }
+      yStr = prompt(
+        "Y pozíció az alaprajzon (0-100)",
+        room.y != null ? String(room.y) : "50"
+      );
+      if (yStr === null) {
+        pendingPin = null;
+        return;
+      }
+    }
 
     const dirStr = prompt(
       "Kezdő irány (fok, pl. 0)",
       room.kezdo_irany != null ? String(room.kezdo_irany) : "0"
     );
-    if (dirStr === null) return;
+    if (dirStr === null) {
+      pendingPin = null;
+      return;
+    }
 
     const m2Str = prompt(
       "Alapterület m² (opcionális)",
       room.m2 != null ? String(room.m2) : ""
     );
-    if (m2Str === null) return;
+    if (m2Str === null) {
+      pendingPin = null;
+      return;
+    }
 
-    const x = parseFloat(xStr.replace(",", "."));
-    const y = parseFloat(yStr.replace(",", "."));
+    const x = parseFloat(String(xStr).replace(",", "."));
+    const y = parseFloat(String(yStr).replace(",", "."));
     const dir = parseFloat(dirStr.replace(",", "."));
     const m2 = m2Str.trim() ? parseFloat(m2Str.replace(",", ".")) : null;
 
@@ -298,6 +353,7 @@ function handleLevelsListClick(e) {
     if (!Number.isNaN(dir)) room.kezdo_irany = dir;
     if (m2 !== null && !Number.isNaN(m2)) room.m2 = m2;
 
+    pendingPin = null;
     renderLevels();
     renderJson();
     return;
