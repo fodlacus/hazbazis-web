@@ -101,11 +101,13 @@ export function terkep_alap_inditasa() {
   const budapest_kozeppont = { lat: 47.4979, lng: 19.0402 };
   fo_terkep = new google.maps.Map(document.getElementById("terkep_tarolo"), {
     center: budapest_kozeppont,
-    zoom: 12,
+    zoom: 11,
+    minZoom: 9,
+    maxZoom: 16,
     mapTypeId: google.maps.MapTypeId.ROADMAP,
     mapTypeControl: false,
     streetViewControl: false,
-    fullscreenControl: false, // Kikapcsoljuk, hogy ne zavarja a saját gombunkat
+    fullscreenControl: false,
   });
 
   rajzolo_eszkoz = new google.maps.drawing.DrawingManager({
@@ -315,6 +317,12 @@ async function terkep_markerek_frissitese(ingatlan_tomb) {
       title: pontos_cim,
     });
     uj_marker.ingatlanData = adat;
+    const info_ablak = new google.maps.InfoWindow({
+      content: egy_ingatlan_info_html(adat),
+    });
+    uj_marker.addListener("click", () => {
+      info_ablak.open({ anchor: uj_marker, map: fo_terkep });
+    });
     markerek.push(uj_marker);
   }
 
