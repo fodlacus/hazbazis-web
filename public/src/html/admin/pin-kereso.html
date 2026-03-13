@@ -117,13 +117,24 @@
 
             // image URL param esetén alaprajz betöltése (VT szerkesztőből megnyitva)
             (function initFromParams() {
-                  const params = new URLSearchParams(location.search);
-                  const imageUrl = params.get('image');
-                  if (imageUrl) {
-                        const url = decodeURIComponent(imageUrl);
-                        preview.src = url;
-                        preview.classList.remove('hidden');
-                        placeholder.classList.add('hidden');
+                  try {
+                        const params = new URLSearchParams(location.search);
+                        const imageUrl = params.get('image');
+                        if (imageUrl) {
+                              const url = decodeURIComponent(imageUrl);
+                              preview.src = url;
+                              preview.onerror = function () {
+                                    placeholder.textContent = 'Az alaprajz betöltése sikertelen. Töltsd fel fájlként.';
+                                    placeholder.classList.remove('hidden');
+                                    preview.classList.add('hidden');
+                              };
+                              preview.onload = function () {
+                                    preview.classList.remove('hidden');
+                                    placeholder.classList.add('hidden');
+                              };
+                        }
+                  } catch (err) {
+                        console.warn('Image URL param feldolgozása sikertelen:', err);
                   }
             })();
 
@@ -190,7 +201,8 @@
                   }
                   const xNum = parseFloat(x.replace(',', '.'));
                   const yNum = parseFloat(y.replace(',', '.'));
-                  window.opener.postMessage({ type: 'pin-koordinata', x: xNum, y: y '*               window.close();
+                  window.opener.postMessage({ type: 'pin-koordinata', x: xNum, y: yNum }, '*');
+                  window.close();
             }
       </script>
 </body>
