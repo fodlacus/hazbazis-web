@@ -73,6 +73,9 @@
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
 
+            // Globális hangállapot (alapból némítva, mint a simple-playerben)
+            let isMuted = true;
+
             // A partner paraméter mostantól HB azonosítót vár (fallback UID-ra)
             const urlParams = new URLSearchParams(window.location.search);
             const partnerKey = urlParams.get('partner');
@@ -86,6 +89,8 @@
                         if (!video) return;
 
                         if (entry.isIntersecting) {
+                              // Az aktuális videó mindig a globális hangállapotot vegye át
+                              video.muted = isMuted;
                               video.currentTime = 0;
                               video.play()
                                     .then(() => { if (playBtnIcon) playBtnIcon.className = "fa-solid fa-pause play-btn-icon"; })
@@ -269,24 +274,26 @@
                         soundBtn.addEventListener('click', (e) => {
                               e.stopPropagation();
 
-                              const currentVideo = item.querySelector('video');
                               const icon = soundBtn.querySelector('i');
 
-                              if (!currentVideo) return;
+                              // Globális hangállapot váltása
+                              isMuted = !isMuted;
 
-                              // Globális hangkezelés: minden videó némítása
+                              // Minden videó vegye át az új állapotot
                               const allVideos = document.querySelectorAll('#video-container video');
-                              allVideos.forEach(v => { v.muted = true; });
+                              allVideos.forEach(v => { v.muted = isMuted; });
 
-                              // Ha az aktuális már hangos volt, akkor most mind némítva marad
-                              const willUnmute = currentVideo.muted;
+                              // Minden hang ikon frissítése
+                              const allIcons = document.querySelectorAll('.sound-btn-icon');
+                              allIcons.forEach(i => {
+                                    i.className = isMuted
+                                          ? "fa-solid fa-volume-xmark sound-btn-icon text-xl"
+                                          : "fa-solid fa-volume-high sound-btn-icon text-xl";
+                              });
 
-                              if (willUnmute) {
-                                    currentVideo.muted = false;
-                              }
-
+                              // Biztonságból az aktuális ikon is (ha fenti nem érte volna el)
                               if (icon) {
-                                    icon.className = (!willUnmute)
+                                    icon.className = isMuted
                                           ? "fa-solid fa-volume-xmark sound-btn-icon text-xl"
                                           : "fa-solid fa-volume-high sound-btn-icon text-xl";
                               }
