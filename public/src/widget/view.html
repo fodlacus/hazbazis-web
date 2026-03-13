@@ -268,14 +268,25 @@
                   if (soundBtn) {
                         soundBtn.addEventListener('click', (e) => {
                               e.stopPropagation();
-                              const video = item.querySelector('video');
+
+                              const currentVideo = item.querySelector('video');
                               const icon = soundBtn.querySelector('i');
 
-                              if (!video) return;
+                              if (!currentVideo) return;
 
-                              video.muted = !video.muted;
+                              // Globális hangkezelés: minden videó némítása
+                              const allVideos = document.querySelectorAll('#video-container video');
+                              allVideos.forEach(v => { v.muted = true; });
+
+                              // Ha az aktuális már hangos volt, akkor most mind némítva marad
+                              const willUnmute = currentVideo.muted;
+
+                              if (willUnmute) {
+                                    currentVideo.muted = false;
+                              }
+
                               if (icon) {
-                                    icon.className = video.muted
+                                    icon.className = (!willUnmute)
                                           ? "fa-solid fa-volume-xmark sound-btn-icon text-xl"
                                           : "fa-solid fa-volume-high sound-btn-icon text-xl";
                               }
