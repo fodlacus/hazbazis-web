@@ -36,8 +36,10 @@ window.addEventListener("message", (e) => {
       touchStatus(
         "Pin koordináták megkaptuk (x: " + e.data.x + ", y: " + e.data.y + ")."
       );
+      pendingPin.received = { x: e.data.x, y: e.data.y };
+      renderLevels();
+      renderJson();
     }
-    pendingPin.received = { x: e.data.x, y: e.data.y };
   }
 });
 
