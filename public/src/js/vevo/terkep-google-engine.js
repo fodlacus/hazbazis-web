@@ -133,14 +133,13 @@ export function terkep_alap_inditasa() {
   google.maps.event.addListener(
     rajzolo_eszkoz,
     "overlaycomplete",
-    function (esemeny) {
+    async function (esemeny) {
       rajzolo_eszkoz.setDrawingMode(null);
 
-      // Automatikus törlés: Ha volt előző rajz, eltüntetjük
       if (utolso_rajz) {
         utolso_rajz.setMap(null);
       }
-      utolso_rajz = esemeny.overlay; // Megjegyezzük az újat
+      utolso_rajz = esemeny.overlay;
 
       let szurt_ingatlanok = [];
 
@@ -162,7 +161,7 @@ export function terkep_alap_inditasa() {
         console.log("Kör szűrés:", szurt_ingatlanok.length, "db");
       }
 
-      terkep_markerek_frissitese(szurt_ingatlanok);
+      await terkep_markerek_frissitese(szurt_ingatlanok);
     }
   );
 }
@@ -287,7 +286,7 @@ function klaszter_tartalom_html(markerek) {
   return blokk;
 }
 
-function terkep_markerek_frissitese(ingatlan_tomb) {
+async function terkep_markerek_frissitese(ingatlan_tomb) {
   if (aktualis_clusterer) {
     aktualis_clusterer.clearMarkers();
     aktualis_clusterer.setMap(null);
@@ -319,14 +318,30 @@ function terkep_markerek_frissitese(ingatlan_tomb) {
     markerek.push(uj_marker);
   }
 
-  const MarkerClustererClass =
+  let MarkerClustererClass =
     (typeof window !== "undefined" &&
       window.markerClusterer?.MarkerClusterer) ||
+    (typeof window !== "undefined" && window.markerClusterer?.default) ||
     (typeof window !== "undefined" && window.MarkerClusterer);
+  if (!MarkerClustererClass && markerek.length > KLASZTER_KUSZOB) {
+    try {
+      const mod = await import(
+        "https://cdn.jsdelivr.net/npm/@googlemaps/markerclusterer@2.6.2/+esm"
+      );
+      MarkerClustererClass = mod.MarkerClusterer;
+    } catch (e) {
+      console.warn("MarkerClusterer betöltése sikertelen:", e);
+    }
+  }
   const useClusterer =
     markerek.length > KLASZTER_KUSZOB && MarkerClustererClass;
-
   if (useClusterer) {
+    console.log(
+      "Klaszterezés aktív:",
+      markerek.length,
+      "marker, küszöb:",
+      KLASZTER_KUSZOB
+    );
     const Renderer = {
       render: (cluster, stats, map) => {
         const markersArr = Array.from(cluster.markers || []);
