@@ -220,6 +220,7 @@ function handleLevelsListClick(e) {
       x: 50,
       y: 50,
       kezdo_irany: 0,
+      m2: 0,
       hotspots: [],
     });
     renderLevels();
@@ -243,7 +244,64 @@ function handleLevelsListClick(e) {
     return;
   }
 
-  // A részletes szobaszerkesztő egy következő iterációban jöhet (külön modal / oldal)
+  if (target.classList.contains("edit-room") || target.closest(".edit-room")) {
+    const btn = target.closest(".edit-room");
+    const lIdx = Number(btn.getAttribute("data-level-index"));
+    const rIdx = Number(btn.getAttribute("data-room-index"));
+    const level = virtualTour.szintek[lIdx];
+    if (!level || !Array.isArray(level.szobak) || !level.szobak[rIdx]) return;
+
+    const room = level.szobak[rIdx];
+
+    const nev = prompt("Szoba neve", room.nev || "");
+    if (nev === null) return;
+    room.nev = nev.trim();
+
+    const id = prompt("Szoba ID (pl. nappali)", room.id || "");
+    if (id === null) return;
+    room.id = id.trim();
+
+    const pano = prompt("Panoráma URL", room.panorama_url || "");
+    if (pano === null) return;
+    room.panorama_url = pano.trim();
+
+    const xStr = prompt(
+      "X pozíció az alaprajzon (0-100)",
+      room.x != null ? String(room.x) : "50"
+    );
+    if (xStr === null) return;
+    const yStr = prompt(
+      "Y pozíció az alaprajzon (0-100)",
+      room.y != null ? String(room.y) : "50"
+    );
+    if (yStr === null) return;
+
+    const dirStr = prompt(
+      "Kezdő irány (fok, pl. 0)",
+      room.kezdo_irany != null ? String(room.kezdo_irany) : "0"
+    );
+    if (dirStr === null) return;
+
+    const m2Str = prompt(
+      "Alapterület m² (opcionális)",
+      room.m2 != null ? String(room.m2) : ""
+    );
+    if (m2Str === null) return;
+
+    const x = parseFloat(xStr.replace(",", "."));
+    const y = parseFloat(yStr.replace(",", "."));
+    const dir = parseFloat(dirStr.replace(",", "."));
+    const m2 = m2Str.trim() ? parseFloat(m2Str.replace(",", ".")) : null;
+
+    if (!Number.isNaN(x)) room.x = x;
+    if (!Number.isNaN(y)) room.y = y;
+    if (!Number.isNaN(dir)) room.kezdo_irany = dir;
+    if (m2 !== null && !Number.isNaN(m2)) room.m2 = m2;
+
+    renderLevels();
+    renderJson();
+    return;
+  }
 }
 
 function handleLevelsListInput(e) {
