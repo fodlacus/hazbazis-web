@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="hu">
+
+<head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Virtuális Túra Szerkesztő - Hazbazis.hu</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="bg-[#111827] text-white min-h-screen font-sans">
+      <div class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+            <div class="flex items-center justify-between">
+                  <div>
+                        <h1 class="text-2xl font-bold text-[#E2F1B0]">Virtuális Túra Szerkesztő</h1>
+                        <p class="text-white/60 text-sm mt-1">Szintek, szobák és hotspotok beállítása egy ingatlanhoz.
+                        </p>
+                  </div>
+                  <div class="flex items-center gap-3">
+                        <a href="admin-hub.html"
+                              class="px-4 py-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:bg-white/5 transition text-sm flex items-center gap-2">
+                              <i class="fa-solid fa-arrow-left"></i> Vissza
+                        </a>
+                        <button id="logout-btn"
+                              class="px-4 py-2 rounded-full border border-white/20 text-white/70 hover:text-white hover:bg-white/5 transition text-sm flex items-center gap-2">
+                              <i class="fa-solid fa-right-from-bracket"></i> Kijelentkezés
+                        </button>
+                  </div>
+            </div>
+
+            <!-- 1. Ingatlan kiválasztása -->
+            <section class="bg-[#111827] border border-white/10 rounded-2xl p-4 space-y-3">
+                  <h2 class="text-sm font-semibold uppercase tracking-wider text-white/60">Ingatlan kiválasztása</h2>
+                  <div class="flex flex-col md:flex-row md:items-center gap-3">
+                        <div class="flex-1">
+                              <label for="hb-id" class="block text-xs text-white/50 uppercase tracking-wider mb-1">HB
+                                    azonosító</label>
+                              <input id="hb-id" type="text" placeholder="HB-372205"
+                                    class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-[#E2F1B0] outline-none">
+                        </div>
+                        <button id="load-tour-btn"
+                              class="px-4 py-2 rounded-xl bg-[#E2F1B0] hover:bg-[#cde088] text-[#111827] font-semibold text-sm shadow-lg flex items-center gap-2">
+                              <i class="fa-solid fa-download"></i> Betöltés
+                        </button>
+                        <button id="new-tour-btn"
+                              class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold text-sm border border-white/10 flex items-center gap-2">
+                              <i class="fa-solid fa-plus"></i> Új túra
+                        </button>
+                  </div>
+                  <p id="tour-status" class="text-xs text-white/50"></p>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                  <!-- 2. Szintek és szobák szerkesztése -->
+                  <section class="bg-[#111827] border border-white/10 rounded-2xl p-4 space-y-4">
+                        <div class="flex items-center justify-between">
+                              <h2 class="text-sm font-semibold uppercase tracking-wider text-white/60">Szintek és
+                                    szobák</h2>
+                              <button id="add-level-btn"
+                                    class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white flex items-center gap-2 border border-white/10">
+                                    <i class="fa-solid fa-layer-group"></i> Új szint
+                              </button>
+                        </div>
+                        <div id="levels-list" class="space-y-3 text-sm">
+                              <!-- Dinamikusan töltve -->
+                              <p class="text-white/40 text-xs">Adj hozzá egy szintet a kezdéshez.</p>
+                        </div>
+                  </section>
+
+                  <!-- 3. JSON előnézet & mentés -->
+                  <section class="bg-[#020617] border border-white/10 rounded-2xl p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                              <h2 class="text-sm font-semibold uppercase tracking-wider text-white/60">JSON
+                                    előnézet</h2>
+                              <div class="flex items-center gap-2">
+                                    <button id="copy-json-btn"
+                                          class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white border border-white/10 flex items-center gap-2">
+                                          <i class="fa-solid fa-copy"></i> Másolás
+                                    </button>
+                                    <button id="save-tour-btn"
+                                          class="px-3 py-1.5 rounded-lg bg-[#E2F1B0] hover:bg-[#cde088] text-xs text-[#111827] font-semibold shadow-md flex items-center gap-2">
+                                          <i class="fa-solid fa-floppy-disk"></i> Mentés Firestore-ba
+                                    </button>
+                              </div>
+                        </div>
+                        <pre id="json-preview"
+                              class="bg-black/40 border border-white/10 rounded-lg p-3 text-[11px] leading-[1.4] text-[#E5E7EB] overflow-auto max-h-[420px] whitespace-pre-wrap"></pre>
+                  </section>
+            </div>
+
+      </div>
+
+      <script type="module" src="../../js/admin/virtual-tour-admin.js"></script>
+</body>
+
+</html>
