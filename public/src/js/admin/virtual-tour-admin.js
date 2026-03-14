@@ -23,6 +23,13 @@ const logoutBtn = document.getElementById("logout-btn");
 let currentHbId = null;
 let virtualTour = { szintek: [] };
 
+/** Ha a Pin Keresőből jön vissza x,y, ide írjuk a szobába. */
+let pendingPinEdit = null; // { levelIndex, roomIndex }
+
+// Később: Hotspot (HP) gombok kezelése – minden hotspotnak kell "yaw" (iránymutató).
+// Érdemes lehet globális vezérlés: pl. egy közös "yaw beállítás" vagy szobánkénti lista,
+// hogy ne kelljen kézzel minden hotspotnál külön megadni (tour_config.json struktúra: hotspots[].cel_id, szoveg, yaw).
+
 function renderJson() {
   jsonPreview.textContent = JSON.stringify(virtualTour, null, 2);
 }
@@ -86,17 +93,32 @@ function renderLevels() {
         ${(level.szobak || [])
           .map(
             (room, roomIndex) => `
-          <div class="flex items-center justify-between text-[11px] bg-black/30 border border-white/10 rounded px-2 py-1">
-            <div class="flex-1 truncate">
-              <span class="font-semibold">${room.nev || "(név nélkül)"}</span>
-              <span class="opacity-50 ml-1">(${room.id || ""})</span>
+          <div class="text-[11px] bg-black/30 border border-white/10 rounded px-2 py-1.5 space-y-1">
+            <div class="flex items-center justify-between">
+              <div class="flex-1 truncate">
+                <span class="font-semibold">${room.nev || "(név nélkül)"}</span>
+                <span class="opacity-50 ml-1">(${room.id || ""})</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button data-level-index="${levelIndex}" data-room-index="${roomIndex}" class="edit-room text-xs text-[#E2F1B0] hover:underline">
+                  Szerkesztés
+                </button>
+                <button data-level-index="${levelIndex}" data-room-index="${roomIndex}" class="delete-room text-xs text-red-300 hover:text-red-400">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button data-level-index="${levelIndex}" data-room-index="${roomIndex}" class="edit-room text-xs text-[#E2F1B0] hover:underline">
-                Szerkesztés
-              </button>
-              <button data-level-index="${levelIndex}" data-room-index="${roomIndex}" class="delete-room text-xs text-red-300 hover:text-red-400">
-                <i class="fa-solid fa-trash"></i>
+            <div class="flex items-center gap-2 flex-wrap">
+              <label class="text-white/50">x:</label>
+              <input type="text" inputmode="decimal" value="${
+                room.x != null ? room.x : 50
+              }" data-level-index="${levelIndex}" data-room-index="${roomIndex}" data-field="x" class="room-xy-input w-14 bg-black/40 border border-white/10 rounded px-1 py-0.5 text-xs font-mono text-right" />
+              <label class="text-white/50">y:</label>
+              <input type="text" inputmode="decimal" value="${
+                room.y != null ? room.y : 50
+              }" data-level-index="${levelIndex}" data-room-index="${roomIndex}" data-field="y" class="room-xy-input w-14 bg-black/40 border border-white/10 rounded px-1 py-0.5 text-xs font-mono text-right" />
+              <button type="button" data-level-index="${levelIndex}" data-room-index="${roomIndex}" class="open-pin-btn text-[10px] px-2 py-0.5 rounded bg-[#3D4A16] text-[#E2F1B0] border border-white/20 hover:bg-[#4d5e1c]" title="Alaprajzon kattintva megkapod az x,y-t, és visszaküldi a szerkesztőbe">
+                📍 Pin megnyitása
               </button>
             </div>
           </div>
@@ -244,6 +266,29 @@ function handleLevelsListClick(e) {
     return;
   }
 
+  if (
+    target.classList.contains("open-pin-btn") ||
+    target.closest(".open-pin-btn")
+  ) {
+    const btn = target.closest(".open-pin-btn");
+    const lIdx = Number(btn.getAttribute("data-level-index"));
+    const rIdx = Number(btn.getAttribute("data-room-index"));
+    const level = virtualTour.szintek[lIdx];
+    if (!level || !Array.isArray(level.szobak) || !level.szobak[rIdx]) return;
+    const alaprajzUrl = (level.alaprajz_url || "").trim();
+    pendingPinEdit = { levelIndex: lIdx, roomIndex: rIdx };
+    const url = alaprajzUrl
+      ? `pin-kereso.html?image=${encodeURIComponent(alaprajzUrl)}`
+      : "pin-kereso.html";
+    window.open(url, "pin-kereso", "width=900,height=700,scrollbars=yes");
+    if (!alaprajzUrl)
+      touchStatus(
+        "Alaprajz URL nincs megadva – a Pin Keresőben töltsd fel a képet.",
+        true
+      );
+    return;
+  }
+
   if (target.classList.contains("edit-room") || target.closest(".edit-room")) {
     const btn = target.closest(".edit-room");
     const lIdx = Number(btn.getAttribute("data-level-index"));
@@ -321,6 +366,17 @@ function handleLevelsListInput(e) {
     virtualTour.szintek[idx][field] = target.checked;
     renderJson();
   }
+
+  if (target.classList.contains("room-xy-input")) {
+    const lIdx = Number(target.getAttribute("data-level-index"));
+    const rIdx = Number(target.getAttribute("data-room-index"));
+    const field = target.getAttribute("data-field");
+    const val = parseFloat(String(target.value).replace(",", "."));
+    if (virtualTour.szintek[lIdx]?.szobak[rIdx] != null && !Number.isNaN(val)) {
+      virtualTour.szintek[lIdx].szobak[rIdx][field] = val;
+      renderJson();
+    }
+  }
 }
 
 async function saveTour() {
@@ -349,6 +405,30 @@ function copyJson() {
     .then(() => touchStatus("JSON a vágólapra másolva."))
     .catch(() => touchStatus("A JSON másolása nem sikerült.", true));
 }
+
+/** Pin Kereső ablakból érkező koordináta (postMessage). */
+function applyPinFromMessage(x, y) {
+  if (pendingPinEdit == null) return;
+  const { levelIndex, roomIndex } = pendingPinEdit;
+  const level = virtualTour.szintek[levelIndex];
+  if (!level?.szobak?.[roomIndex]) return;
+  level.szobak[roomIndex].x = x;
+  level.szobak[roomIndex].y = y;
+  pendingPinEdit = null;
+  renderLevels();
+  renderJson();
+  touchStatus("Pin koordináta beírva (x: " + x + ", y: " + y + ").");
+}
+
+window.addEventListener("message", (e) => {
+  if (
+    e.data?.type === "pin-koordinata" &&
+    typeof e.data.x === "number" &&
+    typeof e.data.y === "number"
+  ) {
+    applyPinFromMessage(e.data.x, e.data.y);
+  }
+});
 
 // AUTH & logout
 onAuthStateChanged(auth, (user) => {
