@@ -280,20 +280,37 @@ function frissitJelmagyarazat(csoportId) {
     !def.ertekek ||
     def.ertekek.length === 0
   ) {
-    el.innerHTML = '<span class="text-white/50">Földrajzi klaszterezés</span>';
+    const total = lastSzurtIngatlanok.length;
+    el.innerHTML =
+      total > 0
+        ? `<span style="color:rgba(255,255,255,0.7)">Földrajzi klaszterezés · ${total} találat</span>`
+        : '<span style="color:rgba(255,255,255,0.5)">Földrajzi klaszterezés</span>';
     return;
   }
-  el.innerHTML = def.ertekek
-    .map(
-      (ertek) =>
-        `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
+  const counts = {};
+  def.ertekek.forEach((e) => {
+    counts[e] = 0;
+  });
+  lastSzurtIngatlanok.forEach((ing) => {
+    const v = getCsoportErtek(ing, csoportId);
+    if (v != null && counts[v] !== undefined) counts[v]++;
+    else if (v) counts["_egyeb"] = (counts["_egyeb"] || 0) + 1;
+  });
+  el.innerHTML =
+    def.ertekek
+      .map(
+        (ertek) =>
+          `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
           <span style="width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,0.3);background-color:${
             def.szinek[ertek] || "#757575"
           };flex-shrink:0"></span>
-          <span>${ertek}</span>
+          <span>${ertek} <strong>(${counts[ertek] ?? 0})</strong></span>
         </div>`
-    )
-    .join("");
+      )
+      .join("") +
+    (counts["_egyeb"]
+      ? `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;color:rgba(255,255,255,0.6)"><span style="width:12px;height:12px;border-radius:50%;background:#757575;flex-shrink:0"></span><span>Egyéb (${counts["_egyeb"]})</span></div>`
+      : "");
 }
 
 function initCsoportPanel() {
@@ -303,6 +320,14 @@ function initCsoportPanel() {
   select.addEventListener("change", () => {
     aktualisCsoportId = select.value || "default";
     frissitJelmagyarazat(aktualisCsoportId);
+    try {
+      const raw = sessionStorage.getItem(TERKEP_STATE_KEY);
+      if (raw) {
+        const state = JSON.parse(raw);
+        state.csoportId = aktualisCsoportId;
+        sessionStorage.setItem(TERKEP_STATE_KEY, JSON.stringify(state));
+      }
+    } catch (e) {}
     if (lastSzurtIngatlanok.length > 0) {
       terkep_markerek_frissitese(lastSzurtIngatlanok);
     }
@@ -311,7 +336,10 @@ function initCsoportPanel() {
 
 function mentesKijelolesAllapot(overlay, szurt_ingatlanok) {
   try {
-    let state = { ingatlanIds: (szurt_ingatlanok || []).map((i) => i.id) };
+    let state = {
+      ingatlanIds: (szurt_ingatlanok || []).map((i) => i.id),
+      csoportId: aktualisCsoportId,
+    };
     if (overlay instanceof google.maps.Polygon) {
       const path = overlay.getPath().getArray();
       state.type = "polygon";
@@ -350,6 +378,14 @@ async function restoreKijelolesAllapot() {
   const idSet = new Set(state.ingatlanIds);
   const szurt_ingatlanok = allIngatlanok.filter((i) => idSet.has(i.id));
   if (!szurt_ingatlanok.length) return;
+
+  lastSzurtIngatlanok = szurt_ingatlanok;
+  if (state.csoportId && CSOPORT_DEFINICIOK[state.csoportId]) {
+    aktualisCsoportId = state.csoportId;
+    const sel = document.getElementById("csoport-select");
+    if (sel) sel.value = state.csoportId;
+    frissitJelmagyarazat(state.csoportId);
+  }
 
   if (utolso_rajz) {
     utolso_rajz.setMap(null);
@@ -631,4 +667,5 @@ async function terkep_markerek_frissitese(ingatlan_tomb) {
       aktiv_markerek.push(uj_marker);
     }
   }
+  frissitJelmagyarazat(aktualisCsoportId);
 }
