@@ -87,6 +87,22 @@
             </button>
       </div>
 
+      <div id="csoport-panel" class="map-vezerlo"
+            style="left: 10px; top: 56px; padding: 10px 12px; min-width: 200px; max-width: 260px;">
+            <label for="csoport-select"
+                  style="display:block;color:#E2F1B0;font-size:11px;font-weight:600;letter-spacing:0.05em;margin-bottom:6px;">Csoportosítás</label>
+            <select id="csoport-select"
+                  style="width:100%;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.2);border-radius:4px;padding:6px 8px;font-size:13px;color:#fff;margin-bottom:8px;outline:none;">
+                  <option value="default">Alapértelmezett (földrajzi)</option>
+                  <option value="tipus">Típus</option>
+                  <option value="vetelar">Vételár</option>
+                  <option value="akcio">Akció</option>
+                  <option value="allapot">Állapot</option>
+                  <option value="kategoria">Kategória</option>
+            </select>
+            <div id="csoport-jelmagyarazat" style="font-size:12px;color:rgba(255,255,255,0.85);"></div>
+      </div>
+
       <script>
             window.terkep_alap_inditasa = function () {
                   import("../../js/vevo/terkep-google-engine.js")

@@ -18,6 +18,96 @@ const KLASZTER_KUSZOB = 5;
 const TERKEP_STATE_KEY = "hazbazis_terkep_kijeloles";
 const RESTORE_RETRY_MAX = 15;
 let restoreRetryCount = 0;
+let lastSzurtIngatlanok = [];
+let aktualisCsoportId = "default";
+
+// Csoportok a marker színezéshez (mező, felirat, értékek, színek)
+const CSOPORT_DEFINICIOK = {
+  default: { label: "Alapértelmezett (földrajzi)", ertekek: [], szinek: {} },
+  tipus: {
+    label: "Típus",
+    field: "tipus",
+    ertekek: ["Lakás", "Családi ház", "Ikerház", "Sorház", "Telek", "Garázs"],
+    szinek: {
+      Lakás: "#3D4A16",
+      "Családi ház": "#6B8E23",
+      Ikerház: "#8bc34a",
+      Sorház: "#009688",
+      Telek: "#2196F3",
+      Garázs: "#795548",
+    },
+  },
+  vetelar: {
+    label: "Vételár",
+    field: "vételár",
+    ertekek: ["max 70 millió Ft", "70–150 millió között", "150 millió fölött"],
+    szinek: {
+      "max 70 millió Ft": "#2E7D32",
+      "70–150 millió között": "#F9A825",
+      "150 millió fölött": "#C62828",
+    },
+  },
+  akcio: {
+    label: "Akció",
+    field: "akcios_ar",
+    ertekek: ["Akciós", "Nem akciós"],
+    szinek: { Akciós: "#D84315", "Nem akciós": "#5C6BC0" },
+  },
+  allapot: {
+    label: "Állapot",
+    field: "allapot",
+    ertekek: [
+      "Új építésű",
+      "Újszerű",
+      "Felújított",
+      "Jó állapotú",
+      "Lakható",
+      "Felújítandó",
+    ],
+    szinek: {
+      "Új építésű": "#00695C",
+      Újszerű: "#00838F",
+      Felújított: "#8bc34a",
+      "Jó állapotú": "#7CB342",
+      Lakható: "#F9A825",
+      Felújítandó: "#EF6C00",
+    },
+  },
+  kategoria: {
+    label: "Kategória",
+    field: "kategoria",
+    ertekek: ["Eladó", "Kiadó"],
+    szinek: { Eladó: "#3D4A16", Kiadó: "#1565C0" },
+  },
+};
+
+function getCsoportErtek(ingatlan, csoportId) {
+  const def = CSOPORT_DEFINICIOK[csoportId];
+  if (!def || csoportId === "default" || !def.field) return null;
+  if (def.field === "vételár") {
+    const ar = Number(ingatlan.vételár) || 0;
+    if (ar <= 70_000_000) return "max 70 millió Ft";
+    if (ar <= 150_000_000) return "70–150 millió között";
+    return "150 millió fölött";
+  }
+  if (def.field === "akcios_ar") {
+    const v = ingatlan.akcios_ar;
+    return v && String(v).trim() !== "" ? "Akciós" : "Nem akciós";
+  }
+  const raw = ingatlan[def.field];
+  const s = raw != null ? String(raw).trim() : "";
+  if (!s) return null;
+  const match = def.ertekek.find((e) => e.toLowerCase() === s.toLowerCase());
+  return match || s;
+}
+
+function getMarkerColor(ingatlan, csoportId) {
+  if (!csoportId || csoportId === "default") return "#C62828";
+  const def = CSOPORT_DEFINICIOK[csoportId];
+  if (!def || !def.szinek) return "#C62828";
+  const ertek = getCsoportErtek(ingatlan, csoportId);
+  return def.szinek[ertek] || "#757575";
+}
 
 // Árkategória (M Ft), m2 sávok a csoportosításhoz
 function getArKategoria(ar) {
@@ -68,6 +158,7 @@ function initDeleteButton() {
         utolso_rajz = null;
       }
       // 2. Letöröljük a markereket is (üres listát küldünk a frissítőnek)
+      lastSzurtIngatlanok = [];
       terkep_markerek_frissitese([]);
       try {
         sessionStorage.removeItem(TERKEP_STATE_KEY);
@@ -175,7 +266,47 @@ export function terkep_alap_inditasa() {
     }
   );
 
+  initCsoportPanel();
   setTimeout(() => restoreKijelolesAllapot(), 100);
+}
+
+function frissitJelmagyarazat(csoportId) {
+  const el = document.getElementById("csoport-jelmagyarazat");
+  if (!el) return;
+  const def = CSOPORT_DEFINICIOK[csoportId];
+  if (
+    !def ||
+    csoportId === "default" ||
+    !def.ertekek ||
+    def.ertekek.length === 0
+  ) {
+    el.innerHTML = '<span class="text-white/50">Földrajzi klaszterezés</span>';
+    return;
+  }
+  el.innerHTML = def.ertekek
+    .map(
+      (ertek) =>
+        `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;">
+          <span style="width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,0.3);background-color:${
+            def.szinek[ertek] || "#757575"
+          };flex-shrink:0"></span>
+          <span>${ertek}</span>
+        </div>`
+    )
+    .join("");
+}
+
+function initCsoportPanel() {
+  const select = document.getElementById("csoport-select");
+  if (!select) return;
+  frissitJelmagyarazat(aktualisCsoportId);
+  select.addEventListener("change", () => {
+    aktualisCsoportId = select.value || "default";
+    frissitJelmagyarazat(aktualisCsoportId);
+    if (lastSzurtIngatlanok.length > 0) {
+      terkep_markerek_frissitese(lastSzurtIngatlanok);
+    }
+  });
 }
 
 function mentesKijelolesAllapot(overlay, szurt_ingatlanok) {
@@ -376,6 +507,7 @@ function klaszter_tartalom_html(markerek) {
 }
 
 async function terkep_markerek_frissitese(ingatlan_tomb) {
+  lastSzurtIngatlanok = Array.isArray(ingatlan_tomb) ? [...ingatlan_tomb] : [];
   if (aktualis_clusterer) {
     aktualis_clusterer.clearMarkers();
     aktualis_clusterer.setMap(null);
@@ -398,10 +530,19 @@ async function terkep_markerek_frissitese(ingatlan_tomb) {
       adat.hazszam || ""
     }`.trim();
 
+    const szin = getMarkerColor(adat, aktualisCsoportId);
     const uj_marker = new google.maps.Marker({
       position: pozicio,
       map: null,
       title: pontos_cim,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 12,
+        fillColor: szin,
+        fillOpacity: 0.95,
+        strokeColor: "#ffffff",
+        strokeWeight: 1.5,
+      },
     });
     uj_marker.ingatlanData = adat;
     const info_ablak = new google.maps.InfoWindow({
