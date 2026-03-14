@@ -386,6 +386,16 @@ async function terkep_markerek_frissitese(ingatlan_tomb) {
       map: fo_terkep,
       markers: markerek,
       renderer: Renderer,
+      onClusterClick: (event, cluster, map) => {
+        const currentZoom = map.getZoom() || 11;
+        const targetZoom = Math.min(currentZoom + 2, 18);
+        const center =
+          cluster.position || (cluster.getCenter && cluster.getCenter());
+        if (center) {
+          map.panTo(center);
+        }
+        map.setZoom(targetZoom);
+      },
     });
   } else {
     for (let k = 0; k < markerek.length; k++) {
