@@ -94,6 +94,15 @@ function getCsoportErtek(ingatlan, csoportId) {
     const v = ingatlan.akcios_ar;
     return v && String(v).trim() !== "" ? "Akciós" : "Nem akciós";
   }
+  if (def.field === "kategoria") {
+    const raw = ingatlan.kategoria;
+    const s = raw != null ? String(raw).trim() : "";
+    if (!s) return "Eladó"; // hiányzó mező (régi adat) → alapértelmezett
+    const lower = s.toLowerCase();
+    if (lower === "elado" || lower === "eladó") return "Eladó";
+    if (lower === "kiado" || lower === "kiadó") return "Kiadó";
+    return "Eladó"; // ismeretlen érték → Eladó, nincs Egyéb
+  }
   const raw = ingatlan[def.field];
   const s = raw != null ? String(raw).trim() : "";
   if (!s) return null;
@@ -475,8 +484,12 @@ function egy_ingatlan_info_html(adat) {
   const pontos_cim = `${adat.telepules || ""}, ${adat.utca || ""} ${
     adat.hazszam || ""
   }`.trim();
+  const azon =
+    (adat.azon && String(adat.azon).trim()) ||
+    "HB-" + (adat.id || "").substring(0, 8);
   return `
     <div style="padding: 5px; max-width: 200px; font-family: sans-serif;">
+      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #3D4A16;">${azon}</p>
       <img src="${borito_kep}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; background-color: #eee;">
       <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #333;">${arMillio} Millió Ft</h3>
       <p style="margin: 0 0 10px 0; font-size: 13px; color: #666;">${pontos_cim}</p>
