@@ -16,6 +16,8 @@ let utolso_rajz = null;
 
 const KLASZTER_KUSZOB = 5;
 const TERKEP_STATE_KEY = "hazbazis_terkep_kijeloles";
+const RESTORE_RETRY_MAX = 15;
+let restoreRetryCount = 0;
 
 // Árkategória (M Ft), m2 sávok a csoportosításhoz
 function getArKategoria(ar) {
@@ -173,7 +175,7 @@ export function terkep_alap_inditasa() {
     }
   );
 
-  restoreKijelolesAllapot();
+  setTimeout(() => restoreKijelolesAllapot(), 100);
 }
 
 function mentesKijelolesAllapot(overlay, szurt_ingatlanok) {
@@ -196,7 +198,7 @@ function mentesKijelolesAllapot(overlay, szurt_ingatlanok) {
 }
 
 async function restoreKijelolesAllapot() {
-  if (!fo_terkep || !allIngatlanok.length) return;
+  if (!fo_terkep) return;
   let state;
   try {
     const raw = sessionStorage.getItem(TERKEP_STATE_KEY);
@@ -206,6 +208,14 @@ async function restoreKijelolesAllapot() {
   } catch (e) {
     return;
   }
+  if (!allIngatlanok.length) {
+    if (restoreRetryCount < RESTORE_RETRY_MAX) {
+      restoreRetryCount++;
+      setTimeout(restoreKijelolesAllapot, 400);
+    }
+    return;
+  }
+  restoreRetryCount = 0;
   const idSet = new Set(state.ingatlanIds);
   const szurt_ingatlanok = allIngatlanok.filter((i) => idSet.has(i.id));
   if (!szurt_ingatlanok.length) return;
