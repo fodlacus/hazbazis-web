@@ -14,7 +14,8 @@ let aktualis_clusterer = null; // MarkerClusterer példány, ha van
 let allIngatlanok = [];
 let utolso_rajz = null;
 
-const KLASZTER_KUSZOB = 5; // Ennél több marker esetén klaszterezünk (kevés tesztadaton is látszik; 20+ esetén növelhető)
+const KLASZTER_KUSZOB = 5;
+const TERKEP_STATE_KEY = "hazbazis_terkep_kijeloles";
 
 // Árkategória (M Ft), m2 sávok a csoportosításhoz
 function getArKategoria(ar) {
@@ -41,10 +42,11 @@ const getUrl = (item) => {
 
 // --- 3. INDÍTÁS AMIKOR AZ OLDAL BETÖLTÖTT ---
 async function initTerkepOldal() {
-  // Először letöltjük az adatokat
   await loadIngatlanok();
-  // Inicializáljuk a törlés gombot
   initDeleteButton();
+  if (fo_terkep) {
+    restoreKijelolesAllapot();
+  }
 }
 
 if (document.readyState === "loading") {
@@ -65,6 +67,9 @@ function initDeleteButton() {
       }
       // 2. Letöröljük a markereket is (üres listát küldünk a frissítőnek)
       terkep_markerek_frissitese([]);
+      try {
+        sessionStorage.removeItem(TERKEP_STATE_KEY);
+      } catch (e) {}
       console.log("Keresés törölve.");
     });
   }
@@ -164,8 +169,80 @@ export function terkep_alap_inditasa() {
       }
 
       await terkep_markerek_frissitese(szurt_ingatlanok);
+      mentesKijelolesAllapot(esemeny.overlay, szurt_ingatlanok);
     }
   );
+
+  restoreKijelolesAllapot();
+}
+
+function mentesKijelolesAllapot(overlay, szurt_ingatlanok) {
+  try {
+    let state = { ingatlanIds: (szurt_ingatlanok || []).map((i) => i.id) };
+    if (overlay instanceof google.maps.Polygon) {
+      const path = overlay.getPath().getArray();
+      state.type = "polygon";
+      state.path = path.map((p) => ({ lat: p.lat(), lng: p.lng() }));
+    } else if (overlay instanceof google.maps.Circle) {
+      const c = overlay.getCenter();
+      state.type = "circle";
+      state.center = { lat: c.lat(), lng: c.lng() };
+      state.radius = overlay.getRadius();
+    }
+    sessionStorage.setItem(TERKEP_STATE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn("Kijelölés mentése sikertelen:", e);
+  }
+}
+
+async function restoreKijelolesAllapot() {
+  if (!fo_terkep || !allIngatlanok.length) return;
+  let state;
+  try {
+    const raw = sessionStorage.getItem(TERKEP_STATE_KEY);
+    if (!raw) return;
+    state = JSON.parse(raw);
+    if (!state.ingatlanIds || !state.ingatlanIds.length) return;
+  } catch (e) {
+    return;
+  }
+  const idSet = new Set(state.ingatlanIds);
+  const szurt_ingatlanok = allIngatlanok.filter((i) => idSet.has(i.id));
+  if (!szurt_ingatlanok.length) return;
+
+  if (utolso_rajz) {
+    utolso_rajz.setMap(null);
+    utolso_rajz = null;
+  }
+
+  if (state.type === "polygon" && state.path && state.path.length > 0) {
+    utolso_rajz = new google.maps.Polygon({
+      paths: state.path,
+      map: fo_terkep,
+      fillColor: "#8bc34a",
+      fillOpacity: 0.4,
+      strokeWeight: 2,
+      clickable: false,
+      editable: true,
+      zIndex: 1,
+    });
+  } else if (state.type === "circle" && state.center && state.radius) {
+    utolso_rajz = new google.maps.Circle({
+      center: state.center,
+      radius: state.radius,
+      map: fo_terkep,
+      fillColor: "#8bc34a",
+      fillOpacity: 0.4,
+      strokeWeight: 2,
+      clickable: false,
+      editable: true,
+      zIndex: 1,
+    });
+  }
+
+  if (utolso_rajz) {
+    await terkep_markerek_frissitese(szurt_ingatlanok);
+  }
 }
 
 window.__terkep_alap_inditasa = terkep_alap_inditasa;
@@ -352,9 +429,8 @@ async function terkep_markerek_frissitese(ingatlan_tomb) {
     );
     const Renderer = {
       render: (cluster, stats, map) => {
-        const markersArr = Array.from(cluster.markers || []);
-        const count = cluster.count ?? markersArr.length;
-        const marker = new google.maps.Marker({
+        const count = cluster.count ?? (cluster.markers || []).length;
+        return new google.maps.Marker({
           position: cluster.position,
           map,
           label: {
@@ -373,13 +449,6 @@ async function terkep_markerek_frissitese(ingatlan_tomb) {
           },
           zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
         });
-        marker.addListener("click", () => {
-          const iw = new google.maps.InfoWindow({
-            content: klaszter_tartalom_html(markersArr),
-          });
-          iw.open({ anchor: marker, map: fo_terkep });
-        });
-        return marker;
       },
     };
     aktualis_clusterer = new MarkerClustererClass({
