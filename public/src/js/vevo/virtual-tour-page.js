@@ -62,47 +62,88 @@ function initTour(tourData) {
 
   tourData.szintek.forEach((szint) => {
     szint.szobak.forEach((szoba) => {
+      const tipus = szoba.tipus || "pano";
       if (!elsoSzobaId) elsoSzobaId = szoba.id; // Az legelső szint legelső szobája a start
 
-      scenes[szoba.id] = {
-        title: szoba.nev,
-        type: "equirectangular",
-        panorama: szoba.panorama_url,
-        autoLoad: true,
-        yaw: szoba.kezdo_irany || 0,
-        hotSpots: (szoba.hotspots || []).map((h) => ({
-          pitch: h.pitch || -10,
-          yaw: h.yaw || 0,
-          type: "scene",
-          text: h.szoveg,
-          sceneId: h.cel_id,
-        })),
-      };
+      if (tipus === "pano") {
+        scenes[szoba.id] = {
+          title: szoba.nev,
+          type: "equirectangular",
+          panorama: szoba.panorama_url, // A sima képeknél is ezt a mezőt használjuk majd
+          autoLoad: true,
+          yaw: szoba.kezdo_irany || 0,
+          hotSpots: (szoba.hotspots || []).map((h) => ({
+            pitch: h.pitch || -10,
+            yaw: h.yaw || 0,
+            type: "scene",
+            text: h.szoveg,
+            sceneId: h.cel_id,
+          })),
+        };
+      }
     });
   });
 
   // 2. Pannellum Indítása
-  viewer = pannellum.viewer("panorama", {
-    default: {
-      firstScene: elsoSzobaId,
-      sceneFadeDuration: 1000,
-      compass: false,
-      crossOrigin: "anonymous",
-    },
-    scenes: scenes,
-  });
 
-  // 3. Eseményfigyelő: Ha szobát váltunk (akár nyíllal, akár térképen)
-  viewer.on("scenechange", (ujSzobaId) => {
-    frissitsdAHelyszint(ujSzobaId);
-  });
+  if (Object.keys(scenes).length > 0) {
+    viewer = pannellum.viewer("panorama", {
+      default: {
+        firstScene: Object.keys(scenes)[0], // Az első pano szoba
+        sceneFadeDuration: 1000,
+        compass: false,
+        crossOrigin: "anonymous",
+      },
+      scenes: scenes,
+    });
 
-  // 4. Első állapot beállítása
-  frissitsdAHelyszint(elsoSzobaId);
+    // Eseményfigyelő a Pannellumon belüli nyilas mozgáshoz
+    viewer.on("scenechange", (ujSzobaId) => {
+      frissitsdAHelyszint(ujSzobaId);
+    });
+  }
+
+  // 3. Első állapot betöltése (az okos vezérlőn keresztül)
+  loadRoom(elsoSzobaId);
   renderSzintValaszto();
 }
 
-// FŐ LOGIKA: Hol vagyunk most?
+// --- OKOS VEZÉRLŐ FÜGGVÉNY ---
+function loadRoom(szobaId) {
+  // Megkeressük a szoba adatait
+  let talaltSzoba = null;
+  for (const szint of currentTourData.szintek) {
+    const s = szint.szobak.find((r) => r.id === szobaId);
+    if (s) {
+      talaltSzoba = s;
+      break;
+    }
+  }
+
+  if (!talaltSzoba) return;
+
+  const tipus = talaltSzoba.tipus || "pano";
+  const panoDiv = document.getElementById("panorama");
+  const flatDiv = document.getElementById("flat-image-viewer");
+  const flatImg = document.getElementById("flat-image-display");
+
+  if (tipus === "pano") {
+    // Ha 360-as: Pannellum mutatása, sima kép elrejtése
+    panoDiv.classList.remove("hidden");
+    flatDiv.classList.add("hidden");
+    if (viewer) {
+      viewer.loadScene(szobaId);
+    }
+  } else if (tipus === "sima") {
+    // Ha sima fotó: Pannellum elrejtése, sima kép mutatása
+    panoDiv.classList.add("hidden");
+    flatDiv.classList.remove("hidden");
+    flatImg.src = talaltSzoba.panorama_url; // Itt a normál fotó URL-je kell legyen
+
+    // Mivel a Pannellum most "alszik", kézzel kell frissítenünk a feliratokat és a piros pöttyöt
+    frissitsdAHelyszint(szobaId);
+  }
+}
 
 // FŐ LOGIKA: Hol vagyunk most?
 function frissitsdAHelyszint(szobaId) {
@@ -124,7 +165,6 @@ function frissitsdAHelyszint(szobaId) {
     if (aktualisSzintId !== talaltSzint.id) {
       valtsSzintet(talaltSzint.id);
     }
-
     // --- ITT A VÁLTOZÁS ---
 
     // 1. Frissítjük a FENTI lebegő sáv kiírását (ha létezik)
@@ -212,13 +252,15 @@ function renderPins(szobak) {
     btn.style.left = `${szoba.x}%`;
     btn.style.top = `${szoba.y}%`;
 
+    const iconClass = szoba.tipus === "sima" ? "fa-camera" : "fa-eye";
+
     btn.className =
       "absolute w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-white bg-[#3D4A16] shadow-lg hover:scale-125 transition-all z-20 cursor-pointer flex items-center justify-center";
     btn.innerHTML = '<i class="fa-solid fa-eye text-[10px] text-white"></i>';
     btn.dataset.id = szoba.id;
 
     btn.onclick = () => {
-      viewer.loadScene(szoba.id);
+      loadRoom(szoba.id);
     };
     container.appendChild(btn);
   });
