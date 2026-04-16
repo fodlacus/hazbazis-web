@@ -7,6 +7,7 @@ import { adatbazis } from "../util/firebase-config.js";
 let viewer = null;
 let currentTourData = null;
 let aktualisSzintId = null;
+let aktualisSzobaIdGlob = null;
 
 // INDÍTÁS
 window.addEventListener("DOMContentLoaded", async () => {
@@ -37,9 +38,25 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 // ADATOK EGYSÉGESÍTÉSE (Hogy a régi egyszintes is működjön)
 function normalizaldAzAdatokat(rawData) {
-  if (rawData.tobb_szintes) return rawData;
+  if (!rawData || typeof rawData !== "object") {
+    return { tobb_szintes: true, szintek: [] };
+  }
 
-  // Ha régi típusú, átalakítjuk "egy szintesre"
+  const biztonsagosSzintek = (tomb) =>
+    (Array.isArray(tomb) ? tomb : []).map((sz) => ({
+      ...sz,
+      szobak: Array.isArray(sz.szobak) ? sz.szobak : [],
+    }));
+
+  // VT szerkesztő / Firestore: gyakran csak { szintek: [...] }, tobb_szintes nélkül
+  if (Array.isArray(rawData.szintek) && rawData.szintek.length > 0) {
+    return {
+      tobb_szintes: true,
+      szintek: biztonsagosSzintek(rawData.szintek),
+    };
+  }
+
+  // Régi egyszintes: alaprajz_url + szobak a dokumentum gyökerében
   return {
     tobb_szintes: true,
     szintek: [
@@ -47,7 +64,7 @@ function normalizaldAzAdatokat(rawData) {
         id: "alap",
         nev: "Alaprajz",
         alaprajz_url: rawData.alaprajz_url,
-        szobak: rawData.szobak,
+        szobak: Array.isArray(rawData.szobak) ? rawData.szobak : [],
       },
     ],
   };
@@ -61,7 +78,7 @@ function initTour(tourData) {
   let elsoSzobaId = null;
 
   tourData.szintek.forEach((szint) => {
-    szint.szobak.forEach((szoba) => {
+    (szint.szobak || []).forEach((szoba) => {
       const tipus = szoba.tipus || "pano";
       if (!elsoSzobaId) elsoSzobaId = szoba.id; // Az legelső szint legelső szobája a start
 
@@ -111,9 +128,10 @@ function initTour(tourData) {
 // --- OKOS VEZÉRLŐ FÜGGVÉNY ---
 function loadRoom(szobaId) {
   // Megkeressük a szoba adatait
+  aktualisSzobaIdGlob = szobaId;
   let talaltSzoba = null;
   for (const szint of currentTourData.szintek) {
-    const s = szint.szobak.find((r) => r.id === szobaId);
+    const s = (szint.szobak || []).find((r) => r.id === szobaId);
     if (s) {
       talaltSzoba = s;
       break;
@@ -152,7 +170,7 @@ function frissitsdAHelyszint(szobaId) {
   let talaltSzoba = null;
 
   for (const szint of currentTourData.szintek) {
-    const s = szint.szobak.find((r) => r.id === szobaId);
+    const s = (szint.szobak || []).find((r) => r.id === szobaId);
     if (s) {
       talaltSzint = szint;
       talaltSzoba = s;
@@ -209,8 +227,8 @@ function renderSzintValaszto() {
     btn.onclick = () => {
       // Gombra kattintva betöltjük a szint első szobáját
       valtsSzintet(szint.id);
-      // Opcionális: oda is ugorhatunk az első szobába
-      viewer.loadScene(szint.szobak[0].id);
+      const elso = (szint.szobak || [])[0];
+      if (viewer && elso) viewer.loadScene(elso.id);
     };
 
     // ID-t adunk neki, hogy később színezzük
@@ -223,9 +241,11 @@ function renderSzintValaszto() {
 function valtsSzintet(szintId) {
   aktualisSzintId = szintId;
   const szint = currentTourData.szintek.find((s) => s.id === szintId);
+  if (!szint) return;
 
   // 1. Alaprajz kép csere
-  document.getElementById("alaprajz-img").src = szint.alaprajz_url;
+  const alapImg = document.getElementById("alaprajz-img");
+  if (alapImg) alapImg.src = szint.alaprajz_url || "";
 
   // 2. Gombok frissítése (aktív állapot)
   const gombok = document.querySelectorAll("#szint-valaszto button");
@@ -240,7 +260,7 @@ function valtsSzintet(szintId) {
   });
 
   // 3. Pöttyök (Pin-ek) újrarajzolása az új szinthez
-  renderPins(szint.szobak);
+  renderPins(szint.szobak || []);
 }
 
 function renderPins(szobak) {
@@ -278,3 +298,29 @@ function highlightPin(id) {
     }
   });
 }
+
+// ÚJ: Lapozó funkció a sima képekhez
+window.lapozas = function (irany) {
+  // 1. Megkeressük az aktuális szintet
+  const szint = currentTourData.szintek.find((s) => s.id === aktualisSzintId);
+  if (!szint) return;
+
+  // 2. Kiszűrjük CSAK a "sima" típusú szobákat/képeket ezen a szinten
+  const simaSzobak = (szint.szobak || []).filter((sz) => sz.tipus === "sima");
+  if (simaSzobak.length === 0) return;
+
+  // 3. Megkeressük, hányadik képet nézzük éppen a listából
+  const currentIndex = simaSzobak.findIndex(
+    (sz) => sz.id === aktualisSzobaIdGlob
+  );
+  if (currentIndex === -1) return;
+
+  // 4. Kiszámoljuk a következő indexet (ha a végére ér, körbefordul az elejére)
+  let nextIndex = currentIndex + irany;
+  if (nextIndex >= simaSzobak.length) nextIndex = 0; // Utolsó után az első
+  if (nextIndex < 0) nextIndex = simaSzobak.length - 1; // Első előtt az utolsó
+
+  // 5. A Varázslat: Betöltjük az új szobát. A loadRoom() automatikusan intézi a térkép frissítését!
+  const nextSzobaId = simaSzobak[nextIndex].id;
+  loadRoom(nextSzobaId);
+};

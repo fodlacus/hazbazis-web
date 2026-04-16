@@ -138,6 +138,29 @@
                   }
             })();
 
+            // Helyi alaprajz a VT szerkesztőből (postMessage, nem fér el URL-ben)
+            window.addEventListener('message', function (ev) {
+                  if (ev.data && ev.data.type === 'vt-floor-image' && ev.data.dataUrl) {
+                        preview.src = ev.data.dataUrl;
+                        markerLayer.innerHTML = '';
+                        preview.onerror = function () {
+                              placeholder.textContent = 'A helyi alaprajz betöltése sikertelen.';
+                              placeholder.classList.remove('hidden');
+                              preview.classList.add('hidden');
+                        };
+                        preview.onload = function () {
+                              preview.classList.remove('hidden');
+                              placeholder.classList.add('hidden');
+                        };
+                  }
+            });
+
+            if (window.opener) {
+                  try {
+                        window.opener.postMessage({ type: 'pin-kereso-ready' }, '*');
+                  } catch (e) { }
+            }
+
             // Kép betöltése
             fileInput.addEventListener('change', function (e) {
                   const file = e.target.files[0];

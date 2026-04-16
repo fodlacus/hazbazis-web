@@ -26,12 +26,22 @@ let virtualTour = { szintek: [] };
 /** Ha a Pin Keresőből jön vissza x,y, ide írjuk a szobába. */
 let pendingPinEdit = null; // { levelIndex, roomIndex }
 
+/** Szint index → helyi alaprajz (data URL), csak Pin előnézethez; nem megy Firestore-ba. */
+let levelAlaprajzDataUrl = {};
+
+/** Pin ablak megnyitásakor: helyi kép átküldése postMessage-szel. */
+let pendingFloorImageForPin = null;
+
 // Később: Hotspot (HP) gombok kezelése – minden hotspotnak kell "yaw" (iránymutató).
 // Érdemes lehet globális vezérlés: pl. egy közös "yaw beállítás" vagy szobánkénti lista,
 // hogy ne kelljen kézzel minden hotspotnál külön megadni (tour_config.json struktúra: hotspots[].cel_id, szoveg, yaw).
 
 function renderJson() {
-  jsonPreview.textContent = JSON.stringify(virtualTour, null, 2);
+  jsonPreview.textContent = JSON.stringify(
+    { tobb_szintes: true, ...virtualTour },
+    null,
+    2
+  );
 }
 
 function renderLevels() {
@@ -71,11 +81,27 @@ function renderLevels() {
         </button>
       </div>
       <div>
-        <label class="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Alaprajz URL</label>
+        <label class="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Alaprajz URL (publikus)</label>
         <input value="${
           level.alaprajz_url || ""
         }" data-level-index="${levelIndex}" data-field="alaprajz_url"
-          class="level-input w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs outline-none focus:border-[#E2F1B0]" />
+          class="level-input w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs outline-none focus:border-[#E2F1B0]"
+          placeholder="https://media.hazbazis.hu/HB-.../virtual_tour/alaprajz.png" />
+        <p class="text-[10px] text-white/45 mt-1 leading-snug">
+          A látogatói bejárás és a böngésző csak <strong class="text-white/60">https</strong> címről tud képet betölteni (R2 / media.hazbazis.hu).
+          Pin koordinátához választhatsz helyi fájlt is – az nem kerül a JSON-ba, csak segít kattintani az alaprajzon.
+        </p>
+        <div class="flex items-center gap-2 mt-1 flex-wrap">
+          <label class="text-[10px] text-[#E2F1B0]/80 cursor-pointer">
+            <span class="underline">Helyi alaprajz (Pin előnézet)</span>
+            <input type="file" accept="image/*" data-level-index="${levelIndex}" class="level-alaprajz-local hidden" />
+          </label>
+          ${
+            levelAlaprajzDataUrl[levelIndex]
+              ? '<span class="text-[10px] text-green-400/90">✓ betöltve</span>'
+              : ""
+          }
+        </div>
       </div>
       <div class="flex items-center justify-between mt-1">
         <div class="flex items-center gap-2 text-[11px] text-white/60">
@@ -276,16 +302,35 @@ function handleLevelsListClick(e) {
     const level = virtualTour.szintek[lIdx];
     if (!level || !Array.isArray(level.szobak) || !level.szobak[rIdx]) return;
     const alaprajzUrl = (level.alaprajz_url || "").trim();
+    const localData = levelAlaprajzDataUrl[lIdx];
     pendingPinEdit = { levelIndex: lIdx, roomIndex: rIdx };
-    const url = alaprajzUrl
-      ? `pin-kereso.html?image=${encodeURIComponent(alaprajzUrl)}`
-      : "pin-kereso.html";
-    window.open(url, "pin-kereso", "width=900,height=700,scrollbars=yes");
-    if (!alaprajzUrl)
+    if (localData) {
+      pendingFloorImageForPin = localData;
+      window.open(
+        "pin-kereso.html",
+        "pin-kereso",
+        "width=900,height=700,scrollbars=yes"
+      );
+      touchStatus("Pin Kereső: helyi alaprajz átküldése…");
+    } else if (alaprajzUrl) {
+      pendingFloorImageForPin = null;
+      window.open(
+        `pin-kereso.html?image=${encodeURIComponent(alaprajzUrl)}`,
+        "pin-kereso",
+        "width=900,height=700,scrollbars=yes"
+      );
+    } else {
+      pendingFloorImageForPin = null;
+      window.open(
+        "pin-kereso.html",
+        "pin-kereso",
+        "width=900,height=700,scrollbars=yes"
+      );
       touchStatus(
-        "Alaprajz URL nincs megadva – a Pin Keresőben töltsd fel a képet.",
+        "Nincs URL és helyi alaprajz – a Pin Keresőben húzd be a képet.",
         true
       );
+    }
     return;
   }
 
@@ -379,9 +424,27 @@ function handleLevelsListInput(e) {
   }
 }
 
+function alaprajzUrlNemPublikus(virtualTourObj) {
+  for (const sz of virtualTourObj.szintek || []) {
+    const u = String(sz.alaprajz_url || "").trim();
+    if (!u) continue;
+    if (u.startsWith("data:") || u.startsWith("blob:")) return u.slice(0, 40) + "…";
+  }
+  return null;
+}
+
 async function saveTour() {
   if (!currentHbId) {
     touchStatus("Először tölts be egy ingatlant (HB azonosító).", true);
+    return;
+  }
+
+  const invalid = alaprajzUrlNemPublikus(virtualTour);
+  if (invalid) {
+    touchStatus(
+      "Az alaprajz mezőben csak https URL lehet (R2 / media). Ne data:/blob: – töltsd fel a képet, és másold be a publikus linket.",
+      true
+    );
     return;
   }
 
@@ -390,7 +453,7 @@ async function saveTour() {
   try {
     const ref = doc(adatbazis, "lakasok", currentHbId);
     await updateDoc(ref, {
-      virtual_tour: virtualTour,
+      virtual_tour: { tobb_szintes: true, ...virtualTour },
     });
     touchStatus("Sikeres mentés a Firestore-ba.");
   } catch (err) {
@@ -401,7 +464,7 @@ async function saveTour() {
 
 function copyJson() {
   navigator.clipboard
-    .writeText(JSON.stringify(virtualTour, null, 2))
+    .writeText(JSON.stringify({ tobb_szintes: true, ...virtualTour }, null, 2))
     .then(() => touchStatus("JSON a vágólapra másolva."))
     .catch(() => touchStatus("A JSON másolása nem sikerült.", true));
 }
@@ -427,6 +490,18 @@ window.addEventListener("message", (e) => {
     typeof e.data.y === "number"
   ) {
     applyPinFromMessage(e.data.x, e.data.y);
+    return;
+  }
+  if (e.data?.type === "pin-kereso-ready" && e.source && pendingFloorImageForPin) {
+    try {
+      e.source.postMessage(
+        { type: "vt-floor-image", dataUrl: pendingFloorImageForPin },
+        "*"
+      );
+    } catch (err) {
+      console.warn("Pin kép átküldése sikertelen:", err);
+    }
+    pendingFloorImageForPin = null;
   }
 });
 
@@ -451,9 +526,31 @@ if (newBtn) newBtn.addEventListener("click", newTour);
 if (addLevelBtn) addLevelBtn.addEventListener("click", addLevel);
 if (saveBtn) saveBtn.addEventListener("click", saveTour);
 if (copyBtn) copyBtn.addEventListener("click", copyJson);
+function handleLevelAlaprajzLocalChange(e) {
+  const target = e.target;
+  if (!target.classList.contains("level-alaprajz-local")) return;
+  const idx = Number(target.getAttribute("data-level-index"));
+  const file = target.files && target.files[0];
+  if (!file || !virtualTour.szintek[idx]) return;
+  if (file.size > 8 * 1024 * 1024) {
+    touchStatus("A helyi alaprajz max. ~8 MB legyen (Pin előnézethez).", true);
+    target.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    levelAlaprajzDataUrl[idx] = reader.result;
+    renderLevels();
+    renderJson();
+    touchStatus("Helyi alaprajz betöltve ehhez a szinthez (Pin megnyitásakor ezt használjuk).");
+  };
+  reader.readAsDataURL(file);
+}
+
 if (levelsList) {
   levelsList.addEventListener("click", handleLevelsListClick);
   levelsList.addEventListener("input", handleLevelsListInput);
+  levelsList.addEventListener("change", handleLevelAlaprajzLocalChange);
 }
 
 // Alapértelmezett JSON megjelenítés
