@@ -22,6 +22,8 @@ const logoutBtn = document.getElementById("logout-btn");
 
 let currentHbId = null;
 let virtualTour = { szintek: [] };
+const MEDIA_BASE_URL = "https://media.hazbazis.hu";
+let availableMediaFiles = [];
 
 /** Ha a Pin Keresőből jön vissza x,y, ide írjuk a szobába. */
 let pendingPinEdit = null; // { levelIndex, roomIndex }
@@ -37,8 +39,10 @@ let pendingFloorImageForPin = null;
 // hogy ne kelljen kézzel minden hotspotnál külön megadni (tour_config.json struktúra: hotspots[].cel_id, szoveg, yaw).
 
 function renderJson() {
+  const hbForPreview = currentHbId || (hbInput?.value || "").trim();
+  const previewTour = buildFirestoreVirtualTour(virtualTour, hbForPreview);
   jsonPreview.textContent = JSON.stringify(
-    { tobb_szintes: true, ...virtualTour },
+    { tobb_szintes: true, ...previewTour },
     null,
     2
   );
@@ -52,6 +56,28 @@ function renderLevels() {
   }
 
   levelsList.innerHTML = "";
+  const mediaPickerCard = document.createElement("div");
+  mediaPickerCard.className =
+    "border border-white/10 rounded-xl p-3 bg-black/20 space-y-1";
+  mediaPickerCard.innerHTML = `
+    <div class="flex items-center gap-3 flex-wrap">
+      <label class="text-[11px] text-[#E2F1B0] cursor-pointer">
+        <span class="underline">Fotólista betöltése mappából</span>
+        <input type="file" class="media-directory-picker hidden" webkitdirectory directory multiple accept="image/*" />
+      </label>
+      <span class="text-[10px] text-white/55">Betöltött képek: <strong class="text-white/75">${
+        availableMediaFiles.length
+      }</strong></span>
+    </div>
+    ${
+      availableMediaFiles.length
+        ? `<p class="text-[10px] text-white/45">Példák: ${escapeHtml(
+            availableMediaFiles.slice(0, 6).join(", ")
+          )}${availableMediaFiles.length > 6 ? ", ..." : ""}</p>`
+        : '<p class="text-[10px] text-white/45">Válaszd ki a local `virtual_tour` mappát, és a szobáknál listából választhatsz fájlnevet.</p>'
+    }
+  `;
+  levelsList.appendChild(mediaPickerCard);
 
   virtualTour.szintek.forEach((level, levelIndex) => {
     const wrapper = document.createElement("div");
@@ -81,17 +107,25 @@ function renderLevels() {
         </button>
       </div>
       <div>
-        <label class="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Alaprajz URL (publikus)</label>
+        <label class="block text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Alaprajz (fájlnév vagy publikus URL)</label>
         <input value="${
           level.alaprajz_url || ""
         }" data-level-index="${levelIndex}" data-field="alaprajz_url"
           class="level-input w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs outline-none focus:border-[#E2F1B0]"
-          placeholder="https://media.hazbazis.hu/HB-.../virtual_tour/alaprajz.png" />
+          placeholder="pl. alaprajz.png vagy https://media.hazbazis.hu/HB-.../virtual_tour/alaprajz.png" />
         <p class="text-[10px] text-white/45 mt-1 leading-snug">
-          A látogatói bejárás és a böngésző csak <strong class="text-white/60">https</strong> címről tud képet betölteni (R2 / media.hazbazis.hu).
+          Mentéskor a rendszer automatikusan kiegészíti a sima fájlneveket:
+          <strong class="text-white/60">https://media.hazbazis.hu/&lt;HB-ID&gt;/virtual_tour/...</strong>
+        </p>
+        <p class="text-[10px] text-white/45 mt-1 leading-snug">
+          A látogatói bejárás és a böngésző csak <strong class="text-white/60">https</strong> címről tud képet betölteni.
           Pin koordinátához választhatsz helyi fájlt is – az nem kerül a JSON-ba, csak segít kattintani az alaprajzon.
         </p>
         <div class="flex items-center gap-2 mt-1 flex-wrap">
+          <label class="text-[10px] text-white/70 cursor-pointer">
+            <span class="underline">Alaprajz fájlnév kiválasztása</span>
+            <input type="file" accept="image/*" data-level-index="${levelIndex}" class="level-alaprajz-filename hidden" />
+          </label>
           <label class="text-[10px] text-[#E2F1B0]/80 cursor-pointer">
             <span class="underline">Helyi alaprajz (Pin előnézet)</span>
             <input type="file" accept="image/*" data-level-index="${levelIndex}" class="level-alaprajz-local hidden" />
@@ -147,6 +181,30 @@ function renderLevels() {
                 📍 Pin megnyitása
               </button>
             </div>
+            <div class="space-y-1">
+              <label class="text-white/50 block">Panoráma (fájlnév vagy URL)</label>
+              <select
+                data-level-index="${levelIndex}"
+                data-room-index="${roomIndex}"
+                class="room-panorama-select w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs outline-none focus:border-[#E2F1B0]"
+              >
+                <option value="">Válassz a betöltött fotólistából…</option>
+                ${buildRoomPanoramaSelectOptions(room.panorama_url || "")}
+              </select>
+              <input
+                type="text"
+                value="${room.panorama_url || ""}"
+                data-level-index="${levelIndex}"
+                data-room-index="${roomIndex}"
+                data-field="panorama_url"
+                class="room-input w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs outline-none focus:border-[#E2F1B0]"
+                placeholder="pl. furdo.jpg vagy https://media.hazbazis.hu/HB-.../virtual_tour/furdo.jpg"
+              />
+              <label class="text-[10px] text-white/70 cursor-pointer">
+                <span class="underline">Panoráma fájlnév kiválasztása</span>
+                <input type="file" accept="image/*" data-level-index="${levelIndex}" data-room-index="${roomIndex}" class="room-panorama-local hidden" />
+              </label>
+            </div>
           </div>
         `
           )
@@ -168,6 +226,26 @@ function touchStatus(msg, isError = false) {
   statusLabel.className = `text-xs ${
     isError ? "text-red-400" : "text-white/60"
   }`;
+}
+
+function escapeHtml(raw) {
+  return String(raw || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function buildRoomPanoramaSelectOptions(selectedRaw) {
+  const selected = String(selectedRaw || "").trim();
+  return availableMediaFiles
+    .map((fileName) => {
+      const esc = escapeHtml(fileName);
+      const isSelected = fileName === selected ? " selected" : "";
+      return `<option value="${esc}"${isSelected}>${esc}</option>`;
+    })
+    .join("");
 }
 
 function ensureStructure() {
@@ -351,10 +429,6 @@ function handleLevelsListClick(e) {
     if (id === null) return;
     room.id = id.trim();
 
-    const pano = prompt("Panoráma URL", room.panorama_url || "");
-    if (pano === null) return;
-    room.panorama_url = pano.trim();
-
     const xStr = prompt(
       "X pozíció az alaprajzon (0-100)",
       room.x != null ? String(room.x) : "50"
@@ -422,15 +496,73 @@ function handleLevelsListInput(e) {
       renderJson();
     }
   }
+
+  if (target.classList.contains("room-input")) {
+    const lIdx = Number(target.getAttribute("data-level-index"));
+    const rIdx = Number(target.getAttribute("data-room-index"));
+    const field = target.getAttribute("data-field");
+    if (!virtualTour.szintek[lIdx]?.szobak?.[rIdx] || !field) return;
+    virtualTour.szintek[lIdx].szobak[rIdx][field] = target.value;
+    renderJson();
+  }
+
+  if (target.classList.contains("room-panorama-select")) {
+    const lIdx = Number(target.getAttribute("data-level-index"));
+    const rIdx = Number(target.getAttribute("data-room-index"));
+    if (!virtualTour.szintek[lIdx]?.szobak?.[rIdx]) return;
+    const selected = String(target.value || "").trim();
+    if (!selected) return;
+    virtualTour.szintek[lIdx].szobak[rIdx].panorama_url = selected;
+    renderLevels();
+    renderJson();
+  }
 }
 
-function alaprajzUrlNemPublikus(virtualTourObj) {
+function problematikusMediaUrl(virtualTourObj) {
   for (const sz of virtualTourObj.szintek || []) {
     const u = String(sz.alaprajz_url || "").trim();
-    if (!u) continue;
-    if (u.startsWith("data:") || u.startsWith("blob:")) return u.slice(0, 40) + "…";
+    if (u && (u.startsWith("data:") || u.startsWith("blob:"))) {
+      return u.slice(0, 40) + "…";
+    }
+    for (const room of sz.szobak || []) {
+      const p = String(room.panorama_url || "").trim();
+      if (p && (p.startsWith("data:") || p.startsWith("blob:"))) {
+        return p.slice(0, 40) + "…";
+      }
+    }
   }
   return null;
+}
+
+function mediaUrlFromInput(rawUrl, hbId) {
+  const val = String(rawUrl || "").trim();
+  if (!val) return "";
+  if (
+    val.startsWith("https://") ||
+    val.startsWith("http://") ||
+    val.startsWith("data:") ||
+    val.startsWith("blob:")
+  ) {
+    return val;
+  }
+
+  const clean = val.replace(/^\/+/, "");
+  if (!hbId) return clean;
+  if (clean.startsWith(`${hbId}/`)) {
+    return `${MEDIA_BASE_URL}/${clean}`;
+  }
+  return `${MEDIA_BASE_URL}/${hbId}/virtual_tour/${clean}`;
+}
+
+function buildFirestoreVirtualTour(sourceTour, hbId) {
+  const clone = JSON.parse(JSON.stringify(sourceTour || { szintek: [] }));
+  for (const szint of clone.szintek || []) {
+    szint.alaprajz_url = mediaUrlFromInput(szint.alaprajz_url, hbId);
+    for (const room of szint.szobak || []) {
+      room.panorama_url = mediaUrlFromInput(room.panorama_url, hbId);
+    }
+  }
+  return clone;
 }
 
 async function saveTour() {
@@ -439,10 +571,10 @@ async function saveTour() {
     return;
   }
 
-  const invalid = alaprajzUrlNemPublikus(virtualTour);
+  const invalid = problematikusMediaUrl(virtualTour);
   if (invalid) {
     touchStatus(
-      "Az alaprajz mezőben csak https URL lehet (R2 / media). Ne data:/blob: – töltsd fel a képet, és másold be a publikus linket.",
+      "A kép mezőkben ne data:/blob: címet használj. Adj meg fájlnevet vagy publikus https URL-t.",
       true
     );
     return;
@@ -452,8 +584,9 @@ async function saveTour() {
 
   try {
     const ref = doc(adatbazis, "lakasok", currentHbId);
+    const virtualTourForSave = buildFirestoreVirtualTour(virtualTour, currentHbId);
     await updateDoc(ref, {
-      virtual_tour: { tobb_szintes: true, ...virtualTour },
+      virtual_tour: { tobb_szintes: true, ...virtualTourForSave },
     });
     touchStatus("Sikeres mentés a Firestore-ba.");
   } catch (err) {
@@ -463,8 +596,10 @@ async function saveTour() {
 }
 
 function copyJson() {
+  const hbForPreview = currentHbId || (hbInput?.value || "").trim();
+  const virtualTourForSave = buildFirestoreVirtualTour(virtualTour, hbForPreview);
   navigator.clipboard
-    .writeText(JSON.stringify({ tobb_szintes: true, ...virtualTour }, null, 2))
+    .writeText(JSON.stringify({ tobb_szintes: true, ...virtualTourForSave }, null, 2))
     .then(() => touchStatus("JSON a vágólapra másolva."))
     .catch(() => touchStatus("A JSON másolása nem sikerült.", true));
 }
@@ -547,10 +682,64 @@ function handleLevelAlaprajzLocalChange(e) {
   reader.readAsDataURL(file);
 }
 
+function handleLevelAlaprajzFilenameChange(e) {
+  const target = e.target;
+  if (!target.classList.contains("level-alaprajz-filename")) return;
+  const idx = Number(target.getAttribute("data-level-index"));
+  const file = target.files && target.files[0];
+  if (!file || !virtualTour.szintek[idx]) return;
+  virtualTour.szintek[idx].alaprajz_url = file.name;
+  renderLevels();
+  renderJson();
+  touchStatus(`Alaprajz fájlnév kiválasztva: ${file.name}`);
+}
+
+function handleRoomPanoramaLocalChange(e) {
+  const target = e.target;
+  if (!target.classList.contains("room-panorama-local")) return;
+  const lIdx = Number(target.getAttribute("data-level-index"));
+  const rIdx = Number(target.getAttribute("data-room-index"));
+  const file = target.files && target.files[0];
+  if (!file || !virtualTour.szintek[lIdx]?.szobak?.[rIdx]) return;
+  virtualTour.szintek[lIdx].szobak[rIdx].panorama_url = file.name;
+  renderLevels();
+  renderJson();
+  touchStatus(`Panoráma fájlnév kiválasztva: ${file.name}`);
+}
+
+function handleMediaDirectoryPickerChange(e) {
+  const target = e.target;
+  if (!target.classList.contains("media-directory-picker")) return;
+  const files = Array.from(target.files || []);
+  if (files.length === 0) return;
+
+  const imageFileNames = Array.from(
+    new Set(
+      files
+        .filter((file) => /^image\//i.test(file.type) || /\.(jpe?g|png|webp|gif)$/i.test(file.name))
+        .map((file) => file.name.trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, "hu"));
+
+  if (imageFileNames.length === 0) {
+    touchStatus("A kiválasztott mappában nem találtam képfájlokat.", true);
+    return;
+  }
+
+  availableMediaFiles = imageFileNames;
+  renderLevels();
+  renderJson();
+  touchStatus(`${availableMediaFiles.length} képfájl betöltve. Most már listából választhatsz.`);
+}
+
 if (levelsList) {
   levelsList.addEventListener("click", handleLevelsListClick);
   levelsList.addEventListener("input", handleLevelsListInput);
   levelsList.addEventListener("change", handleLevelAlaprajzLocalChange);
+  levelsList.addEventListener("change", handleLevelAlaprajzFilenameChange);
+  levelsList.addEventListener("change", handleRoomPanoramaLocalChange);
+  levelsList.addEventListener("change", handleMediaDirectoryPickerChange);
 }
 
 // Alapértelmezett JSON megjelenítés

@@ -70,63 +70,108 @@ function normalizaldAzAdatokat(rawData) {
   };
 }
 
+function panoramaUrlErvenyes(szoba) {
+  const u = szoba && szoba.panorama_url != null ? String(szoba.panorama_url).trim() : "";
+  return u.length > 0;
+}
+
+/** Első olyan szoba (sorrend szerint), amit meg tudunk jeleníteni (van panoráma URL). */
+function elsoMegjelenithetoSzobaId(tourData) {
+  for (const szint of tourData.szintek || []) {
+    for (const szoba of szint.szobak || []) {
+      if (!panoramaUrlErvenyes(szoba)) continue;
+      const tipus = szoba.tipus || "pano";
+      if (tipus === "pano" || tipus === "sima") return szoba.id;
+    }
+  }
+  return null;
+}
+
 function initTour(tourData) {
   currentTourData = tourData;
 
-  // 1. Pannellum Scene-ek összerakása (Minden szoba egy helyre, szinttől függetlenül)
+  // 1. Pannellum Scene-ek – csak érvényes panoráma URL-lel (üres / hiányzó URL Pannellum belső hibát okoz)
   const scenes = {};
-  let elsoSzobaId = null;
 
   tourData.szintek.forEach((szint) => {
     (szint.szobak || []).forEach((szoba) => {
       const tipus = szoba.tipus || "pano";
-      if (!elsoSzobaId) elsoSzobaId = szoba.id; // Az legelső szint legelső szobája a start
-
-      if (tipus === "pano") {
-        scenes[szoba.id] = {
-          title: szoba.nev,
-          type: "equirectangular",
-          panorama: szoba.panorama_url, // A sima képeknél is ezt a mezőt használjuk majd
-          autoLoad: true,
-          yaw: szoba.kezdo_irany || 0,
-          hotSpots: (szoba.hotspots || []).map((h) => ({
-            pitch: h.pitch || -10,
-            yaw: h.yaw || 0,
-            type: "scene",
-            text: h.szoveg,
-            sceneId: h.cel_id,
-          })),
-        };
+      if (tipus !== "pano") return;
+      if (!panoramaUrlErvenyes(szoba)) {
+        console.warn(
+          "[VT] Panoráma kihagyva (nincs panorama_url):",
+          szoba.id || szoba.nev
+        );
+        return;
       }
+      scenes[szoba.id] = {
+        title: szoba.nev,
+        type: "equirectangular",
+        panorama: String(szoba.panorama_url).trim(),
+        autoLoad: true,
+        yaw: szoba.kezdo_irany || 0,
+        hotSpots: [],
+      };
     });
   });
 
-  // 2. Pannellum Indítása
-
-  if (Object.keys(scenes).length > 0) {
-    viewer = pannellum.viewer("panorama", {
-      default: {
-        firstScene: Object.keys(scenes)[0], // Az első pano szoba
-        sceneFadeDuration: 1000,
-        compass: false,
-        crossOrigin: "anonymous",
-      },
-      scenes: scenes,
+  // Hotspotok: csak olyan cel_id, amihez van Pannellum-jelenet (különben összeomlik a viewer)
+  tourData.szintek.forEach((szint) => {
+    (szint.szobak || []).forEach((szoba) => {
+      const sc = scenes[szoba.id];
+      if (!sc) return;
+      sc.hotSpots = (szoba.hotspots || [])
+        .filter((h) => h && h.cel_id && scenes[h.cel_id])
+        .map((h) => ({
+          pitch: h.pitch || -10,
+          yaw: h.yaw || 0,
+          type: "scene",
+          text: h.szoveg,
+          sceneId: h.cel_id,
+        }));
     });
+  });
 
-    // Eseményfigyelő a Pannellumon belüli nyilas mozgáshoz
-    viewer.on("scenechange", (ujSzobaId) => {
-      frissitsdAHelyszint(ujSzobaId);
-    });
+  const sceneKeys = Object.keys(scenes);
+  const elsoSzobaId = elsoMegjelenithetoSzobaId(tourData);
+
+  // 2. Pannellum – WebGL-hez a képszerveren legyen CORS (pl. media.hazbazis.hu: Access-Control-Allow-Origin)
+  if (sceneKeys.length > 0) {
+    try {
+      viewer = pannellum.viewer("panorama", {
+        default: {
+          firstScene: sceneKeys[0],
+          sceneFadeDuration: 1000,
+          compass: false,
+          crossOrigin: "anonymous",
+        },
+        scenes: scenes,
+      });
+      viewer.on("scenechange", (ujSzobaId) => {
+        frissitsdAHelyszint(ujSzobaId);
+      });
+    } catch (err) {
+      console.error("[VT] Pannellum indítás hiba:", err);
+      viewer = null;
+    }
+  } else {
+    console.warn("[VT] Nincs egyetlen érvényes panoráma jelenet sem.");
   }
 
-  // 3. Első állapot betöltése (az okos vezérlőn keresztül)
+  if (!elsoSzobaId) {
+    alert(
+      "Nincs megjeleníthető panoráma: minden szobánál adj meg érvényes panorama_url-t (https://…)."
+    );
+  }
+
   loadRoom(elsoSzobaId);
   renderSzintValaszto();
 }
 
 // --- OKOS VEZÉRLŐ FÜGGVÉNY ---
 function loadRoom(szobaId) {
+  if (szobaId == null || szobaId === "") return;
+
   // Megkeressük a szoba adatait
   aktualisSzobaIdGlob = szobaId;
   let talaltSzoba = null;
@@ -149,8 +194,12 @@ function loadRoom(szobaId) {
     // Ha 360-as: Pannellum mutatása, sima kép elrejtése
     panoDiv.classList.remove("hidden");
     flatDiv.classList.add("hidden");
-    if (viewer) {
-      viewer.loadScene(szobaId);
+    if (viewer && panoramaUrlErvenyes(talaltSzoba)) {
+      try {
+        viewer.loadScene(szobaId);
+      } catch (e) {
+        console.error("[VT] loadScene:", e);
+      }
     }
   } else if (tipus === "sima") {
     // Ha sima fotó: Pannellum elrejtése, sima kép mutatása
