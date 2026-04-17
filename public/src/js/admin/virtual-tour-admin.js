@@ -23,7 +23,8 @@ const logoutBtn = document.getElementById("logout-btn");
 let currentHbId = null;
 let virtualTour = { szintek: [] };
 const MEDIA_BASE_URL = "https://media.hazbazis.hu";
-let availableMediaFiles = [];
+/** Csak a szerkesztőben: ehhez a szinthez betöltött képfájlnevek (nem kerül Firestore-ba). */
+const VT_LEVEL_MEDIA_KEY = "_vt_media_files";
 
 /** Ha a Pin Keresőből jön vissza x,y, ide írjuk a szobába. */
 let pendingPinEdit = null; // { levelIndex, roomIndex }
@@ -56,30 +57,11 @@ function renderLevels() {
   }
 
   levelsList.innerHTML = "";
-  const mediaPickerCard = document.createElement("div");
-  mediaPickerCard.className =
-    "border border-white/10 rounded-xl p-3 bg-black/20 space-y-1";
-  mediaPickerCard.innerHTML = `
-    <div class="flex items-center gap-3 flex-wrap">
-      <label class="text-[11px] text-[#E2F1B0] cursor-pointer">
-        <span class="underline">Fotólista betöltése mappából</span>
-        <input type="file" class="media-directory-picker hidden" webkitdirectory directory multiple accept="image/*" />
-      </label>
-      <span class="text-[10px] text-white/55">Betöltött képek: <strong class="text-white/75">${
-        availableMediaFiles.length
-      }</strong></span>
-    </div>
-    ${
-      availableMediaFiles.length
-        ? `<p class="text-[10px] text-white/45">Példák: ${escapeHtml(
-            availableMediaFiles.slice(0, 6).join(", ")
-          )}${availableMediaFiles.length > 6 ? ", ..." : ""}</p>`
-        : '<p class="text-[10px] text-white/45">Válaszd ki a local `virtual_tour` mappát, és a szobáknál listából választhatsz fájlnevet.</p>'
-    }
-  `;
-  levelsList.appendChild(mediaPickerCard);
 
   virtualTour.szintek.forEach((level, levelIndex) => {
+    const levelMediaFiles = Array.isArray(level[VT_LEVEL_MEDIA_KEY])
+      ? level[VT_LEVEL_MEDIA_KEY]
+      : [];
     const wrapper = document.createElement("div");
     wrapper.className =
       "border border-white/10 rounded-xl p-3 bg-black/20 space-y-2";
@@ -137,6 +119,22 @@ function renderLevels() {
           }
         </div>
       </div>
+      <div class="border border-white/5 rounded-lg px-2 py-1.5 bg-black/15 space-y-1">
+        <div class="flex items-center gap-3 flex-wrap">
+          <label class="text-[10px] text-[#E2F1B0] cursor-pointer">
+            <span class="underline">Fotólista betöltése (ehhez a szinthöz)</span>
+            <input type="file" class="level-media-directory-picker hidden" webkitdirectory directory multiple accept="image/*" data-level-index="${levelIndex}" />
+          </label>
+          <span class="text-[10px] text-white/55">Betöltött képek: <strong class="text-white/75">${levelMediaFiles.length}</strong></span>
+        </div>
+        ${
+          levelMediaFiles.length
+            ? `<p class="text-[10px] text-white/45">Példák: ${escapeHtml(
+                levelMediaFiles.slice(0, 5).join(", ")
+              )}${levelMediaFiles.length > 5 ? ", …" : ""}</p>`
+            : '<p class="text-[10px] text-white/45">Válaszd ki a szinthez tartozó <code class="text-white/55">virtual_tour</code> mappát; a szobák panoráma listája csak ennél a szintnél jelenik meg.</p>'
+        }
+      </div>
       <div class="flex items-center justify-between mt-1">
         <div class="flex items-center gap-2 text-[11px] text-white/60">
           <input type="checkbox" ${
@@ -188,8 +186,8 @@ function renderLevels() {
                 data-room-index="${roomIndex}"
                 class="room-panorama-select w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs outline-none focus:border-[#E2F1B0]"
               >
-                <option value="">Válassz a betöltött fotólistából…</option>
-                ${buildRoomPanoramaSelectOptions(room.panorama_url || "")}
+                <option value="">Válassz erről a szintről betöltött fotókból…</option>
+                ${buildRoomPanoramaSelectOptions(room.panorama_url || "", levelIndex)}
               </select>
               <input
                 type="text"
@@ -237,15 +235,52 @@ function escapeHtml(raw) {
     .replaceAll("'", "&#039;");
 }
 
-function buildRoomPanoramaSelectOptions(selectedRaw) {
-  const selected = String(selectedRaw || "").trim();
-  return availableMediaFiles
+function panoramaFilenameHint(raw) {
+  const u = String(raw || "").trim();
+  if (!u) return "";
+  if (u.startsWith("http://") || u.startsWith("https://")) {
+    try {
+      const path = u.split("?")[0];
+      const seg = path.split("/").filter(Boolean).pop() || "";
+      return decodeURIComponent(seg);
+    } catch {
+      return u;
+    }
+  }
+  const parts = u.split("/").filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : u;
+}
+
+function buildRoomPanoramaSelectOptions(selectedRaw, levelIndex) {
+  const level = virtualTour.szintek[levelIndex];
+  const levelFiles = Array.isArray(level?.[VT_LEVEL_MEDIA_KEY])
+    ? level[VT_LEVEL_MEDIA_KEY]
+    : [];
+  const selectedTrim = String(selectedRaw || "").trim();
+  const selectedBasename = panoramaFilenameHint(selectedRaw);
+
+  let extra = "";
+  if (
+    selectedBasename &&
+    !levelFiles.includes(selectedBasename) &&
+    selectedBasename !== ""
+  ) {
+    const esc = escapeHtml(selectedBasename);
+    extra += `<option value="${esc}" selected>${esc} (aktuális, nincs a listában)</option>`;
+  }
+
+  const fileOptions = levelFiles
     .map((fileName) => {
       const esc = escapeHtml(fileName);
-      const isSelected = fileName === selected ? " selected" : "";
-      return `<option value="${esc}"${isSelected}>${esc}</option>`;
+      const isSelected =
+        fileName === selectedTrim ||
+        fileName === selectedBasename ||
+        (selectedTrim.startsWith("http") && fileName === selectedBasename);
+      return `<option value="${esc}"${isSelected ? " selected" : ""}>${esc}</option>`;
     })
     .join("");
+
+  return extra + fileOptions;
 }
 
 function ensureStructure() {
@@ -282,6 +317,9 @@ async function loadTour() {
     const data = snap.data();
     if (data.virtual_tour && data.virtual_tour.szintek) {
       virtualTour = data.virtual_tour;
+      for (const sz of virtualTour.szintek || []) {
+        delete sz[VT_LEVEL_MEDIA_KEY];
+      }
       touchStatus("Meglévő virtuális túra betöltve.");
     } else {
       virtualTour = { szintek: [] };
@@ -557,6 +595,7 @@ function mediaUrlFromInput(rawUrl, hbId) {
 function buildFirestoreVirtualTour(sourceTour, hbId) {
   const clone = JSON.parse(JSON.stringify(sourceTour || { szintek: [] }));
   for (const szint of clone.szintek || []) {
+    delete szint[VT_LEVEL_MEDIA_KEY];
     szint.alaprajz_url = mediaUrlFromInput(szint.alaprajz_url, hbId);
     for (const room of szint.szobak || []) {
       room.panorama_url = mediaUrlFromInput(room.panorama_url, hbId);
@@ -707,9 +746,13 @@ function handleRoomPanoramaLocalChange(e) {
   touchStatus(`Panoráma fájlnév kiválasztva: ${file.name}`);
 }
 
-function handleMediaDirectoryPickerChange(e) {
+function handleLevelMediaDirectoryPickerChange(e) {
   const target = e.target;
-  if (!target.classList.contains("media-directory-picker")) return;
+  if (!target.classList.contains("level-media-directory-picker")) return;
+  const levelIndex = Number(target.getAttribute("data-level-index"));
+  const level = virtualTour.szintek[levelIndex];
+  if (!level) return;
+
   const files = Array.from(target.files || []);
   if (files.length === 0) return;
 
@@ -727,10 +770,13 @@ function handleMediaDirectoryPickerChange(e) {
     return;
   }
 
-  availableMediaFiles = imageFileNames;
+  level[VT_LEVEL_MEDIA_KEY] = imageFileNames;
+  target.value = "";
   renderLevels();
   renderJson();
-  touchStatus(`${availableMediaFiles.length} képfájl betöltve. Most már listából választhatsz.`);
+  touchStatus(
+    `${imageFileNames.length} képfájl betöltve ehhez a szinthez (${level.nev || level.id || "szint"}).`
+  );
 }
 
 if (levelsList) {
@@ -739,7 +785,7 @@ if (levelsList) {
   levelsList.addEventListener("change", handleLevelAlaprajzLocalChange);
   levelsList.addEventListener("change", handleLevelAlaprajzFilenameChange);
   levelsList.addEventListener("change", handleRoomPanoramaLocalChange);
-  levelsList.addEventListener("change", handleMediaDirectoryPickerChange);
+  levelsList.addEventListener("change", handleLevelMediaDirectoryPickerChange);
 }
 
 // Alapértelmezett JSON megjelenítés
