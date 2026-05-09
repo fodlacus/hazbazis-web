@@ -24,7 +24,7 @@
 
   if (!partnerId) {
     console.error(
-      "Hazbazis Widget Hiba: Hiányzik a 'data-hb' paraméter a beillesztett kódból!"
+      "Hazbazis Widget Hiba: Hiányzik a 'data-hb' paraméter a beillesztett kódból!",
     );
     return;
   }
@@ -53,7 +53,7 @@
 
   // AZ ÉLES ÚTVONALAD A SZERVEREN:
   const widgetUrl = `https://hazbazis.hu/src/widget/view.html?partner=${encodeURIComponent(
-    partnerId
+    partnerId,
   )}&type=${partnerType}`;
 
   iframe.src = widgetUrl;

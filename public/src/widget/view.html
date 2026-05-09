@@ -8,6 +8,11 @@
       <script src="https://cdn.tailwindcss.com"></script>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
       <style>
+            :root {
+                  --hb-primer-szin: #E2F1B0;
+                  --hb-masodlagos-szin: #3D4A16;
+            }
+
             #video-container {
                   scroll-snap-type: y mandatory;
                   scroll-behavior: smooth;
@@ -34,6 +39,20 @@
                   background: rgba(0, 0, 0, 0.7);
                   transform: scale(1.1);
             }
+
+            .hb-jelveny {
+                  background-color: var(--hb-primer-szin);
+                  color: var(--hb-masodlagos-szin);
+            }
+
+            .hb-cta-gomb {
+                  background-color: var(--hb-primer-szin);
+                  color: var(--hb-masodlagos-szin);
+            }
+
+            .hb-cta-gomb:hover {
+                  filter: brightness(0.92);
+            }
       </style>
 </head>
 
@@ -47,7 +66,7 @@
                   </div>
             </div>
 
-            <a href="https://hazbazis.hu" target="_blank"
+            <a id="powered-by-link" href="https://hazbazis.hu" target="_blank"
                   class="absolute top-4 left-4 z-40 opacity-50 hover:opacity-100 transition pointer-events-auto">
                   <div class="text-[9px] font-bold tracking-widest uppercase text-white drop-shadow-md">
                         Powered by Hazbazis
@@ -81,6 +100,39 @@
             const partnerKey = urlParams.get('partner');
             const partnerType = urlParams.get('type');
 
+            const DEFAULT_SHORTS = {
+                  aktiv: true,
+                  kijelzett_azon: true,
+                  kijelzett_ar: true,
+                  kijelzett_cim: true,
+                  cta_szoveg: "Részletek megtekintése",
+                  cta_url: "",
+            };
+
+            function applyMegjelenes(megjelenes) {
+                  const root = document.documentElement;
+                  const primer = (megjelenes && megjelenes.primer_szin) ? String(megjelenes.primer_szin) : "#E2F1B0";
+                  const masod = (megjelenes && megjelenes.masodlagos_szin) ? String(megjelenes.masodlagos_szin) : "#3D4A16";
+                  root.style.setProperty("--hb-primer-szin", primer);
+                  root.style.setProperty("--hb-masodlagos-szin", masod);
+
+                  const powered = document.getElementById("powered-by-link");
+                  if (powered && megjelenes && megjelenes.powered_by_lathato === false) {
+                        powered.style.display = "none";
+                  }
+            }
+
+            function mergeShortsCfg(shorts) {
+                  return { ...DEFAULT_SHORTS, ...(shorts && typeof shorts === "object" ? shorts : {}) };
+            }
+
+            function feloldCtaUrl(ctaUrl, lakasDocId) {
+                  const u = (ctaUrl && String(ctaUrl).trim()) ? String(ctaUrl).trim() : "";
+                  if (!u) return `widget-adatlap.html?id=${encodeURIComponent(lakasDocId)}`;
+                  if (u.includes("{id}")) return u.split("{id}").join(encodeURIComponent(lakasDocId));
+                  return u;
+            }
+
             const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                         const video = entry.target.querySelector('video');
@@ -113,31 +165,41 @@
 
                   try {
                         let partnerUid = null;
+                        let shortsCfg = mergeShortsCfg(null);
 
-                        const hbMod = partnerType === "hb" || (partnerKey && partnerKey.startsWith("hb-"));
+                        const hbMod = partnerType === "hb" || (partnerKey && partnerKey.toLowerCase().startsWith("hb-"));
                         if (hbMod) {
-                              const widgetSnap = await getDocs(
+                              const konfigSnap = await getDocs(
                                     query(
-                                          collection(db, "widget"),
-                                          where("hb_azon", "==", partnerKey),
+                                          collection(db, "wid-konfig"),
+                                          where("beagyazas_kulcs", "==", partnerKey),
                                           limit(1)
                                     )
                               );
 
-                              if (widgetSnap.empty) {
-                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Nincs aktív widget ehhez a partnerhez.</div>';
+                              if (konfigSnap.empty) {
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Nincs wid-konfig ehhez a beágyazási kulcshoz.</div>';
                                     return;
                               }
 
-                              const widgetData = widgetSnap.docs[0].data();
-                              if (widgetData.active === false) {
+                              const konfigData = konfigSnap.docs[0].data();
+                              if (konfigData.aktiv === false) {
                                     container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">A widget jelenleg inaktív.</div>';
                                     return;
                               }
 
-                              const hirdetoAzon = widgetData.hirdeto_azon;
+                              const shortsBlokk = konfigData.shorts;
+                              if (shortsBlokk && shortsBlokk.aktiv === false) {
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">A Shorts widget ki van kapcsolva.</div>';
+                                    return;
+                              }
+
+                              shortsCfg = mergeShortsCfg(shortsBlokk);
+                              applyMegjelenes(konfigData.megjelenes || null);
+
+                              const hirdetoAzon = konfigData.hirdeto_azon;
                               if (!hirdetoAzon) {
-                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Hiányzó hirdető azonosító.</div>';
+                                    container.innerHTML = '<div class="h-full flex items-center justify-center text-white/50">Hiányzó hirdető azonosító (wid-konfig).</div>';
                                     return;
                               }
 
@@ -157,6 +219,7 @@
                               partnerUid = userSnap.docs[0].id;
                         } else {
                               partnerUid = partnerKey;
+                              applyMegjelenes(null);
                         }
 
                         // hirdeto_uid alapú szűrés
@@ -177,7 +240,7 @@
                         container.innerHTML = "";
 
                         snapshot.forEach(doc => {
-                              renderShortsItem(doc.id, doc.data(), container);
+                              renderShortsItem(doc.id, doc.data(), container, shortsCfg);
                         });
 
                   } catch (error) {
@@ -190,7 +253,7 @@
                   }
             }
 
-            function renderShortsItem(id, data, container) {
+            function renderShortsItem(id, data, container, shortsCfg) {
                   const item = document.createElement('div');
                   item.className = "video-item h-full w-full relative bg-gray-900 overflow-hidden";
 
@@ -198,13 +261,28 @@
                   const cim = `${data.telepules}, ${data.varosresz || data.utca || ''}`;
                   let posterUrl = data.boritokep || (data.kepek && data.kepek[0]) || "";
 
-                  // JAVÍTVA: HB Azonosító kezelése
-                  const hbAzon = data.azon || id; // Vagy data.azon, vagy a dokumentum ID-ja
+                  const hbAzon = data.azon || id;
 
-                  // JAVÍTVA: widget-adatlap.html hívása
-                  // Fontos: a ../widget-adatlap.html relatív útvonal attól függ, hol van ez a fájl.
-                  // Feltételezem, hogy ugyanabban a mappában lesznek.
-                  const adatlapLink = `widget-adatlap.html?id=${id}`;
+                  const adatlapLink = feloldCtaUrl(shortsCfg.cta_url, id);
+                  const ctaSzoveg = (shortsCfg.cta_szoveg && String(shortsCfg.cta_szoveg).trim())
+                        ? String(shortsCfg.cta_szoveg).trim()
+                        : DEFAULT_SHORTS.cta_szoveg;
+
+                  const showAzon = shortsCfg.kijelzett_azon !== false;
+                  const showAr = shortsCfg.kijelzett_ar !== false;
+                  const showCim = shortsCfg.kijelzett_cim !== false;
+
+                  const jelvenyHtml = showAzon
+                        ? `<span class="hb-jelveny px-2 py-0.5 rounded text-xs font-bold mb-2 inline-block shadow-sm">${hbAzon}</span>`
+                        : "";
+                  const arHtml = showAr
+                        ? `<div class="text-white font-bold text-3xl mb-1 drop-shadow-md tracking-tight">${ar}</div>`
+                        : "";
+                  const cimHtml = showCim
+                        ? `<div class="text-white/90 font-medium text-lg drop-shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-location-dot text-red-500"></i> ${cim}
+                        </div>`
+                        : "";
 
                   item.innerHTML = `
                 <video 
@@ -227,19 +305,14 @@
 
                 <div class="absolute bottom-0 left-0 w-full p-6 pb-8 z-30">
                     <div class="mb-4">
-                        <span class="bg-[#E2F1B0] text-[#3D4A16] px-2 py-0.5 rounded text-xs font-bold mb-2 inline-block shadow-sm">
-                            ${hbAzon}
-                        </span>
-
-                        <div class="text-white font-bold text-3xl mb-1 drop-shadow-md tracking-tight">${ar}</div>
-                        <div class="text-white/90 font-medium text-lg drop-shadow-md flex items-center gap-2">
-                            <i class="fa-solid fa-location-dot text-red-500"></i> ${cim}
-                        </div>
+                        ${jelvenyHtml}
+                        ${arHtml}
+                        ${cimHtml}
                     </div>
 
                     <a href="${adatlapLink}" target="_blank" class="block w-full">
-                        <button class="bg-[#E2F1B0] hover:bg-[#d4e69e] text-[#3D4A16] font-bold py-3.5 px-6 rounded-xl w-full flex items-center justify-between transition transform active:scale-95 shadow-xl">
-                            <span>Részletek megtekintése</span>
+                        <button type="button" class="hb-cta-gomb font-bold py-3.5 px-6 rounded-xl w-full flex items-center justify-between transition transform active:scale-95 shadow-xl">
+                            <span>${ctaSzoveg}</span>
                             <i class="fa-solid fa-arrow-right-long"></i>
                         </button>
                     </a>
